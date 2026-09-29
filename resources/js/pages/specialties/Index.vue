@@ -1,0 +1,124 @@
+<script setup lang="ts">
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/AppLayout.vue';
+import specialtyRoutes from '@/routes/specialties';
+import type { BreadcrumbItem } from '@/types';
+
+defineProps<{
+    specialties: {
+        id: number;
+        name: string;
+        description: string | null;
+        doctors_count: number;
+        can_delete: boolean;
+    }[];
+}>();
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Especialidades', href: specialtyRoutes.index() },
+];
+
+function destroy(id: number, name: string) {
+    if (!confirm(`¿Eliminar la especialidad «${name}»?`)) {
+        return;
+    }
+
+    router.delete(specialtyRoutes.destroy(id).url, { preserveScroll: true });
+}
+</script>
+
+<template>
+    <Head title="Especialidades" />
+
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div class="flex flex-1 flex-col gap-4 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h1 class="text-2xl font-semibold tracking-tight">
+                    Especialidades
+                </h1>
+                <Button as-child>
+                    <Link :href="specialtyRoutes.create()">
+                        <Plus /> Nueva especialidad
+                    </Link>
+                </Button>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border">
+                <table class="w-full text-sm">
+                    <thead class="bg-muted/50 text-left text-muted-foreground">
+                        <tr>
+                            <th class="px-4 py-3 font-medium">Especialidad</th>
+                            <th class="px-4 py-3 font-medium">Médicos</th>
+                            <th class="px-4 py-3 font-medium">
+                                <span class="sr-only">Acciones</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr v-if="specialties.length === 0">
+                            <td
+                                colspan="3"
+                                class="px-4 py-10 text-center text-muted-foreground"
+                            >
+                                Aún no hay especialidades registradas.
+                            </td>
+                        </tr>
+                        <tr
+                            v-for="specialty in specialties"
+                            :key="specialty.id"
+                        >
+                            <td class="px-4 py-3">
+                                <p class="font-medium">{{ specialty.name }}</p>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ specialty.description ?? '—' }}
+                                </p>
+                            </td>
+                            <td class="px-4 py-3 tabular-nums">
+                                {{ specialty.doctors_count }}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex justify-end gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                specialtyRoutes.edit(
+                                                    specialty.id,
+                                                )
+                                            "
+                                        >
+                                            <Pencil /> Editar
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        v-if="specialty.can_delete"
+                                        size="sm"
+                                        variant="ghost"
+                                        class="text-destructive"
+                                        @click="
+                                            destroy(
+                                                specialty.id,
+                                                specialty.name,
+                                            )
+                                        "
+                                    >
+                                        <Trash2 /> Eliminar
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-xs text-muted-foreground">
+                Solo se pueden eliminar las especialidades sin médicos
+                asignados.
+            </p>
+        </div>
+    </AppLayout>
+</template>

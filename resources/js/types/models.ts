@@ -1,0 +1,128 @@
+export type Option = {
+    value: string;
+    label: string;
+};
+
+export type RoleValue = 'admin' | 'doctor' | 'receptionist' | 'patient';
+
+export type AppointmentStatusValue =
+    'requested' | 'confirmed' | 'completed' | 'cancelled';
+
+export type Paginated<T> = {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+    links: { url: string | null; label: string; active: boolean }[];
+};
+
+export type PersonReference = {
+    id: number;
+    full_name: string;
+};
+
+export type DoctorReference = {
+    id: number;
+    name: string;
+    specialty: string;
+};
+
+export type Patient = {
+    id: number;
+    full_name: string;
+    first_name: string;
+    last_name: string;
+    document_number: string | null;
+    email: string | null;
+    phone: string | null;
+    birth_date: string | null;
+    age: number | null;
+    gender: Option | null;
+    address: string | null;
+    blood_type: string | null;
+    emergency_contact_name: string | null;
+    emergency_contact_phone: string | null;
+    has_account: boolean;
+    allergies?: string | null;
+    chronic_conditions?: string | null;
+    medical_background?: string | null;
+    created_at: string;
+};
+
+export type Appointment = {
+    id: number;
+    scheduled_at: string;
+    status: Option & { value: AppointmentStatusValue };
+    reason: string;
+    notes: string | null;
+    patient?: PersonReference;
+    doctor?: DoctorReference;
+    consultation_id?: number | null;
+    can: { update_status: boolean };
+};
+
+export type Prescription = {
+    id: number;
+    medication: string;
+    dosage: string;
+    frequency: string;
+    duration: string | null;
+    instructions: string | null;
+};
+
+export type Consultation = {
+    id: number;
+    consulted_at: string;
+    reason: string;
+    symptoms: string | null;
+    diagnosis: string;
+    treatment: string | null;
+    notes?: string | null;
+    weight_kg: string | null;
+    height_cm: string | null;
+    blood_pressure: string | null;
+    temperature_c: string | null;
+    heart_rate: number | null;
+    patient?: PersonReference;
+    doctor?: DoctorReference;
+    prescriptions?: Prescription[];
+    attachments?: Attachment[];
+};
+
+export type Attachment = {
+    id: number;
+    original_name: string;
+    mime_type: string;
+    size: number;
+    description: string | null;
+    created_at: string;
+};
+
+export type Payment = {
+    id: number;
+    amount: string;
+    method: Option;
+    status: Option;
+    concept: string;
+    reference: string | null;
+    paid_at: string | null;
+    notes: string | null;
+    patient?: PersonReference;
+    created_at: string;
+};
+
+export type Doctor = {
+    id: number;
+    name: string;
+    email: string;
+    specialty: string;
+    license_number: string;
+    phone: string | null;
+    consultation_fee: string;
+    bio: string | null;
+};
