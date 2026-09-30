@@ -22,7 +22,7 @@ import {
     Wallet,
 } from 'lucide-vue-next';
 import ThemeToggle from '@/components/ThemeToggle.vue';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, login, privacy, register } from '@/routes';
 
 withDefaults(
     defineProps<{
@@ -671,9 +671,17 @@ const steps = [
                         <MapPin class="size-4" /> Dirección de la clínica
                     </li>
                 </ul>
-                <p class="text-sm text-muted-foreground sm:text-right">
-                    © {{ new Date().getFullYear() }} Médicos Integrados
-                </p>
+                <div class="text-sm text-muted-foreground sm:text-right">
+                    <p>
+                        © {{ new Date().getFullYear() }} Médicos Integrados
+                    </p>
+                    <Link
+                        :href="privacy()"
+                        class="mt-2 inline-block underline-offset-4 hover:underline"
+                    >
+                        Política de tratamiento de datos personales
+                    </Link>
+                </div>
             </div>
         </footer>
     </div>

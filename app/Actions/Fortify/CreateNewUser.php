@@ -25,15 +25,23 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
+            'privacy' => ['accepted'],
+        ], [
+            'privacy.accepted' => 'Debes autorizar el tratamiento de tus datos personales según la política para crear tu cuenta.',
         ])->validate();
 
         return DB::transaction(function () use ($input): User {
-            $user = User::create([
+            $user = new User([
                 'name' => $input['name'],
                 'email' => $input['email'],
                 'password' => $input['password'],
                 'role' => UserRole::Patient,
             ]);
+
+            $user->forceFill([
+                'privacy_accepted_at' => now(),
+                'privacy_policy_version' => config('privacy.version'),
+            ])->save();
 
             $this->attachPatientRecord($user);
 

@@ -53,6 +53,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'must_change_password' => 'boolean',
             'is_active' => 'boolean',
+            'privacy_accepted_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
         ];

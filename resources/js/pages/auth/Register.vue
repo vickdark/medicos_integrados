@@ -4,11 +4,12 @@ import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { login } from '@/routes';
+import { login, privacy } from '@/routes';
 import { store } from '@/routes/register';
 </script>
 
@@ -83,10 +84,39 @@ import { store } from '@/routes/register';
                     <InputError :message="errors.password_confirmation" />
                 </div>
 
+                <div class="grid gap-2">
+                    <div class="flex items-start gap-3">
+                        <Checkbox
+                            id="privacy"
+                            name="privacy"
+                            class="mt-0.5"
+                            :tabindex="5"
+                        />
+                        <Label
+                            for="privacy"
+                            class="block text-sm leading-snug font-normal"
+                        >
+                            Acepto la
+                            <a
+                                :href="privacy().url"
+                                target="_blank"
+                                rel="noopener"
+                                class="underline underline-offset-4"
+                                >política de tratamiento de datos
+                                personales</a
+                            >
+                            y autorizo el tratamiento de mis datos personales,
+                            incluidos los datos sensibles de salud, para mi
+                            atención médica.
+                        </Label>
+                    </div>
+                    <InputError :message="errors.privacy" />
+                </div>
+
                 <Button
                     type="submit"
                     class="mt-2 w-full"
-                    tabindex="5"
+                    tabindex="6"
                     :disabled="processing"
                     data-test="register-user-button"
                 >
@@ -100,7 +130,7 @@ import { store } from '@/routes/register';
                 <TextLink
                     :href="login()"
                     class="underline underline-offset-4"
-                    :tabindex="6"
+                    :tabindex="7"
                     >Inicia sesión</TextLink
                 >
             </div>

@@ -15,6 +15,7 @@ use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\SendConsultationPrescriptionController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\TourController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('privacidad', PrivacyPolicyController::class)->name('privacy');
 Route::get('doctors/{doctor}/photo', DoctorPhotoController::class)->name('doctors.photo');
 
 Route::middleware(['auth', 'verified'])->group(function () {

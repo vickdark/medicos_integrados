@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
-import { home } from '@/routes';
+import { home, privacy } from '@/routes';
 
 defineProps<{
     title?: string;
@@ -39,5 +39,11 @@ defineProps<{
                 <slot />
             </div>
         </div>
+        <Link
+            :href="privacy()"
+            class="text-xs text-muted-foreground underline-offset-4 hover:underline"
+        >
+            Política de tratamiento de datos personales
+        </Link>
     </div>
 </template>

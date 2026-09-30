@@ -177,3 +177,16 @@ it('returns not found for doctors without a photo', function () {
         ->get(route('doctors.photo', $doctor))
         ->assertNotFound();
 });
+
+it('scales down and compresses the uploaded photo', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('users.store'), doctorFormData(['photo' => UploadedFile::fake()->image('grande.jpg', 2400, 1800)]))
+        ->assertSessionHasNoErrors();
+
+    $doctor = Doctor::query()->sole();
+    [$width, $height] = getimagesizefromstring(Storage::disk('local')->get($doctor->photo_path));
+
+    expect($doctor->photo_path)->toEndWith('.webp')
+        ->and(max($width, $height))->toBe(800)
+        ->and($width / $height)->toEqualWithDelta(2400 / 1800, 0.01);
+});
