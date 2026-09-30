@@ -21,6 +21,7 @@ const props = defineProps<{
         consultation_fee: string;
         slot_minutes: number;
         bio: string | null;
+        photo_url: string | null;
         schedule_summary: { days: string; ranges: string[] }[];
     };
 }>();
@@ -58,6 +59,13 @@ const details = [
                     variant="small"
                     title="Perfil profesional"
                     description="Tus datos como médico en la clínica. Si algo debe corregirse, pídelo al administrador."
+                />
+
+                <img
+                    v-if="profile.photo_url"
+                    :src="profile.photo_url"
+                    :alt="`Foto de ${profile.name}`"
+                    class="size-28 rounded-2xl border object-cover"
                 />
 
                 <dl class="grid gap-3 text-sm">

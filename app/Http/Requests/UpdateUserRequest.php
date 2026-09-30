@@ -57,6 +57,10 @@ class UpdateUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'photo.image' => 'La foto debe ser una imagen.',
+            'photo.mimes' => 'La foto debe ser JPG, PNG o WebP.',
+            'photo.max' => 'La foto no puede superar los 2 MB.',
+            'photo.uploaded' => 'No se pudo subir la foto; revisa que pese menos de 2 MB.',
             'role.enum' => 'No se puede cambiar el rol de esta cuenta.',
         ];
     }

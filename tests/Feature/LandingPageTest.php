@@ -1,19 +1,25 @@
 <?php
 
 use App\Models\Doctor;
-use App\Models\Specialty;
+use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-it('shows the landing page with the specialties and their doctor count', function () {
-    $cardiology = Specialty::factory()->create(['name' => 'Cardiología']);
-    Doctor::factory()->count(2)->for($cardiology)->create();
+it('shows the public landing page without listing the specialties', function () {
+    Doctor::factory()->create();
 
     $this->get(route('home'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Welcome')
-            ->has('specialties', 1)
-            ->where('specialties.0.name', 'Cardiología')
-            ->where('specialties.0.doctors_count', 2)
+            ->has('canRegister')
+            ->missing('specialties')
         );
+});
+
+it('lets a guest see the landing page and a signed in user too', function () {
+    $this->get(route('home'))->assertOk();
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('home'))
+        ->assertOk();
 });

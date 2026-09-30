@@ -39,7 +39,7 @@ const sidebarNavItems = computed<NavItem[]>(() => [
     ...(page.props.auth.role?.value === 'admin'
         ? [
               {
-                  title: 'Color de la aplicación',
+                  title: 'Personalización',
                   href: editBranding(),
               },
           ]

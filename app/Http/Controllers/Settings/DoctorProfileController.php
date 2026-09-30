@@ -30,6 +30,7 @@ class DoctorProfileController extends Controller
                 'consultation_fee' => $doctor->consultation_fee,
                 'slot_minutes' => $doctor->slotLength(),
                 'bio' => $doctor->bio,
+                'photo_url' => $doctor->photoUrl(),
                 'schedule_summary' => $doctor->weeklyScheduleSummary(),
             ],
         ]);

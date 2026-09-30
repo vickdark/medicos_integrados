@@ -19,7 +19,11 @@ class AppSetting extends Model
 
     public const BRAND_COLOR = 'brand_color';
 
+    public const LANDING_SHOW_DOCTORS = 'landing_show_doctors';
+
     private const BRAND_CACHE_KEY = 'app_settings.brand_color';
+
+    private const LANDING_DOCTORS_CACHE_KEY = 'app_settings.landing_show_doctors';
 
     /**
      * The attributes that are mass assignable.
@@ -71,5 +75,34 @@ class AppSetting extends Model
         self::query()->where('key', self::BRAND_COLOR)->delete();
 
         Cache::forget(self::BRAND_CACHE_KEY);
+    }
+
+    /**
+     * Whether the landing page shows the doctors of the clinic. Off by default: the
+     * administrator has to enable it.
+     */
+    public static function showDoctorsOnLanding(): bool
+    {
+        try {
+            return Cache::rememberForever(
+                self::LANDING_DOCTORS_CACHE_KEY,
+                fn (): bool => self::query()->where('key', self::LANDING_SHOW_DOCTORS)->value('value') === '1',
+            );
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Enable or disable the public list of doctors on the landing page.
+     */
+    public static function setShowDoctorsOnLanding(bool $show): void
+    {
+        self::query()->updateOrCreate(
+            ['key' => self::LANDING_SHOW_DOCTORS],
+            ['value' => $show ? '1' : '0'],
+        );
+
+        Cache::forget(self::LANDING_DOCTORS_CACHE_KEY);
     }
 }

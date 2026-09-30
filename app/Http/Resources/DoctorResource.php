@@ -20,6 +20,10 @@ class DoctorResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
+            'is_active' => $this->user->is_active,
+            'photo_url' => $this->photoUrl(),
+            'slot_minutes' => $this->slotLength(),
             'name' => $this->user->name,
             'email' => $this->user->email,
             'specialty' => $this->specialty->name,

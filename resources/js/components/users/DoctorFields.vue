@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ImagePlus } from 'lucide-vue-next';
+import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +14,7 @@ export type DoctorProfile = {
     consultation_fee: string;
     slot_minutes: number;
     bio: string | null;
+    photo_url?: string | null;
 };
 
 const slotOptions = [10, 15, 20, 30, 45, 60];
@@ -21,6 +24,14 @@ defineProps<{
     specialties: { id: number; name: string }[];
     doctor?: DoctorProfile | null;
 }>();
+
+const preview = ref<string | null>(null);
+
+function onPhotoChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+
+    preview.value = file ? URL.createObjectURL(file) : null;
+}
 </script>
 
 <template>
@@ -102,6 +113,43 @@ defineProps<{
                 </NativeSelect>
                 <InputError :message="errors.slot_minutes" />
             </div>
+        </div>
+        <div class="grid gap-2">
+            <Label for="photo">Foto de perfil</Label>
+            <div class="flex items-center gap-4">
+                <div
+                    class="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted text-muted-foreground"
+                >
+                    <img
+                        v-if="preview || doctor?.photo_url"
+                        :src="preview ?? doctor?.photo_url ?? ''"
+                        alt="Foto del médico"
+                        class="size-full object-cover"
+                    />
+                    <ImagePlus v-else class="size-6" />
+                </div>
+                <div class="grid gap-2">
+                    <Input
+                        id="photo"
+                        type="file"
+                        name="photo"
+                        accept="image/jpeg,image/png,image/webp"
+                        @change="onPhotoChange"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                        JPG, PNG o WebP de hasta 2 MB. Se muestra en su perfil
+                        y, si se activa, en la página de inicio.
+                    </p>
+                    <label
+                        v-if="doctor?.photo_url"
+                        class="flex items-center gap-2 text-sm"
+                    >
+                        <input type="checkbox" name="remove_photo" value="1" />
+                        Quitar la foto actual
+                    </label>
+                </div>
+            </div>
+            <InputError :message="errors.photo" />
         </div>
         <div class="grid gap-2">
             <Label for="bio">Reseña profesional</Label>

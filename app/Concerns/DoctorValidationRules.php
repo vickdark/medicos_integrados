@@ -27,6 +27,8 @@ trait DoctorValidationRules
             'license_number' => ['required', 'string', 'max:50', Rule::unique(Doctor::class)->ignore($doctorId)],
             'phone' => ['nullable', 'string', 'max:30'],
             'consultation_fee' => ['required', 'numeric', 'min:0', 'max:99999999'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_photo' => ['nullable', 'boolean'],
             'slot_minutes' => ['sometimes', 'required', 'integer', Rule::in(Doctor::SLOT_OPTIONS)],
             'bio' => ['nullable', 'string', 'max:2000'],
         ];

@@ -8,6 +8,7 @@ use App\Http\Controllers\ConsultationPrescriptionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\DoctorPhotoController;
 use App\Http\Controllers\DoctorScheduleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PatientController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('doctors/{doctor}/photo', DoctorPhotoController::class)->name('doctors.photo');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
@@ -54,7 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('attachments/{attachment}', [ConsultationAttachmentController::class, 'show'])->name('attachments.show');
     Route::delete('attachments/{attachment}', [ConsultationAttachmentController::class, 'destroy'])->name('attachments.destroy');
 
-    Route::resource('doctors', DoctorController::class)->only(['index', 'create', 'store']);
+    Route::resource('doctors', DoctorController::class)->only(['index', 'create', 'store', 'show']);
 
     Route::get('doctors/{doctor}/schedules', [DoctorScheduleController::class, 'index'])->name('schedules.index');
     Route::post('doctors/{doctor}/schedules', [DoctorScheduleController::class, 'store'])->name('schedules.store');

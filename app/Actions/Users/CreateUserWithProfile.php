@@ -39,7 +39,7 @@ class CreateUserWithProfile
             $user->save();
 
             match ($role) {
-                UserRole::Doctor => $user->doctor()->create(Arr::only($data, self::DOCTOR_FIELDS)),
+                UserRole::Doctor => $this->saveDoctor($user, $data),
                 UserRole::Patient => $this->attachPatientRecord($user, $data),
                 default => null,
             };
@@ -48,6 +48,16 @@ class CreateUserWithProfile
 
             return $user;
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function saveDoctor(User $user, array $data): void
+    {
+        $doctor = $user->doctor()->create(Arr::only($data, self::DOCTOR_FIELDS));
+
+        app(SaveDoctorPhoto::class)->handle($doctor, $data['photo'] ?? null, (bool) ($data['remove_photo'] ?? false));
     }
 
     /**

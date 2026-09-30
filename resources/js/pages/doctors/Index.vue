@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Clock, UserPlus } from 'lucide-vue-next';
+import { Clock, Eye, Pencil, UserPlus } from 'lucide-vue-next';
 import IconButton from '@/components/IconButton.vue';
 import Pagination from '@/components/Pagination.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
@@ -98,18 +98,46 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                             <td class="px-4 py-3 text-right tabular-nums">
                                 {{ formatMoney(doctor.consultation_fee) }}
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <IconButton
-                                    label="Horario"
-                                    tone="violet"
-                                    as-child
-                                >
-                                    <Link
-                                        :href="scheduleRoutes.index(doctor.id)"
+                            <td class="px-4 py-3">
+                                <div class="flex justify-end gap-1.5">
+                                    <IconButton
+                                        label="Ver perfil"
+                                        tone="info"
+                                        as-child
                                     >
-                                        <Clock />
-                                    </Link>
-                                </IconButton>
+                                        <Link
+                                            :href="doctorRoutes.show(doctor.id)"
+                                        >
+                                            <Eye />
+                                        </Link>
+                                    </IconButton>
+                                    <IconButton
+                                        label="Editar"
+                                        tone="info"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                userRoutes.edit(doctor.user_id)
+                                            "
+                                        >
+                                            <Pencil />
+                                        </Link>
+                                    </IconButton>
+                                    <IconButton
+                                        label="Horario"
+                                        tone="violet"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                scheduleRoutes.index(doctor.id)
+                                            "
+                                        >
+                                            <Clock />
+                                        </Link>
+                                    </IconButton>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

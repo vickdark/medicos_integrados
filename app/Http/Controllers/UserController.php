@@ -113,7 +113,9 @@ class UserController extends Controller
                 'email' => $user->email,
                 'role' => $user->role->value,
             ],
-            'doctor' => $user->doctor?->only(['specialty_id', 'license_number', 'phone', 'consultation_fee', 'slot_minutes', 'bio']),
+            'doctor' => $user->doctor
+                ? [...$user->doctor->only(['specialty_id', 'license_number', 'phone', 'consultation_fee', 'slot_minutes', 'bio']), 'photo_url' => $user->doctor->photoUrl()]
+                : null,
             'patient' => $user->patient ? (new PatientResource($user->patient))->resolve($request) : null,
             'initialRole' => $user->role->value,
             'roleOptions' => array_map(fn (UserRole $role): array => $role->toOption(), $user->assignableRoles($request->user())),

@@ -29,6 +29,7 @@ class Doctor extends Model
         'bio',
         'consultation_fee',
         'slot_minutes',
+        'photo_path',
     ];
 
     /**
@@ -149,6 +150,16 @@ class Doctor extends Model
             'days' => $group['start'] === $group['end'] ? $group['start'] : "{$group['start']} – {$group['end']}",
             'ranges' => $group['ranges'],
         ], $groups);
+    }
+
+    /**
+     * URL of the doctor's photo, versioned so a new upload is not served from cache.
+     */
+    public function photoUrl(): ?string
+    {
+        return $this->photo_path
+            ? route('doctors.photo', ['doctor' => $this->id, 'v' => $this->updated_at?->timestamp])
+            : null;
     }
 
     /**

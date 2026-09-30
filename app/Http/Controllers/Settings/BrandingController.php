@@ -25,6 +25,7 @@ class BrandingController extends Controller
         return Inertia::render('settings/Branding', [
             'color' => AppSetting::brandColor(),
             'defaultColor' => BrandPalette::DEFAULT_COLOR,
+            'showDoctors' => AppSetting::showDoctorsOnLanding(),
             'presets' => collect(BrandPalette::PRESETS)
                 ->map(fn (string $color, string $name): array => ['name' => $name, 'color' => $color])
                 ->values(),

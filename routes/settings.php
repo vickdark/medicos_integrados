@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\BrandingController;
 use App\Http\Controllers\Settings\DoctorProfileController;
+use App\Http\Controllers\Settings\LandingSettingsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/branding', [BrandingController::class, 'edit'])->name('branding.edit');
     Route::put('settings/branding', [BrandingController::class, 'update'])->name('branding.update');
     Route::delete('settings/branding', [BrandingController::class, 'destroy'])->name('branding.destroy');
+    Route::put('settings/landing', [LandingSettingsController::class, 'update'])->name('landing-settings.update');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])->name('security.edit');
 

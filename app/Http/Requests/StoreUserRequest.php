@@ -71,6 +71,10 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'photo.image' => 'La foto debe ser una imagen.',
+            'photo.mimes' => 'La foto debe ser JPG, PNG o WebP.',
+            'photo.max' => 'La foto no puede superar los 2 MB.',
+            'photo.uploaded' => 'No se pudo subir la foto; revisa que pese menos de 2 MB.',
             'role.required' => 'Selecciona el rol del usuario.',
             'role.enum' => 'El rol seleccionado no es válido.',
         ];

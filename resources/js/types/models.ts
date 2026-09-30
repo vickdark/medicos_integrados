@@ -152,6 +152,10 @@ export type Doctor = {
     phone: string | null;
     consultation_fee: string;
     bio: string | null;
+    user_id: number;
+    is_active: boolean;
+    photo_url: string | null;
+    slot_minutes: number;
 };
 
 export type ChartBar = {

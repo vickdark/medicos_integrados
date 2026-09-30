@@ -3,6 +3,7 @@ import { Form, Head, router } from '@inertiajs/vue3';
 import { Check, RotateCcw } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import BrandingController from '@/actions/App/Http/Controllers/Settings/BrandingController';
+import LandingSettingsController from '@/actions/App/Http/Controllers/Settings/LandingSettingsController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -17,13 +18,14 @@ import type { BreadcrumbItem } from '@/types';
 const props = defineProps<{
     color: string;
     defaultColor: string;
+    showDoctors: boolean;
     presets: { name: string; color: string }[];
 }>();
 
 const MIN_CONTRAST = 3;
 
 const breadcrumbItems: BreadcrumbItem[] = [
-    { title: 'Color de la aplicación', href: edit() },
+    { title: 'Personalización', href: edit() },
 ];
 
 const chosen = ref(props.color);
@@ -96,9 +98,9 @@ async function reset() {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbItems">
-        <Head title="Color de la aplicación" />
+        <Head title="Personalización" />
 
-        <h1 class="sr-only">Color de la aplicación</h1>
+        <h1 class="sr-only">Personalización</h1>
 
         <SettingsLayout>
             <div class="space-y-6">
@@ -233,6 +235,50 @@ async function reset() {
                         </Button>
                     </div>
                 </Form>
+
+                <div class="space-y-4 border-t pt-8">
+                    <Heading
+                        variant="small"
+                        title="Página de inicio"
+                        description="Decide qué información pública se muestra en la sección Quiénes somos."
+                    />
+
+                    <Form
+                        v-bind="LandingSettingsController.update.form()"
+                        :options="{ preserveScroll: true }"
+                        class="space-y-4"
+                        v-slot="{ processing }"
+                    >
+                        <input type="hidden" name="show_doctors" value="0" />
+                        <label
+                            class="flex items-start gap-3 rounded-lg border p-4"
+                        >
+                            <input
+                                type="checkbox"
+                                name="show_doctors"
+                                value="1"
+                                class="mt-1 size-4"
+                                :checked="showDoctors"
+                            />
+                            <span class="grid gap-1 text-sm">
+                                <span class="font-medium">
+                                    Mostrar a los médicos en la página de inicio
+                                </span>
+                                <span class="text-muted-foreground">
+                                    Se publican en tarjetas el nombre, la
+                                    especialidad, la reseña y la foto de los
+                                    médicos con la cuenta activa. Está
+                                    desactivado hasta que lo habilites. Sus
+                                    fotos se cargan desde Usuarios, al editar al
+                                    médico.
+                                </span>
+                            </span>
+                        </label>
+                        <Button :disabled="processing">
+                            Guardar página de inicio
+                        </Button>
+                    </Form>
+                </div>
             </div>
         </SettingsLayout>
     </AppLayout>

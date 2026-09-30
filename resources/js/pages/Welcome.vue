@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import {
+    Activity,
+    ArrowRight,
+    BadgeCheck,
     CalendarCheck,
+    CircleCheck,
+    ClipboardCheck,
     ClipboardList,
+    FileText,
+    HeartHandshake,
     HeartPulse,
+    Laptop,
     Mail,
     MapPin,
     Phone,
+    Pill,
     ShieldCheck,
     Stethoscope,
+    Users,
     Wallet,
 } from 'lucide-vue-next';
 import ThemeToggle from '@/components/ThemeToggle.vue';
@@ -17,18 +27,97 @@ import { dashboard, login, register } from '@/routes';
 withDefaults(
     defineProps<{
         canRegister: boolean;
-        specialties: {
-            id: number;
-            name: string;
-            description: string | null;
-            doctors_count: number;
-        }[];
+        doctors?:
+            | {
+                  id: number;
+                  name: string;
+                  specialty: string;
+                  bio: string | null;
+                  photo_url: string | null;
+              }[]
+            | null;
     }>(),
     {
         canRegister: true,
-        specialties: () => [],
+        doctors: null,
     },
 );
+
+function initials(name: string): string {
+    return name
+        .split(' ')
+        .filter((part) => part.length > 0 && !/^(dr|dra)\.?$/i.test(part))
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase();
+}
+
+const highlights = [
+    'Historia clínica cifrada',
+    'Citas sin llamadas',
+    'Recetas y facturas en PDF',
+];
+
+const values = [
+    {
+        icon: HeartHandshake,
+        title: 'Cercanía',
+        description:
+            'Te escuchamos y te acompañamos en cada etapa de tu atención, con un trato humano y respetuoso.',
+    },
+    {
+        icon: ShieldCheck,
+        title: 'Confianza',
+        description:
+            'Cuidamos tu información clínica con cifrado y acceso solo para el personal autorizado.',
+    },
+    {
+        icon: Laptop,
+        title: 'Tecnología útil',
+        description:
+            'Digitalizamos lo que te quita tiempo para que tu médico se concentre en ti.',
+    },
+];
+
+const medicalServices = [
+    {
+        icon: Stethoscope,
+        title: 'Consulta médica general',
+        description:
+            'Evaluación integral, diagnóstico y orientación para resolver tus molestias del día a día.',
+    },
+    {
+        icon: Users,
+        title: 'Atención por especialidades',
+        description:
+            'Médicos especialistas para atender tu caso con el enfoque que necesita.',
+    },
+    {
+        icon: ClipboardCheck,
+        title: 'Chequeos y controles preventivos',
+        description:
+            'Revisiones periódicas para cuidar tu salud antes de que aparezcan los problemas.',
+    },
+    {
+        icon: Activity,
+        title: 'Seguimiento de tratamientos',
+        description:
+            'Control de tu evolución consulta a consulta, con tu historial siempre a la mano.',
+    },
+    {
+        icon: Pill,
+        title: 'Recetas médicas',
+        description:
+            'Indicaciones y medicamentos claros, en un documento que puedes recibir por correo.',
+    },
+    {
+        icon: FileText,
+        title: 'Historia clínica',
+        description:
+            'Tus consultas, antecedentes y recetas organizados, disponibles para ti y tu médico.',
+    },
+];
 
 const features = [
     {
@@ -41,13 +130,13 @@ const features = [
         icon: CalendarCheck,
         title: 'Citas en línea',
         description:
-            'Solicita tu cita con el especialista que necesitas y haz seguimiento de su estado sin llamadas.',
+            'Solicita tu cita con el especialista que necesitas, elige el horario libre que prefieras y haz seguimiento de su estado.',
     },
     {
         icon: Wallet,
         title: 'Pagos claros',
         description:
-            'Consulta tus pagos realizados y pendientes con el detalle de cada atención.',
+            'Consulta tus pagos realizados y pendientes con el detalle de cada atención y descarga tu factura.',
     },
     {
         icon: ShieldCheck,
@@ -78,7 +167,7 @@ const steps = [
 
     <div class="min-h-screen bg-background text-foreground">
         <header
-            class="sticky top-0 z-20 border-b bg-background/80 backdrop-blur"
+            class="sticky top-0 z-30 border-b bg-background/80 backdrop-blur"
         >
             <nav
                 class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3"
@@ -94,11 +183,14 @@ const steps = [
                 <div
                     class="hidden items-center gap-6 text-sm text-muted-foreground md:flex"
                 >
-                    <a href="#servicios" class="hover:text-foreground"
-                        >Servicios</a
+                    <a href="#nosotros" class="hover:text-foreground"
+                        >Quiénes somos</a
                     >
-                    <a href="#especialidades" class="hover:text-foreground"
-                        >Especialidades</a
+                    <a href="#servicios-medicos" class="hover:text-foreground"
+                        >Servicios médicos</a
+                    >
+                    <a href="#portal" class="hover:text-foreground"
+                        >Tu portal</a
                     >
                     <a href="#como-funciona" class="hover:text-foreground"
                         >Cómo funciona</a
@@ -136,32 +228,50 @@ const steps = [
         </header>
 
         <main>
-            <section class="relative overflow-hidden">
+            <section class="relative isolate overflow-hidden">
+                <div class="absolute inset-0 -z-10" aria-hidden="true">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-br from-brand-50 via-background to-brand-100/60 dark:from-brand-950/60 dark:via-background dark:to-brand-900/20"
+                    />
+                    <div
+                        class="absolute -top-32 -right-24 size-[34rem] rounded-full bg-brand-300/40 blur-3xl dark:bg-brand-500/15"
+                    />
+                    <div
+                        class="absolute -bottom-40 -left-32 size-[30rem] rounded-full bg-brand-200/50 blur-3xl dark:bg-brand-700/15"
+                    />
+                    <div
+                        class="absolute inset-0 bg-[radial-gradient(var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)] [background-size:22px_22px]"
+                    />
+                </div>
+
                 <div
-                    class="absolute inset-0 -z-10 bg-gradient-to-b from-brand-50 to-transparent dark:from-brand-950/40"
-                    aria-hidden="true"
-                />
-                <div
-                    class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-2 lg:py-28"
+                    class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-28"
                 >
-                    <div class="space-y-6">
+                    <div class="space-y-8">
                         <p
-                            class="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-medium text-brand-700 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-300"
+                            class="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/80 px-3.5 py-1.5 text-xs font-medium text-brand-700 shadow-sm backdrop-blur dark:border-brand-800 dark:bg-brand-950/70 dark:text-brand-300"
                         >
                             <Stethoscope class="size-3.5" /> Centro médico
                             integral
                         </p>
+
                         <h1
-                            class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl"
+                            class="text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl"
                         >
-                            Tu salud y tu historial médico, en un solo lugar
+                            Tu salud y tu historial médico,
+                            <span
+                                class="bg-gradient-to-r from-brand-700 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200"
+                                >en un solo lugar</span
+                            >
                         </h1>
+
                         <p class="max-w-xl text-lg text-muted-foreground">
                             Agenda citas con nuestros especialistas, consulta
                             tus diagnósticos y recetas, y lleva el control de
                             tus pagos desde cualquier dispositivo.
                         </p>
-                        <div class="flex flex-wrap gap-3">
+
+                        <div class="flex flex-wrap items-center gap-3">
                             <Link
                                 :href="
                                     $page.props.auth.user
@@ -170,42 +280,77 @@ const steps = [
                                           ? register()
                                           : login()
                                 "
-                                class="rounded-md bg-brand-600 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
+                                class="group inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 hover:shadow-brand-600/35"
                             >
                                 Solicitar una cita
+                                <ArrowRight
+                                    class="size-4 transition-transform group-hover:translate-x-0.5"
+                                />
                             </Link>
                             <a
-                                href="#especialidades"
-                                class="rounded-md border px-5 py-3 text-sm font-medium hover:bg-accent"
+                                href="#como-funciona"
+                                class="inline-flex items-center rounded-full border bg-background/70 px-6 py-3.5 text-sm font-semibold backdrop-blur transition hover:bg-accent"
                             >
-                                Ver especialidades
+                                Cómo funciona
                             </a>
                         </div>
+
+                        <ul
+                            class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground"
+                        >
+                            <li
+                                v-for="highlight in highlights"
+                                :key="highlight"
+                                class="inline-flex items-center gap-1.5"
+                            >
+                                <CircleCheck
+                                    class="size-4 text-brand-600 dark:text-brand-400"
+                                />
+                                {{ highlight }}
+                            </li>
+                        </ul>
                     </div>
 
                     <div
-                        class="relative mx-auto w-full max-w-md"
+                        class="relative mx-auto w-full max-w-md pb-10 sm:max-w-lg lg:pb-0"
                         aria-hidden="true"
                     >
-                        <div class="rounded-2xl border bg-card p-6 shadow-xl">
-                            <div class="mb-4 flex items-center justify-between">
+                        <div
+                            class="absolute inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-brand-400/30 to-brand-600/10 blur-2xl"
+                        />
+
+                        <div
+                            class="relative rounded-3xl border bg-card/95 p-6 shadow-2xl shadow-brand-900/10 backdrop-blur"
+                        >
+                            <div class="mb-5 flex items-center justify-between">
                                 <p class="text-sm font-semibold">
                                     Próxima cita
                                 </p>
                                 <span
-                                    class="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-500/15 dark:text-sky-300"
+                                    class="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-500/15 dark:text-sky-300"
                                     >Confirmada</span
                                 >
                             </div>
-                            <p class="text-2xl font-semibold">Jueves, 10:30</p>
-                            <p class="text-sm text-muted-foreground">
-                                Cardiología · Control general
-                            </p>
+                            <div class="flex items-center gap-4">
+                                <span
+                                    class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-lg font-semibold text-white"
+                                >
+                                    Dr
+                                </span>
+                                <div>
+                                    <p class="text-2xl font-semibold">
+                                        Jueves, 10:30 AM
+                                    </p>
+                                    <p class="text-sm text-muted-foreground">
+                                        Cardiología · Control general
+                                    </p>
+                                </div>
+                            </div>
                             <div class="my-5 border-t" />
                             <p class="mb-3 text-sm font-semibold">
                                 Última consulta
                             </p>
-                            <div class="space-y-2 text-sm">
+                            <div class="space-y-2.5 text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-muted-foreground"
                                         >Presión</span
@@ -227,12 +372,223 @@ const steps = [
                                 </div>
                             </div>
                         </div>
+
+                        <div
+                            class="absolute -bottom-2 -left-2 flex items-center gap-3 rounded-2xl border bg-card p-3.5 pr-5 shadow-xl sm:-left-8"
+                        >
+                            <span
+                                class="flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                            >
+                                <BadgeCheck class="size-5" />
+                            </span>
+                            <div>
+                                <p class="text-sm font-semibold">
+                                    Pago confirmado
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    Factura disponible
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            class="absolute -top-4 -right-2 flex items-center gap-3 rounded-2xl border bg-card p-3.5 pr-5 shadow-xl sm:-right-6"
+                        >
+                            <span
+                                class="flex size-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                            >
+                                <FileText class="size-5" />
+                            </span>
+                            <div>
+                                <p class="text-sm font-semibold">
+                                    Receta lista
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    Te la enviamos por correo
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <section
-                id="servicios"
+                id="nosotros"
+                class="mx-auto grid max-w-6xl scroll-mt-20 items-center gap-12 px-4 py-20 lg:grid-cols-2"
+            >
+                <div class="space-y-5">
+                    <p
+                        class="text-sm font-semibold tracking-wide text-brand-700 uppercase dark:text-brand-400"
+                    >
+                        Quiénes somos
+                    </p>
+                    <h2
+                        class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl"
+                    >
+                        Un centro médico que te conoce y te cuida
+                    </h2>
+                    <p class="text-muted-foreground">
+                        En Médicos Integrados reunimos médicos de distintas
+                        especialidades y un equipo administrativo comprometido
+                        para que recibas atención completa en un mismo lugar,
+                        sin vueltas ni papeleo.
+                    </p>
+                    <p class="text-muted-foreground">
+                        Creemos que la buena medicina combina el criterio del
+                        médico con información ordenada y accesible. Por eso tu
+                        historial, tus citas y tus pagos están conectados y
+                        siempre a tu alcance.
+                    </p>
+                    <div
+                        class="grid gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-800 dark:bg-brand-950/40"
+                    >
+                        <p
+                            class="flex items-center gap-2 text-sm font-semibold text-brand-800 dark:text-brand-200"
+                        >
+                            <HeartPulse class="size-4" /> Nuestra misión
+                        </p>
+                        <p class="text-sm text-brand-900 dark:text-brand-100">
+                            Acompañar a cada paciente y a su familia con
+                            atención médica integral, cercana y segura.
+                        </p>
+                    </div>
+                </div>
+
+                <ul class="grid gap-4">
+                    <li
+                        v-for="value in values"
+                        :key="value.title"
+                        class="flex gap-4 rounded-xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                        <span
+                            class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white"
+                        >
+                            <component :is="value.icon" class="size-5" />
+                        </span>
+                        <div>
+                            <h3 class="font-semibold">{{ value.title }}</h3>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                {{ value.description }}
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+
+                <div v-if="doctors && doctors.length" class="lg:col-span-2">
+                    <div class="mt-6 mb-8">
+                        <h3 class="text-2xl font-semibold tracking-tight">
+                            Nuestro equipo médico
+                        </h3>
+                        <p class="mt-1 text-muted-foreground">
+                            Profesionales comprometidos con tu salud.
+                        </p>
+                    </div>
+                    <div
+                        class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    >
+                        <article
+                            v-for="doctor in doctors"
+                            :key="doctor.id"
+                            class="group overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                        >
+                            <div
+                                class="relative aspect-[4/4.2] overflow-hidden bg-gradient-to-br from-brand-100 to-brand-300 dark:from-brand-900 dark:to-brand-700"
+                            >
+                                <img
+                                    v-if="doctor.photo_url"
+                                    :src="doctor.photo_url"
+                                    :alt="`Foto de ${doctor.name}`"
+                                    loading="lazy"
+                                    class="size-full object-cover transition duration-500 group-hover:scale-105"
+                                />
+                                <span
+                                    v-else
+                                    class="flex size-full items-center justify-center text-5xl font-semibold text-brand-700/70 dark:text-brand-200/70"
+                                    aria-hidden="true"
+                                >
+                                    {{ initials(doctor.name) }}
+                                </span>
+                            </div>
+                            <div class="space-y-2 p-5">
+                                <h4 class="font-semibold">{{ doctor.name }}</h4>
+                                <p
+                                    class="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-800 dark:bg-brand-500/15 dark:text-brand-300"
+                                >
+                                    {{ doctor.specialty }}
+                                </p>
+                                <p
+                                    v-if="doctor.bio"
+                                    class="line-clamp-3 text-sm text-muted-foreground"
+                                >
+                                    {{ doctor.bio }}
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                id="servicios-medicos"
+                class="scroll-mt-20 border-y bg-muted/30"
+            >
+                <div class="mx-auto max-w-6xl px-4 py-20">
+                    <div class="mb-12 max-w-2xl">
+                        <p
+                            class="text-sm font-semibold tracking-wide text-brand-700 uppercase dark:text-brand-400"
+                        >
+                            Servicios médicos
+                        </p>
+                        <h2
+                            class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl"
+                        >
+                            Atención para cada momento de tu salud
+                        </h2>
+                        <p class="mt-3 text-muted-foreground">
+                            Desde una consulta rutinaria hasta el seguimiento de
+                            un tratamiento, te acompañamos con un equipo médico
+                            multidisciplinario.
+                        </p>
+                    </div>
+                    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        <article
+                            v-for="service in medicalServices"
+                            :key="service.title"
+                            class="group rounded-xl border bg-card p-6 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md dark:hover:border-brand-700"
+                        >
+                            <span
+                                class="mb-4 flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white dark:bg-brand-950 dark:text-brand-300"
+                            >
+                                <component :is="service.icon" class="size-5" />
+                            </span>
+                            <h3 class="font-semibold">{{ service.title }}</h3>
+                            <p class="mt-2 text-sm text-muted-foreground">
+                                {{ service.description }}
+                            </p>
+                        </article>
+                    </div>
+                    <div class="mt-10">
+                        <Link
+                            :href="
+                                $page.props.auth.user
+                                    ? dashboard()
+                                    : canRegister
+                                      ? register()
+                                      : login()
+                            "
+                            class="group inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700"
+                        >
+                            Agendar una cita
+                            <ArrowRight
+                                class="size-4 transition-transform group-hover:translate-x-0.5"
+                            />
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                id="portal"
                 class="mx-auto max-w-6xl scroll-mt-20 px-4 py-20"
             >
                 <div class="mb-12 max-w-2xl">
@@ -248,7 +604,7 @@ const steps = [
                     <div
                         v-for="feature in features"
                         :key="feature.title"
-                        class="rounded-xl border bg-card p-6"
+                        class="rounded-xl border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md"
                     >
                         <span
                             class="mb-4 flex size-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
@@ -264,69 +620,32 @@ const steps = [
             </section>
 
             <section
-                id="especialidades"
+                id="como-funciona"
                 class="scroll-mt-20 border-y bg-muted/30"
             >
                 <div class="mx-auto max-w-6xl px-4 py-20">
                     <h2 class="mb-10 text-3xl font-semibold tracking-tight">
-                        Nuestras especialidades
+                        Cómo funciona
                     </h2>
-                    <div
-                        v-if="specialties.length"
-                        class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-                    >
-                        <div
-                            v-for="specialty in specialties"
-                            :key="specialty.id"
-                            class="rounded-xl border bg-card p-5"
+                    <ol class="grid gap-6 md:grid-cols-3">
+                        <li
+                            v-for="(step, index) in steps"
+                            :key="step.title"
+                            class="rounded-xl border bg-card p-6"
                         >
-                            <h3 class="font-semibold">{{ specialty.name }}</h3>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                {{ specialty.description }}
-                            </p>
-                            <p
-                                class="mt-3 text-xs font-medium text-brand-700 dark:text-brand-400"
+                            <span
+                                class="flex size-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white"
+                                >{{ index + 1 }}</span
                             >
-                                {{ specialty.doctors_count }}
-                                {{
-                                    specialty.doctors_count === 1
-                                        ? 'médico'
-                                        : 'médicos'
-                                }}
+                            <h3 class="mt-4 text-lg font-semibold">
+                                {{ step.title }}
+                            </h3>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                {{ step.description }}
                             </p>
-                        </div>
-                    </div>
-                    <p v-else class="text-muted-foreground">
-                        Pronto publicaremos nuestras especialidades.
-                    </p>
+                        </li>
+                    </ol>
                 </div>
-            </section>
-
-            <section
-                id="como-funciona"
-                class="mx-auto max-w-6xl scroll-mt-20 px-4 py-20"
-            >
-                <h2 class="mb-10 text-3xl font-semibold tracking-tight">
-                    Cómo funciona
-                </h2>
-                <ol class="grid gap-6 md:grid-cols-3">
-                    <li
-                        v-for="(step, index) in steps"
-                        :key="step.title"
-                        class="rounded-xl border p-6"
-                    >
-                        <span
-                            class="text-sm font-semibold text-brand-700 dark:text-brand-400"
-                            >Paso {{ index + 1 }}</span
-                        >
-                        <h3 class="mt-2 text-lg font-semibold">
-                            {{ step.title }}
-                        </h3>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            {{ step.description }}
-                        </p>
-                    </li>
-                </ol>
             </section>
         </main>
 

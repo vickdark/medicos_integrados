@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Users\CreateUserWithProfile;
+use App\Enums\AppointmentStatus;
 use App\Enums\UserRole;
 use App\Exports\DoctorsExport;
 use App\Exports\TableExporter;
@@ -11,9 +12,11 @@ use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\TableQueryRequest;
 use App\Http\Resources\DoctorResource;
 use App\Models\Doctor;
+use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,6 +40,38 @@ class DoctorController extends Controller
         return Inertia::render('doctors/Index', [
             'doctors' => $doctors,
             'filters' => $request->filters(),
+        ]);
+    }
+
+    /**
+     * Display the profile of a doctor: contact and professional data, office hours
+     * and a summary of their activity.
+     */
+    public function show(Request $request, Doctor $doctor): Response
+    {
+        Gate::authorize('view', $doctor);
+
+        $doctor->load(['user', 'specialty']);
+
+        return Inertia::render('doctors/Show', [
+            'doctor' => (new DoctorResource($doctor))->resolve($request),
+            'bio' => $doctor->bio,
+            'schedule_summary' => $doctor->weeklyScheduleSummary(),
+            'stats' => [
+                'appointments_month' => $doctor->appointments()
+                    ->where('status', '!=', AppointmentStatus::Cancelled)
+                    ->where('scheduled_at', '>=', now()->startOfMonth())
+                    ->count(),
+                'upcoming' => $doctor->appointments()
+                    ->whereIn('status', [AppointmentStatus::Requested, AppointmentStatus::Confirmed])
+                    ->where('scheduled_at', '>=', now())
+                    ->count(),
+                'consultations' => $doctor->consultations()->count(),
+                'patients' => Patient::query()->treatedBy($doctor)->count(),
+            ],
+            'can' => [
+                'edit' => $request->user()->can('update', $doctor->user),
+            ],
         ]);
     }
 
