@@ -153,3 +153,64 @@ export type Doctor = {
     consultation_fee: string;
     bio: string | null;
 };
+
+export type ChartBar = {
+    label: string;
+    value: number;
+    current?: boolean;
+    today?: boolean;
+};
+
+export type StaffInsights = {
+    kpis: {
+        patients: number;
+        patients_new_month: number;
+        appointments_today: number;
+        appointments_today_open: number;
+        requests: number;
+        income_month: number;
+        income_delta: number | null;
+        pending_amount: number;
+        pending_count: number;
+    };
+    income_by_month: ChartBar[];
+    appointments_by_day: ChartBar[];
+    today_agenda: Appointment[];
+    pending_requests: Appointment[];
+    pending_payments: {
+        id: number;
+        patient: string;
+        concept: string;
+        amount: string;
+        appointment_at: string | null;
+    }[];
+    top_doctors: {
+        id: number;
+        name: string;
+        specialty: string;
+        appointments: number;
+    }[];
+};
+
+export type DoctorInsights = {
+    kpis: {
+        appointments_today: number;
+        appointments_today_open: number;
+        requests: number;
+        patients: number;
+        consultations_month: number;
+        consultations_delta: number | null;
+    };
+    next_appointment: Appointment | null;
+    today_agenda: Appointment[];
+    pending_requests: Appointment[];
+    week_load: ChartBar[];
+    consultations_by_month: ChartBar[];
+    recent_consultations: {
+        id: number;
+        patient: string;
+        patient_id: number;
+        reason: string;
+        consulted_at: string;
+    }[];
+};

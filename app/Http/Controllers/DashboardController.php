@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Dashboard\BuildDoctorInsights;
+use App\Actions\Dashboard\BuildStaffInsights;
 use App\Enums\AppointmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
@@ -22,7 +24,7 @@ class DashboardController extends Controller
     /**
      * Show the dashboard adapted to the authenticated user's role.
      */
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, BuildStaffInsights $staffInsights, BuildDoctorInsights $doctorInsights): Response
     {
         $user = $request->user();
 
@@ -38,6 +40,11 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'stats' => $this->statsFor($user),
             'upcomingAppointments' => AppointmentResource::collection($upcomingAppointments),
+            'insights' => match ($user->role) {
+                UserRole::Admin, UserRole::Receptionist => $staffInsights->handle($user, $request),
+                UserRole::Doctor => $doctorInsights->handle($user, $request),
+                default => null,
+            },
             'profileReminder' => $this->profileReminderFor($user),
             'showTour' => $user->role === UserRole::Patient
                 && ! $user->hasSeenTour(TourView::PATIENT_ONBOARDING, EnsureDeviceId::from($request)),

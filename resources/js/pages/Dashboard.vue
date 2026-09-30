@@ -7,6 +7,8 @@ import {
     UserPlus,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import DoctorDashboard from '@/components/dashboard/DoctorDashboard.vue';
+import StaffDashboard from '@/components/dashboard/StaffDashboard.vue';
 import GuidedTour from '@/components/GuidedTour.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -25,13 +27,20 @@ import consultationRoutes from '@/routes/consultations';
 import patientRoutes from '@/routes/patients';
 import tourRoutes from '@/routes/tour';
 import type { BreadcrumbItem } from '@/types';
-import type { Appointment, Consultation, RoleValue } from '@/types/models';
+import type {
+    Appointment,
+    Consultation,
+    DoctorInsights,
+    RoleValue,
+    StaffInsights,
+} from '@/types/models';
 
 const props = defineProps<{
     stats: { label: string; value: number | string }[];
     upcomingAppointments: Appointment[];
     recentConsultations: Consultation[];
     showTour: boolean;
+    insights: StaffInsights | DoctorInsights | null;
     profileReminder: {
         patient_id: number;
         incomplete: boolean;
@@ -174,7 +183,22 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                 </div>
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StaffDashboard
+                v-if="(role === 'admin' || role === 'receptionist') && insights"
+                :insights="insights as StaffInsights"
+                :role="role"
+            />
+
+            <DoctorDashboard
+                v-else-if="role === 'doctor' && insights"
+                :insights="insights as DoctorInsights"
+                :role="role"
+            />
+
+            <div
+                v-if="role === 'patient'"
+                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            >
                 <Card v-for="stat in stats" :key="stat.label" class="gap-2">
                     <CardHeader>
                         <CardDescription>{{ stat.label }}</CardDescription>
@@ -185,7 +209,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                 </Card>
             </div>
 
-            <div class="grid gap-4 lg:grid-cols-3">
+            <div v-if="role === 'patient'" class="grid gap-4 lg:grid-cols-3">
                 <Card class="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>Próximas citas</CardTitle>
@@ -217,16 +241,9 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                                     <p
                                         class="truncate text-sm text-muted-foreground"
                                     >
-                                        <template v-if="role !== 'patient'">
-                                            {{ appointment.patient?.full_name }}
-                                            ·
-                                        </template>
-                                        <template v-if="role !== 'doctor'">
-                                            {{ appointment.doctor?.name }} ({{
-                                                appointment.doctor?.specialty
-                                            }}) ·
-                                        </template>
-                                        {{ appointment.reason }}
+                                        {{ appointment.doctor?.name }} ({{
+                                            appointment.doctor?.specialty
+                                        }}) · {{ appointment.reason }}
                                     </p>
                                 </div>
                                 <StatusBadge :status="appointment.status" />
@@ -242,7 +259,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                     </CardContent>
                 </Card>
 
-                <Card v-if="role === 'patient'">
+                <Card>
                     <CardHeader>
                         <CardTitle>Últimas consultas</CardTitle>
                         <CardDescription>
@@ -281,38 +298,6 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                                 </Link>
                             </li>
                         </ul>
-                    </CardContent>
-                </Card>
-
-                <Card v-else>
-                    <CardHeader>
-                        <CardTitle>Accesos rápidos</CardTitle>
-                    </CardHeader>
-                    <CardContent class="flex flex-col gap-2">
-                        <Button
-                            variant="outline"
-                            class="justify-start"
-                            as-child
-                        >
-                            <Link :href="patientRoutes.index()"
-                                >Buscar paciente</Link
-                            >
-                        </Button>
-                        <Button
-                            variant="outline"
-                            class="justify-start"
-                            as-child
-                        >
-                            <Link
-                                :href="
-                                    appointmentRoutes.index({
-                                        query: { status: 'requested' },
-                                    })
-                                "
-                            >
-                                Solicitudes por confirmar
-                            </Link>
-                        </Button>
                     </CardContent>
                 </Card>
             </div>
