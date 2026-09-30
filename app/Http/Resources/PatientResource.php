@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Consultation;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,6 +40,10 @@ class PatientResource extends JsonResource
             'allergies' => $this->when($canViewMedicalHistory, $this->allergies),
             'chronic_conditions' => $this->when($canViewMedicalHistory, $this->chronic_conditions),
             'medical_background' => $this->when($canViewMedicalHistory, $this->medical_background),
+            'can' => [
+                'update' => $request->user()?->can('update', $this->resource) ?? false,
+                'create_consultation' => $request->user()?->can('create', [Consultation::class, $this->resource]) ?? false,
+            ],
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

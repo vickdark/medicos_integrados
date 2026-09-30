@@ -42,6 +42,7 @@ El sistema tiene tres partes:
    - Médicos, especialidades y horarios de atención.
    - Auditoría de accesos y cambios sobre la información clínica.
    - **Todas las tablas** tienen paginación, buscador y filtros en el servidor, y exportación a **Excel y PDF** de lo que se está viendo.
+   - **Tablas como tarjetas en móvil:** por debajo de 768 px cada fila se muestra como una tarjeta con el nombre de la columna junto a cada valor (clase `cards` en la tabla y atributo `data-label` en cada celda; estilos en `resources/css/app.css`). Toda tabla nueva debe usar ambos.
 3. **Portal del paciente**: su historial médico, sus citas (puede solicitarlas y cancelarlas), sus pagos, la descarga de sus adjuntos y la actualización de sus datos de contacto.
    - **Datos del paciente:** el paciente completa sus datos básicos (documento, fecha de nacimiento, sexo, grupo sanguíneo, teléfono) hasta que un médico lo atiende por primera vez; después esos datos se bloquean para él, pero teléfono, dirección y contacto de emergencia siempre son editables. Los antecedentes clínicos (alergias, enfermedades, antecedentes) solo los registra el personal médico. Desde el segundo inicio de sesión el panel muestra un recordatorio para completar o actualizar los datos (sin redirigir).
 

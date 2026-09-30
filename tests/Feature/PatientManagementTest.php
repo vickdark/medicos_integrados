@@ -125,3 +125,21 @@ it('forbids a doctor from opening a patient they do not treat', function () {
         ->get(route('patients.show', Patient::factory()->create()))
         ->assertForbidden();
 });
+
+it('tells the patients table which actions each row allows', function () {
+    $doctor = Doctor::factory()->create();
+    $patient = Patient::factory()->create();
+    Appointment::factory()->create(['doctor_id' => $doctor->id, 'patient_id' => $patient->id]);
+
+    $this->actingAs($doctor->user)
+        ->get(route('patients.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('patients.data.0.can.update', true)
+            ->where('patients.data.0.can.create_consultation', true));
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->get(route('patients.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('patients.data.0.can.update', true)
+            ->where('patients.data.0.can.create_consultation', false));
+});

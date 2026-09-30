@@ -58,6 +58,7 @@ export type Patient = {
     emergency_contact_name: string | null;
     emergency_contact_phone: string | null;
     has_account: boolean;
+    can?: { update: boolean; create_consultation: boolean };
     allergies?: string | null;
     chronic_conditions?: string | null;
     medical_background?: string | null;

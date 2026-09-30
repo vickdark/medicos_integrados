@@ -187,7 +187,7 @@ function setMode(value: ViewMode) {
                 </TableToolbar>
 
                 <div class="overflow-x-auto rounded-lg border">
-                    <table class="w-full text-sm">
+                    <table class="cards w-full text-sm">
                         <thead
                             class="bg-muted/50 text-left text-muted-foreground"
                         >
@@ -227,12 +227,19 @@ function setMode(value: ViewMode) {
                                 v-for="appointment in props.appointments.data"
                                 :key="appointment.id"
                             >
-                                <td class="px-4 py-3 whitespace-nowrap">
+                                <td
+                                    data-label="Fecha y hora"
+                                    class="px-4 py-3 whitespace-nowrap"
+                                >
                                     {{
                                         formatDateTime(appointment.scheduled_at)
                                     }}
                                 </td>
-                                <td v-if="role !== 'patient'" class="px-4 py-3">
+                                <td
+                                    data-label="Paciente"
+                                    v-if="role !== 'patient'"
+                                    class="px-4 py-3"
+                                >
                                     <Link
                                         :href="
                                             patientRoutes.show(
@@ -244,19 +251,23 @@ function setMode(value: ViewMode) {
                                         {{ appointment.patient?.full_name }}
                                     </Link>
                                 </td>
-                                <td v-if="role !== 'doctor'" class="px-4 py-3">
+                                <td
+                                    data-label="Médico"
+                                    v-if="role !== 'doctor'"
+                                    class="px-4 py-3"
+                                >
                                     {{ appointment.doctor?.name }}
                                     <p class="text-xs text-muted-foreground">
                                         {{ appointment.doctor?.specialty }}
                                     </p>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td data-label="Motivo" class="px-4 py-3">
                                     {{ appointment.reason }}
                                 </td>
-                                <td class="px-4 py-3">
+                                <td data-label="Estado" class="px-4 py-3">
                                     <StatusBadge :status="appointment.status" />
                                 </td>
-                                <td class="px-4 py-3">
+                                <td data-label="" class="px-4 py-3">
                                     <AppointmentActions
                                         :appointment="appointment"
                                         :role="role"

@@ -143,7 +143,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
             </TableToolbar>
 
             <div class="overflow-x-auto rounded-lg border">
-                <table class="w-full text-sm">
+                <table class="cards w-full text-sm">
                     <thead class="bg-muted/50 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">Usuario</th>
@@ -166,7 +166,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                             </td>
                         </tr>
                         <tr v-for="user in props.users.data" :key="user.id">
-                            <td class="px-4 py-3">
+                            <td data-label="Usuario" class="px-4 py-3">
                                 <p class="font-medium">
                                     {{ user.name }}
                                     <span
@@ -179,7 +179,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                     {{ user.email }}
                                 </p>
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Rol" class="px-4 py-3">
                                 <span
                                     class="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap"
                                     :class="roleTones[user.role.value]"
@@ -187,10 +187,13 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                     {{ user.role.label }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td
+                                data-label="Perfil"
+                                class="px-4 py-3 text-muted-foreground"
+                            >
                                 {{ user.profile ?? '—' }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Acceso" class="px-4 py-3">
                                 <span
                                     class="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap"
                                     :class="
@@ -202,10 +205,13 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                     {{ user.is_active ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
+                            <td
+                                data-label="Alta"
+                                class="px-4 py-3 whitespace-nowrap"
+                            >
                                 {{ formatDate(user.created_at) }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="" class="px-4 py-3">
                                 <div class="flex justify-end gap-1.5">
                                     <IconButton
                                         label="Editar"

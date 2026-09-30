@@ -77,7 +77,7 @@ async function destroy(id: number, name: string) {
             />
 
             <div class="overflow-x-auto rounded-lg border">
-                <table class="w-full text-sm">
+                <table class="cards w-full text-sm">
                     <thead class="bg-muted/50 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">Especialidad</th>
@@ -100,16 +100,19 @@ async function destroy(id: number, name: string) {
                             v-for="specialty in props.specialties.data"
                             :key="specialty.id"
                         >
-                            <td class="px-4 py-3">
+                            <td data-label="Especialidad" class="px-4 py-3">
                                 <p class="font-medium">{{ specialty.name }}</p>
                                 <p class="text-xs text-muted-foreground">
                                     {{ specialty.description ?? '—' }}
                                 </p>
                             </td>
-                            <td class="px-4 py-3 tabular-nums">
+                            <td
+                                data-label="Médicos"
+                                class="px-4 py-3 tabular-nums"
+                            >
                                 {{ specialty.doctors_count }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="" class="px-4 py-3">
                                 <div class="flex justify-end gap-1.5">
                                     <IconButton
                                         label="Editar"

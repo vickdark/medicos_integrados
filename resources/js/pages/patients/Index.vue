@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { UserPlus } from 'lucide-vue-next';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import {
+    CalendarPlus,
+    Eye,
+    FilePlus2,
+    Pencil,
+    UserPlus,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
+import IconButton from '@/components/IconButton.vue';
 import Pagination from '@/components/Pagination.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
 import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
+import appointmentRoutes from '@/routes/appointments';
+import consultationRoutes from '@/routes/consultations';
 import patientRoutes from '@/routes/patients';
 import type { BreadcrumbItem } from '@/types';
 import type { Paginated, Patient, TableFilters } from '@/types/models';
@@ -15,6 +25,11 @@ const props = defineProps<{
     filters: TableFilters;
     can: { create: boolean };
 }>();
+
+const page = usePage();
+const canScheduleAppointments = computed(() =>
+    ['admin', 'receptionist'].includes(page.props.auth.role?.value ?? ''),
+);
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Pacientes', href: patientRoutes.index() },
@@ -52,7 +67,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
             />
 
             <div class="overflow-x-auto rounded-lg border">
-                <table class="w-full text-sm">
+                <table class="cards w-full text-sm">
                     <thead class="bg-muted/50 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">Paciente</th>
@@ -60,12 +75,15 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                             <th class="px-4 py-3 font-medium">Edad</th>
                             <th class="px-4 py-3 font-medium">Teléfono</th>
                             <th class="px-4 py-3 font-medium">Portal</th>
+                            <th class="px-4 py-3 font-medium">
+                                <span class="sr-only">Acciones</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
                         <tr v-if="props.patients.data.length === 0">
                             <td
-                                colspan="5"
+                                colspan="6"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 No se encontraron pacientes.
@@ -76,7 +94,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                             :key="patient.id"
                             class="transition-colors hover:bg-muted/40"
                         >
-                            <td class="px-4 py-3">
+                            <td data-label="Paciente" class="px-4 py-3">
                                 <Link
                                     :href="patientRoutes.show(patient.id)"
                                     class="font-medium hover:underline"
@@ -87,20 +105,20 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                     {{ patient.email ?? '—' }}
                                 </p>
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Documento" class="px-4 py-3">
                                 {{ patient.document_number ?? '—' }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Edad" class="px-4 py-3">
                                 {{
                                     patient.age !== null
                                         ? `${patient.age} años`
                                         : '—'
                                 }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Teléfono" class="px-4 py-3">
                                 {{ patient.phone ?? '—' }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Portal" class="px-4 py-3">
                                 <span
                                     class="text-xs"
                                     :class="
@@ -115,6 +133,71 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                             : 'Sin cuenta'
                                     }}
                                 </span>
+                            </td>
+                            <td data-label="" class="px-4 py-3">
+                                <div class="flex justify-end gap-1.5">
+                                    <IconButton
+                                        label="Ver ficha"
+                                        tone="info"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                patientRoutes.show(patient.id)
+                                            "
+                                        >
+                                            <Eye />
+                                        </Link>
+                                    </IconButton>
+                                    <IconButton
+                                        v-if="patient.can?.update"
+                                        label="Editar"
+                                        tone="info"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                patientRoutes.edit(patient.id)
+                                            "
+                                        >
+                                            <Pencil />
+                                        </Link>
+                                    </IconButton>
+                                    <IconButton
+                                        v-if="canScheduleAppointments"
+                                        label="Agendar cita"
+                                        tone="success"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                appointmentRoutes.create({
+                                                    query: {
+                                                        patient_id: patient.id,
+                                                    },
+                                                })
+                                            "
+                                        >
+                                            <CalendarPlus />
+                                        </Link>
+                                    </IconButton>
+                                    <IconButton
+                                        v-if="patient.can?.create_consultation"
+                                        label="Nueva consulta"
+                                        tone="success"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                consultationRoutes.create(
+                                                    patient.id,
+                                                )
+                                            "
+                                        >
+                                            <FilePlus2 />
+                                        </Link>
+                                    </IconButton>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

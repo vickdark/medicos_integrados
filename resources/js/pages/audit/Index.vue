@@ -116,7 +116,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
             </div>
 
             <div class="overflow-x-auto rounded-lg border">
-                <table class="w-full text-sm">
+                <table class="cards w-full text-sm">
                     <thead class="bg-muted/50 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">Fecha</th>
@@ -136,17 +136,22 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                             </td>
                         </tr>
                         <tr v-for="log in props.logs.data" :key="log.id">
-                            <td class="px-4 py-3 whitespace-nowrap">
+                            <td
+                                data-label="Fecha"
+                                class="px-4 py-3 whitespace-nowrap"
+                            >
                                 {{ formatDateTime(log.created_at) }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Usuario" class="px-4 py-3">
                                 {{ log.user?.name ?? 'Usuario eliminado' }}
                                 <p class="text-xs text-muted-foreground">
                                     {{ log.user?.role }}
                                 </p>
                             </td>
-                            <td class="px-4 py-3">{{ log.description }}</td>
-                            <td class="px-4 py-3">
+                            <td data-label="Acción" class="px-4 py-3">
+                                {{ log.description }}
+                            </td>
+                            <td data-label="Paciente" class="px-4 py-3">
                                 <template v-if="log.patient">
                                     <Link
                                         :href="
@@ -173,6 +178,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                 <span v-else>—</span>
                             </td>
                             <td
+                                data-label="IP"
                                 class="px-4 py-3 text-xs text-muted-foreground tabular-nums"
                             >
                                 {{ log.ip_address ?? '—' }}

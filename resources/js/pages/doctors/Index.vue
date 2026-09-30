@@ -56,7 +56,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
             />
 
             <div class="overflow-x-auto rounded-lg border">
-                <table class="w-full text-sm">
+                <table class="cards w-full text-sm">
                     <thead class="bg-muted/50 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">Médico</th>
@@ -84,21 +84,28 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                             v-for="doctor in props.doctors.data"
                             :key="doctor.id"
                         >
-                            <td class="px-4 py-3">
+                            <td data-label="Médico" class="px-4 py-3">
                                 <p class="font-medium">{{ doctor.name }}</p>
                                 <p class="text-xs text-muted-foreground">
                                     {{ doctor.email }}
                                 </p>
                             </td>
-                            <td class="px-4 py-3">{{ doctor.specialty }}</td>
-                            <td class="px-4 py-3">
+                            <td data-label="Especialidad" class="px-4 py-3">
+                                {{ doctor.specialty }}
+                            </td>
+                            <td data-label="Colegiatura" class="px-4 py-3">
                                 {{ doctor.license_number }}
                             </td>
-                            <td class="px-4 py-3">{{ doctor.phone ?? '—' }}</td>
-                            <td class="px-4 py-3 text-right tabular-nums">
+                            <td data-label="Teléfono" class="px-4 py-3">
+                                {{ doctor.phone ?? '—' }}
+                            </td>
+                            <td
+                                data-label="Tarifa"
+                                class="px-4 py-3 text-right tabular-nums"
+                            >
                                 {{ formatMoney(doctor.consultation_fee) }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="" class="px-4 py-3">
                                 <div class="flex justify-end gap-1.5">
                                     <IconButton
                                         label="Ver perfil"

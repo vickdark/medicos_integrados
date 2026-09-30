@@ -155,7 +155,7 @@ const breadcrumbs: BreadcrumbItem[] = [
             </TableToolbar>
 
             <div class="overflow-x-auto rounded-lg border">
-                <table class="w-full text-sm">
+                <table class="cards w-full text-sm">
                     <thead class="bg-muted/50 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">Fecha</th>
@@ -186,10 +186,17 @@ const breadcrumbs: BreadcrumbItem[] = [
                             v-for="payment in props.payments.data"
                             :key="payment.id"
                         >
-                            <td class="px-4 py-3 whitespace-nowrap">
+                            <td
+                                data-label="Fecha"
+                                class="px-4 py-3 whitespace-nowrap"
+                            >
                                 {{ formatDate(payment.paid_at) }}
                             </td>
-                            <td v-if="!isPatient" class="px-4 py-3">
+                            <td
+                                data-label="Paciente"
+                                v-if="!isPatient"
+                                class="px-4 py-3"
+                            >
                                 <Link
                                     :href="
                                         patientRoutes.show(payment.patient!.id)
@@ -199,7 +206,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                                     {{ payment.patient?.full_name }}
                                 </Link>
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Concepto" class="px-4 py-3">
                                 {{ payment.concept }}
                                 <p
                                     v-if="payment.appointment"
@@ -220,18 +227,19 @@ const breadcrumbs: BreadcrumbItem[] = [
                                     Ref. {{ payment.reference }}
                                 </p>
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Método" class="px-4 py-3">
                                 {{ payment.method.label }}
                             </td>
                             <td
+                                data-label="Monto"
                                 class="px-4 py-3 text-right font-medium tabular-nums"
                             >
                                 {{ formatMoney(payment.amount) }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="Estado" class="px-4 py-3">
                                 <StatusBadge :status="payment.status" />
                             </td>
-                            <td class="px-4 py-3">
+                            <td data-label="" class="px-4 py-3">
                                 <div class="flex justify-end gap-1.5">
                                     <IconButton
                                         label="Ver detalle"
