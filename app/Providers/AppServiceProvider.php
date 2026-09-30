@@ -41,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
     protected function configureBranding(): void
     {
         Gate::define('manage-branding', fn (User $user): bool => $user->hasRole(UserRole::Admin));
+        Gate::define('view-reports', fn (User $user): bool => $user->hasRole(UserRole::Admin, UserRole::Receptionist)
+            || ($user->hasRole(UserRole::Doctor) && $user->doctor !== null));
 
         View::composer(['pdf.*', 'exports.*'], function ($view): void {
             $view->with(BrandPalette::documentColors(AppSetting::brandColor()));

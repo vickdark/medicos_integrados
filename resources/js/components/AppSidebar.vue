@@ -2,6 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     CalendarDays,
+    ChartColumn,
     ClipboardList,
     Clock,
     LayoutGrid,
@@ -33,6 +34,7 @@ import doctorRoutes from '@/routes/doctors';
 import medicationRoutes from '@/routes/medications';
 import patientRoutes from '@/routes/patients';
 import paymentRoutes from '@/routes/payments';
+import reportRoutes from '@/routes/reports';
 import scheduleRoutes from '@/routes/schedules';
 import specialtyRoutes from '@/routes/specialties';
 import userRoutes from '@/routes/users';
@@ -94,7 +96,20 @@ const mainNavItems = computed<NavItem[]>(() => {
         });
     }
 
+    if (role === 'admin' || role === 'receptionist') {
+        items.push({
+            title: 'Reportes',
+            href: reportRoutes.index(),
+            icon: ChartColumn,
+        });
+    }
+
     if (role === 'doctor' && doctorId) {
+        items.push({
+            title: 'Mis reportes',
+            href: reportRoutes.index(),
+            icon: ChartColumn,
+        });
         items.push({
             title: 'Mi horario',
             href: scheduleRoutes.index(doctorId),

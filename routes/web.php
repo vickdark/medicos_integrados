@@ -17,6 +17,7 @@ use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SendConsultationPrescriptionController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\TourController;
@@ -38,6 +39,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('specialties/export', [SpecialtyController::class, 'export'])->name('specialties.export');
     Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
     Route::get('medications/export', [MedicationController::class, 'export'])->name('medications.export');
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('users/export', [UserController::class, 'export'])->name('users.export');
 
     Route::get('patients/{patient}/clinical-history', PatientHistoryController::class)->name('patients.history');
