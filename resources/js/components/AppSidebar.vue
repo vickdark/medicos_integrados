@@ -10,6 +10,7 @@ import {
     ShieldCheck,
     Stethoscope,
     Tags,
+    Ticket,
     UserCog,
     Users,
     Wallet,
@@ -37,6 +38,7 @@ import paymentRoutes from '@/routes/payments';
 import reportRoutes from '@/routes/reports';
 import scheduleRoutes from '@/routes/schedules';
 import specialtyRoutes from '@/routes/specialties';
+import turnRoutes from '@/routes/turns';
 import userRoutes from '@/routes/users';
 import type { NavItem } from '@/types';
 import type { RoleValue } from '@/types/models';
@@ -87,6 +89,14 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: CalendarDays,
         },
     ];
+
+    if (role === 'admin' || role === 'receptionist' || doctorId) {
+        items.push({
+            title: 'Turnos',
+            href: turnRoutes.index(),
+            icon: Ticket,
+        });
+    }
 
     if (role === 'admin' || role === 'receptionist') {
         items.push({

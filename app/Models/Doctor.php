@@ -98,6 +98,14 @@ class Doctor extends Model
     }
 
     /**
+     * @return HasMany<Turn, $this>
+     */
+    public function turns(): HasMany
+    {
+        return $this->hasMany(Turn::class);
+    }
+
+    /**
      * Determine whether the date and time falls within the doctor's office hours.
      * Doctors without registered office hours are considered always available.
      */
@@ -235,6 +243,7 @@ class Doctor extends Model
     public function treats(Patient $patient): bool
     {
         return $this->appointments()->whereBelongsTo($patient)->exists()
-            || $this->consultations()->whereBelongsTo($patient)->exists();
+            || $this->consultations()->whereBelongsTo($patient)->exists()
+            || $this->turns()->whereBelongsTo($patient)->exists();
     }
 }

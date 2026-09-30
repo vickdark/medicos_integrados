@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Dashboard\BuildDoctorInsights;
 use App\Actions\Dashboard\BuildStaffInsights;
+use App\Actions\Turns\DescribePatientTurn;
 use App\Enums\AppointmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
@@ -24,7 +25,7 @@ class DashboardController extends Controller
     /**
      * Show the dashboard adapted to the authenticated user's role.
      */
-    public function __invoke(Request $request, BuildStaffInsights $staffInsights, BuildDoctorInsights $doctorInsights): Response
+    public function __invoke(Request $request, BuildStaffInsights $staffInsights, BuildDoctorInsights $doctorInsights, DescribePatientTurn $describePatientTurn): Response
     {
         $user = $request->user();
 
@@ -46,6 +47,9 @@ class DashboardController extends Controller
                 default => null,
             },
             'profileReminder' => $this->profileReminderFor($user),
+            'myTurn' => $user->role === UserRole::Patient && $user->patient
+                ? $describePatientTurn->handle($user->patient)
+                : null,
             'showTour' => $user->role === UserRole::Patient
                 && ! $user->hasSeenTour(TourView::PATIENT_ONBOARDING, EnsureDeviceId::from($request)),
             'recentConsultations' => $user->role === UserRole::Patient && $user->patient

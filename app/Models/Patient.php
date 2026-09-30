@@ -124,6 +124,14 @@ class Patient extends Model
     }
 
     /**
+     * @return HasMany<Turn, $this>
+     */
+    public function turns(): HasMany
+    {
+        return $this->hasMany(Turn::class);
+    }
+
+    /**
      * Limit the query to patients the given doctor has appointments or consultations with.
      *
      * @param  Builder<Patient>  $query
@@ -132,7 +140,8 @@ class Patient extends Model
     {
         $query->where(function (Builder $query) use ($doctor): void {
             $query->whereHas('appointments', fn (Builder $query) => $query->whereBelongsTo($doctor))
-                ->orWhereHas('consultations', fn (Builder $query) => $query->whereBelongsTo($doctor));
+                ->orWhereHas('consultations', fn (Builder $query) => $query->whereBelongsTo($doctor))
+                ->orWhereHas('turns', fn (Builder $query) => $query->whereBelongsTo($doctor));
         });
     }
 

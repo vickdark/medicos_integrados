@@ -8,6 +8,8 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import DoctorDashboard from '@/components/dashboard/DoctorDashboard.vue';
+import PatientTurnCard from '@/components/dashboard/PatientTurnCard.vue';
+import type { PatientTurn } from '@/components/dashboard/PatientTurnCard.vue';
 import StaffDashboard from '@/components/dashboard/StaffDashboard.vue';
 import GuidedTour from '@/components/GuidedTour.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -46,6 +48,7 @@ const props = defineProps<{
         incomplete: boolean;
         locked: boolean;
     } | null;
+    myTurn: PatientTurn | null;
 }>();
 
 const page = usePage();
@@ -182,6 +185,11 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                     </Button>
                 </div>
             </div>
+
+            <PatientTurnCard
+                v-if="role === 'patient' && myTurn"
+                :my-turn="myTurn"
+            />
 
             <StaffDashboard
                 v-if="(role === 'admin' || role === 'receptionist') && insights"

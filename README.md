@@ -73,6 +73,7 @@ Los roles están en el enum `App\Enums\UserRole`. Cada permiso se aplica mediant
 | Médicos y especialidades | ✅ | ❌ | ❌ | ❌ |
 | Horarios de atención | Todos | ❌ | El suyo | ❌ |
 | Catálogo de medicamentos | ✅ | ❌ | ✅ | ❌ |
+| Turnos | Todos | Todos | Su fila | El suyo (en Inicio) |
 | Reportes | Citas, ingresos y consultas | Citas, ingresos y consultas | Sus citas y consultas | ❌ |
 | Auditoría | ✅ | ❌ | ❌ | ❌ |
 
@@ -285,6 +286,8 @@ El menú lateral (`AppSidebar.vue`) se arma según `auth.role`.
 | `/users` | Usuarios: cuentas, roles y perfil (solo admin) |
 | `/doctors` y `/doctors/{doctor}/schedules` | Médicos y horarios |
 | `/specialties` | Especialidades |
+| `/turns` | Turnos del día: recepción genera turnos (pacientes sin cita o citas de hoy al llegar), llama, marca atendido, devuelve a la fila o cancela; el médico gestiona solo su fila y abre la consulta del paciente llamado |
+| `/pantalla-de-turnos` | Pantalla pública para la sala de espera: turnos en atención y próximos (solo código y médico, nunca nombres de pacientes); se actualiza cada 5 s |
 | `/reports` | Reportes de citas, ingresos y consultas, agrupados por médico o especialidad y filtrables por período, médico y especialidad; exportables a Excel y PDF (admin y recepción; el médico ve solo sus citas y consultas, sin ingresos) |
 | `/privacidad` | Política de tratamiento de datos personales (pública; enlazada en la landing, el login y el registro). El registro exige aceptarla y guarda fecha y versión en `users.privacy_accepted_at` y `users.privacy_policy_version` |
 | `/medications` | Catálogo de medicamentos (admin y médicos) |
@@ -379,7 +382,6 @@ npm run types:check                   # vue-tsc
 
 **Pendientes**
 
-- **Sistema de turnos:** pensado para dos casos: el paciente que nunca apartó cita y se registra en sitio (recepción le genera un turno), y el paciente que ya tiene una cita y quiere ver su orden de atención. Incluye una **pantalla de turnos** (visible en la sala de espera) que muestre qué turno se está atendiendo y cuáles siguen, además de la consulta del turno propio desde el portal del paciente.
 - **Completar y revisar la política de datos personales (Colombia):** `/privacidad` está redactada con base en la Ley 1581 de 2012 y normas relacionadas, pero debe revisarla un abogado. Configurar en `.env` los datos del responsable (`PRIVACY_COMPANY`, `PRIVACY_NIT`, `PRIVACY_ADDRESS`, `PRIVACY_PHONE`, `PRIVACY_CONTACT_EMAIL`) y verificar si la clínica debe inscribir sus bases de datos en el Registro Nacional de Bases de Datos (RNBD) de la SIC. Al cambiar el texto de fondo, subir `version` en `config/privacy.php`.
 - **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
 - **API con Laravel Sanctum** para una futura app móvil.

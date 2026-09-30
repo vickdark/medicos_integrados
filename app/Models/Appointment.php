@@ -89,6 +89,14 @@ class Appointment extends Model
     }
 
     /**
+     * @return HasMany<Turn, $this>
+     */
+    public function turns(): HasMany
+    {
+        return $this->hasMany(Turn::class);
+    }
+
+    /**
      * Load whether the appointment has paid or pending payments, which drives
      * its payment indicator.
      *

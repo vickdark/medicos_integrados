@@ -21,11 +21,15 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SendConsultationPrescriptionController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\TourController;
+use App\Http\Controllers\TurnBoardController;
+use App\Http\Controllers\TurnController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('privacidad', PrivacyPolicyController::class)->name('privacy');
+Route::get('pantalla-de-turnos', [TurnBoardController::class, 'show'])->name('turns.board');
+Route::get('pantalla-de-turnos/datos', [TurnBoardController::class, 'data'])->name('turns.feed');
 Route::get('doctors/{doctor}/photo', DoctorPhotoController::class)->name('doctors.photo');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -76,6 +80,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('specialties', SpecialtyController::class)->except(['show']);
 
     Route::resource('medications', MedicationController::class)->except(['show']);
+
+    Route::get('turns', [TurnController::class, 'index'])->name('turns.index');
+    Route::post('turns', [TurnController::class, 'store'])->name('turns.store');
+    Route::patch('turns/{turn}/status', [TurnController::class, 'updateStatus'])->name('turns.status');
 
     Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
     Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');

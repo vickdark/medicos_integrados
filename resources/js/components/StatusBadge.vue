@@ -18,6 +18,10 @@ const tones: Record<string, string> = {
     cancelled:
         'bg-neutral-200 text-neutral-700 dark:bg-neutral-500/20 dark:text-neutral-300',
     voided: 'bg-neutral-200 text-neutral-700 dark:bg-neutral-500/20 dark:text-neutral-300',
+    waiting:
+        'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+    called: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
+    done: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
 };
 
 const toneClass = computed(() => tones[props.status.value] ?? tones.cancelled);
