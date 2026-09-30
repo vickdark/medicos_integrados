@@ -10,6 +10,7 @@ use App\Http\Requests\ExportTableRequest;
 use App\Http\Requests\MarkPaymentPaidRequest;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\TableQueryRequest;
+use App\Http\Requests\VoidPaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Appointment;
 use App\Models\Patient;
@@ -229,5 +230,21 @@ class PaymentController extends Controller
         ]);
 
         return back()->with('success', 'Pago marcado como pagado.');
+    }
+
+    /**
+     * Void a payment, keeping the reason in its notes.
+     */
+    public function void(VoidPaymentRequest $request, Payment $payment): RedirectResponse
+    {
+        $reason = 'Anulado: '.$request->validated('reason');
+
+        $payment->update([
+            'status' => PaymentStatus::Voided,
+            'notes' => filled($payment->notes) ? $payment->notes."\n".$reason : $reason,
+            'recorded_by' => $request->user()->id,
+        ]);
+
+        return back()->with('success', 'Pago anulado.');
     }
 }

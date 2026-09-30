@@ -300,7 +300,7 @@ patients ─┬─ 1:N ─ appointments ── N:1 ─ doctors
 Estados:
 
 - **Cita:** `requested` (solicitada) → `confirmed` (confirmada) → `completed` (completada), o `cancelled` (cancelada). Pasa a completada automáticamente al registrar la consulta asociada.
-- **Pago:** `pending` (pendiente) o `paid` (pagado). Existe también `voided` (anulado), aún sin interfaz.
+- **Pago:** `pending` (pendiente) o `paid` (pagado). Existe también `voided` (anulado): admin y recepción pueden anular un pago pendiente o pagado desde el listado indicando el motivo (queda en las notas); también se aplica al cancelar una cita con cobro pendiente.
 
 ## Tablas: búsqueda, filtros y exportación
 
@@ -370,7 +370,6 @@ npm run types:check                   # vue-tsc
 - **Política de tratamiento de datos personales:** redactar y publicar la política (enlace en la landing, el registro y el pie de página) y registrar la aceptación del paciente al crear su cuenta, con fecha y versión.
 - **Catálogo de medicamentos (CRUD):** módulo para administrar los medicamentos (nombre, presentación, concentración, etc.), disponible solo para admin y médicos, de modo que el médico los elija al recetar en vez de escribirlos a mano. Desde la atención el médico también podrá crear un medicamento nuevo al momento.
 - **Recordatorios automáticos de citas** (correo o mensaje) un día antes de la cita.
-- **Anular pagos desde la interfaz:** hoy el estado *anulado* existe (se aplica al cancelar una cita con cobro pendiente) pero no hay una acción para anular un pago manualmente.
 - **Reportes:** los dashboards ya muestran ingresos, citas por día, consultas por mes y médicos con más citas; faltan reportes filtrables y exportables por rango, médico y especialidad.
 - **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
 - **Fotos de los médicos:** redimensionarlas al subirlas para que pesen menos.

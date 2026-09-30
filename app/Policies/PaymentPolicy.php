@@ -53,4 +53,13 @@ class PaymentPolicy
     {
         return $this->create($user) && $payment->status === PaymentStatus::Pending;
     }
+
+    /**
+     * Determine whether the user can void a payment. Any payment that is not
+     * already voided can be voided.
+     */
+    public function void(User $user, Payment $payment): bool
+    {
+        return $this->create($user) && $payment->status !== PaymentStatus::Voided;
+    }
 }

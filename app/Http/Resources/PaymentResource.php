@@ -26,6 +26,7 @@ class PaymentResource extends JsonResource
             'concept' => $this->concept,
             'can' => [
                 'mark_paid' => $request->user()?->can('markPaid', $this->resource) ?? false,
+                'void' => $request->user()?->can('void', $this->resource) ?? false,
                 'download_invoice' => $request->user()?->can('downloadInvoice', $this->resource) ?? false,
             ],
             'reference' => $this->reference,

@@ -140,7 +140,7 @@ export type Payment = {
         doctor: string;
     } | null;
     recorded_by?: string | null;
-    can: { mark_paid: boolean; download_invoice: boolean };
+    can: { mark_paid: boolean; void: boolean; download_invoice: boolean };
     created_at: string;
 };
 

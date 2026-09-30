@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
-import { CircleCheck, Eye, FileText, Plus, ReceiptText } from 'lucide-vue-next';
+import {
+    Ban,
+    CircleCheck,
+    Eye,
+    FileText,
+    Plus,
+    ReceiptText,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import DateRangeFilter from '@/components/DateRangeFilter.vue';
@@ -68,6 +75,16 @@ const payDialogOpen = computed({
     set: (open) => {
         if (!open) {
             payingPayment.value = null;
+        }
+    },
+});
+
+const voidingPayment = ref<Payment | null>(null);
+const voidDialogOpen = computed({
+    get: () => voidingPayment.value !== null,
+    set: (open) => {
+        if (!open) {
+            voidingPayment.value = null;
         }
     },
 });
@@ -283,6 +300,14 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         <CircleCheck />
                                     </IconButton>
                                     <IconButton
+                                        v-if="can.create && payment.can.void"
+                                        label="Anular pago"
+                                        tone="danger"
+                                        @click="voidingPayment = payment"
+                                    >
+                                        <Ban />
+                                    </IconButton>
+                                    <IconButton
                                         v-if="can.create && payment.patient"
                                         label="Registrar otro pago igual"
                                         tone="warning"
@@ -403,6 +428,52 @@ const breadcrumbs: BreadcrumbItem[] = [
                             <InputError :message="errors.reference" />
                         </div>
                         <Button :disabled="processing">Confirmar pago</Button>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog v-model:open="voidDialogOpen">
+                <DialogContent v-if="voidingPayment" class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Anular pago</DialogTitle>
+                        <DialogDescription>
+                            {{ voidingPayment.patient?.full_name }} ·
+                            {{ voidingPayment.concept }} ·
+                            {{ formatMoney(voidingPayment.amount) }}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <p
+                        v-if="voidingPayment.can.download_invoice"
+                        class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300"
+                    >
+                        Este pago ya está cobrado: al anularlo dejará de contar
+                        en el total pagado y su factura ya no estará
+                        disponible.
+                    </p>
+
+                    <Form
+                        v-bind="PaymentController.void.form(voidingPayment.id)"
+                        class="grid gap-4"
+                        :options="{ preserveScroll: true }"
+                        v-slot="{ errors, processing }"
+                        @success="voidingPayment = null"
+                    >
+                        <div class="grid gap-2">
+                            <Label for="void-reason">
+                                Motivo de la anulación *
+                            </Label>
+                            <Input
+                                id="void-reason"
+                                name="reason"
+                                maxlength="255"
+                                required
+                            />
+                            <InputError :message="errors.reason" />
+                        </div>
+                        <Button variant="destructive" :disabled="processing">
+                            Anular pago
+                        </Button>
                     </Form>
                 </DialogContent>
             </Dialog>

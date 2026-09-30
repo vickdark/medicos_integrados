@@ -51,6 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store', 'show']);
     Route::get('payments/{payment}/invoice', [PaymentController::class, 'invoice'])->name('payments.invoice');
     Route::patch('payments/{payment}/paid', [PaymentController::class, 'markPaid'])->name('payments.paid');
+    Route::patch('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
 
     Route::post('consultations/{consultation}/attachments', [ConsultationAttachmentController::class, 'store'])->name('attachments.store');
     Route::get('attachments/{attachment}', [ConsultationAttachmentController::class, 'show'])->name('attachments.show');

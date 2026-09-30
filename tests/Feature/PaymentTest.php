@@ -129,6 +129,42 @@ it('does not allow marking as paid a payment that is not pending or by non-staff
     expect($pending->fresh()->status)->toBe(PaymentStatus::Pending);
 });
 
+it('lets reception void a pending or paid payment keeping the reason', function () {
+    $receptionist = User::factory()->receptionist()->create();
+    $pending = Payment::factory()->pending()->create(['notes' => null]);
+    $paid = Payment::factory()->create(['notes' => 'Pago en ventanilla']);
+
+    $this->actingAs($receptionist)
+        ->patch(route('payments.void', $pending), ['reason' => 'Cobro duplicado'])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+    $this->actingAs($receptionist)
+        ->patch(route('payments.void', $paid), ['reason' => 'Error de monto'])
+        ->assertRedirect();
+
+    expect($pending->fresh()->status)->toBe(PaymentStatus::Voided)
+        ->and($pending->fresh()->notes)->toBe('Anulado: Cobro duplicado')
+        ->and($paid->fresh()->status)->toBe(PaymentStatus::Voided)
+        ->and($paid->fresh()->notes)->toBe("Pago en ventanilla\nAnulado: Error de monto");
+});
+
+it('does not allow voiding without a reason, an already voided payment or by non-staff', function () {
+    $pending = Payment::factory()->pending()->create();
+    $voided = Payment::factory()->create(['status' => PaymentStatus::Voided]);
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->patch(route('payments.void', $pending), ['reason' => ''])
+        ->assertSessionHasErrors('reason');
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->patch(route('payments.void', $voided), ['reason' => 'Otra vez'])
+        ->assertForbidden();
+    $this->actingAs(User::factory()->create())
+        ->patch(route('payments.void', $pending), ['reason' => 'No autorizado'])
+        ->assertForbidden();
+
+    expect($pending->fresh()->status)->toBe(PaymentStatus::Pending);
+});
+
 it('prefills the payment form from an existing payment row', function () {
     $source = Payment::factory()->create(['concept' => 'Control mensual', 'amount' => '75.00', 'method' => 'card']);
 
