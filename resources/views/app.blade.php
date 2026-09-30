@@ -15,6 +15,13 @@
             }
         </style>
 
+        {{-- Accent color chosen by the administrator; app.css derives its shades from it. --}}
+        <style>
+            :root {
+                --brand: {{ \App\Models\AppSetting::brandColor() }};
+            }
+        </style>
+
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <link rel="icon" href="/favicon.ico" sizes="any">

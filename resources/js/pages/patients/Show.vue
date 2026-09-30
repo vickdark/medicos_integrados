@@ -319,7 +319,7 @@ const details: { label: string; value: string | null }[] = [
                             class="relative"
                         >
                             <span
-                                class="absolute top-1.5 -left-[29px] size-2.5 rounded-full bg-teal-600"
+                                class="absolute top-1.5 -left-[29px] size-2.5 rounded-full bg-brand-600"
                             />
                             <Link
                                 :href="consultationRoutes.show(consultation.id)"

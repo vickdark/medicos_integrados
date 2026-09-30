@@ -6,13 +6,13 @@
     <style>
         @page { margin: 28px 32px; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1f2937; }
-        header { border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 12px; }
-        .brand { color: #0d9488; font-size: 11px; font-weight: bold; }
+        header { border-bottom: 2px solid {{ $brand }}; padding-bottom: 8px; margin-bottom: 12px; }
+        .brand { color: {{ $brand }}; font-size: 11px; font-weight: bold; }
         h1 { font-size: 16px; margin: 4px 0 2px; }
         .meta { color: #6b7280; }
         .filters { margin: 0 0 10px; color: #374151; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #0d9488; color: #fff; text-align: left; padding: 5px 6px; font-weight: bold; }
+        th { background: {{ $brand }}; color: #fff; text-align: left; padding: 5px 6px; font-weight: bold; }
         td { padding: 4px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
         tr:nth-child(even) td { background: #f9fafb; }
         .number { text-align: right; white-space: nowrap; }

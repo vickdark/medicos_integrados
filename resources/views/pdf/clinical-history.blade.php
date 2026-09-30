@@ -6,10 +6,10 @@
     <style>
         @page { margin: 30px 34px 40px; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #1f2937; }
-        header { border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 12px; }
-        .brand { color: #0d9488; font-size: 11px; font-weight: bold; }
+        header { border-bottom: 2px solid {{ $brand }}; padding-bottom: 8px; margin-bottom: 12px; }
+        .brand { color: {{ $brand }}; font-size: 11px; font-weight: bold; }
         h1 { font-size: 17px; margin: 4px 0 2px; }
-        h2 { font-size: 11px; color: #0d9488; text-transform: uppercase; letter-spacing: .5px; margin: 16px 0 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+        h2 { font-size: 11px; color: {{ $brand }}; text-transform: uppercase; letter-spacing: .5px; margin: 16px 0 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
         .meta { color: #6b7280; }
         table.data { width: 100%; border-collapse: collapse; }
         table.data td { padding: 3px 6px 3px 0; vertical-align: top; }
@@ -20,7 +20,7 @@
         .doctor { color: #6b7280; }
         .field { margin: 0 0 5px; }
         .field strong { display: block; color: #374151; font-size: 9px; text-transform: uppercase; }
-        .vitals { background: #f0fdfa; border-radius: 3px; padding: 4px 6px; margin-bottom: 6px; color: #115e59; }
+        .vitals { background: {{ $brandTint }}; border-radius: 3px; padding: 4px 6px; margin-bottom: 6px; color: {{ $brandDark }}; }
         table.meds { width: 100%; border-collapse: collapse; margin-top: 3px; }
         table.meds th { background: #f3f4f6; text-align: left; padding: 3px 5px; font-size: 9px; }
         table.meds td { padding: 3px 5px; border-bottom: 1px solid #f3f4f6; }

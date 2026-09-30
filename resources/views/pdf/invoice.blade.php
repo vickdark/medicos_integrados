@@ -6,12 +6,12 @@
     <style>
         @page { margin: 34px 40px; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
-        .top { width: 100%; border-bottom: 3px solid #0d9488; padding-bottom: 12px; margin-bottom: 20px; }
+        .top { width: 100%; border-bottom: 3px solid {{ $brand }}; padding-bottom: 12px; margin-bottom: 20px; }
         .top td { vertical-align: top; }
-        .brand { color: #0d9488; font-size: 18px; font-weight: bold; }
+        .brand { color: {{ $brand }}; font-size: 18px; font-weight: bold; }
         .doc-title { text-align: right; }
         .doc-title h1 { font-size: 20px; margin: 0; color: #111827; }
-        .doc-title .number { font-size: 13px; color: #0d9488; font-weight: bold; }
+        .doc-title .number { font-size: 13px; color: {{ $brand }}; font-weight: bold; }
         .paid { display: inline-block; border: 2px solid #059669; color: #059669; font-weight: bold; padding: 2px 10px; border-radius: 4px; margin-top: 6px; letter-spacing: 1px; }
         h2 { font-size: 10px; text-transform: uppercase; color: #6b7280; letter-spacing: .6px; margin: 0 0 4px; }
         .boxes { width: 100%; margin-bottom: 20px; }
@@ -19,12 +19,12 @@
         .name { font-size: 13px; font-weight: bold; }
         .muted { color: #6b7280; }
         table.lines { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-        table.lines th { background: #0d9488; color: #fff; text-align: left; padding: 7px 8px; font-size: 10px; }
+        table.lines th { background: {{ $brand }}; color: #fff; text-align: left; padding: 7px 8px; font-size: 10px; }
         table.lines td { padding: 9px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
         .right { text-align: right; white-space: nowrap; }
         table.total { width: 45%; margin-left: 55%; border-collapse: collapse; }
         table.total td { padding: 6px 8px; }
-        table.total tr.grand td { border-top: 2px solid #0d9488; font-size: 14px; font-weight: bold; }
+        table.total tr.grand td { border-top: 2px solid {{ $brand }}; font-size: 14px; font-weight: bold; }
         .notes { margin-top: 22px; padding: 8px 10px; background: #f9fafb; border-radius: 4px; }
         footer { position: fixed; bottom: -14px; left: 0; right: 0; text-align: center; color: #9ca3af; font-size: 8px; }
     </style>

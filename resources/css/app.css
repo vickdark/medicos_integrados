@@ -13,6 +13,18 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
+    --color-brand-50: color-mix(in oklab, var(--brand) 8%, white);
+    --color-brand-100: color-mix(in oklab, var(--brand) 16%, white);
+    --color-brand-200: color-mix(in oklab, var(--brand) 30%, white);
+    --color-brand-300: color-mix(in oklab, var(--brand) 48%, white);
+    --color-brand-400: color-mix(in oklab, var(--brand) 72%, white);
+    --color-brand-500: color-mix(in oklab, var(--brand) 88%, white);
+    --color-brand-600: var(--brand);
+    --color-brand-700: color-mix(in oklab, var(--brand) 82%, black);
+    --color-brand-800: color-mix(in oklab, var(--brand) 64%, black);
+    --color-brand-900: color-mix(in oklab, var(--brand) 46%, black);
+    --color-brand-950: color-mix(in oklab, var(--brand) 30%, black);
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);

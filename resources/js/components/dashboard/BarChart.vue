@@ -115,8 +115,8 @@ const summary = computed(
                                 class="w-full max-w-6 rounded-t-[4px] transition-opacity group-hover:opacity-80 group-focus:opacity-80"
                                 :class="
                                     isHighlighted(bar)
-                                        ? 'bg-teal-600 dark:bg-teal-400'
-                                        : 'bg-teal-300 dark:bg-teal-800'
+                                        ? 'bg-brand-600 dark:bg-brand-400'
+                                        : 'bg-brand-300 dark:bg-brand-800'
                                 "
                                 :style="{
                                     height: `${(bar.value / max) * 100}%`,

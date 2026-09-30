@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\BrandingController;
 use App\Http\Controllers\Settings\DoctorProfileController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -16,6 +17,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/doctor-profile', [DoctorProfileController::class, 'show'])->name('doctor-profile.show');
+
+    Route::get('settings/branding', [BrandingController::class, 'edit'])->name('branding.edit');
+    Route::put('settings/branding', [BrandingController::class, 'update'])->name('branding.update');
+    Route::delete('settings/branding', [BrandingController::class, 'destroy'])->name('branding.destroy');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])->name('security.edit');
 

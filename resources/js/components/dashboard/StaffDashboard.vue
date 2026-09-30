@@ -252,10 +252,10 @@ const compactMoney = (value: number): string =>
                                 </span>
                             </div>
                             <div
-                                class="h-1.5 rounded-full bg-teal-100 dark:bg-teal-950"
+                                class="h-1.5 rounded-full bg-brand-100 dark:bg-brand-950"
                             >
                                 <div
-                                    class="h-full rounded-full bg-teal-600 dark:bg-teal-400"
+                                    class="h-full rounded-full bg-brand-600 dark:bg-brand-400"
                                     :style="{
                                         width: `${(doctor.appointments / insights.top_doctors[0].appointments) * 100}%`,
                                     }"

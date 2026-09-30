@@ -4,7 +4,7 @@ import { HeartPulse } from 'lucide-vue-next';
 
 <template>
     <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-teal-600 text-white"
+        class="flex aspect-square size-8 items-center justify-center rounded-md bg-brand-600 text-white"
     >
         <HeartPulse class="size-5" />
     </div>

@@ -2,8 +2,10 @@
 
 namespace App\Exports;
 
+use App\Actions\Branding\BrandPalette;
 use App\Enums\AuditAction;
 use App\Enums\ExportFormat;
+use App\Models\AppSetting;
 use App\Models\AuditLog;
 use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -69,7 +71,7 @@ class TableExporter
 
         $sheet->getStyle([1, 1, $lastColumn, 1])->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0D9488']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => BrandPalette::withoutHash(AppSetting::brandColor())]],
         ]);
 
         foreach ($moneyColumns as $index) {

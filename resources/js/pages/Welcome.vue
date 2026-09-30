@@ -85,7 +85,7 @@ const steps = [
             >
                 <Link href="/" class="flex items-center gap-2 font-semibold">
                     <span
-                        class="flex size-8 items-center justify-center rounded-md bg-teal-600 text-white"
+                        class="flex size-8 items-center justify-center rounded-md bg-brand-600 text-white"
                     >
                         <HeartPulse class="size-5" />
                     </span>
@@ -112,7 +112,7 @@ const steps = [
                     <Link
                         v-if="$page.props.auth.user"
                         :href="dashboard()"
-                        class="rounded-md bg-teal-600 px-4 py-2 font-medium text-white hover:bg-teal-700"
+                        class="rounded-md bg-brand-600 px-4 py-2 font-medium text-white hover:bg-brand-700"
                     >
                         Ir a mi panel
                     </Link>
@@ -126,7 +126,7 @@ const steps = [
                         <Link
                             v-if="canRegister"
                             :href="register()"
-                            class="rounded-md bg-teal-600 px-4 py-2 font-medium text-white hover:bg-teal-700"
+                            class="rounded-md bg-brand-600 px-4 py-2 font-medium text-white hover:bg-brand-700"
                         >
                             Registrarse
                         </Link>
@@ -138,7 +138,7 @@ const steps = [
         <main>
             <section class="relative overflow-hidden">
                 <div
-                    class="absolute inset-0 -z-10 bg-gradient-to-b from-teal-50 to-transparent dark:from-teal-950/40"
+                    class="absolute inset-0 -z-10 bg-gradient-to-b from-brand-50 to-transparent dark:from-brand-950/40"
                     aria-hidden="true"
                 />
                 <div
@@ -146,7 +146,7 @@ const steps = [
                 >
                     <div class="space-y-6">
                         <p
-                            class="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white px-3 py-1 text-xs font-medium text-teal-700 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-300"
+                            class="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-medium text-brand-700 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-300"
                         >
                             <Stethoscope class="size-3.5" /> Centro médico
                             integral
@@ -170,7 +170,7 @@ const steps = [
                                           ? register()
                                           : login()
                                 "
-                                class="rounded-md bg-teal-600 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-teal-700"
+                                class="rounded-md bg-brand-600 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
                             >
                                 Solicitar una cita
                             </Link>
@@ -251,7 +251,7 @@ const steps = [
                         class="rounded-xl border bg-card p-6"
                     >
                         <span
-                            class="mb-4 flex size-10 items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
+                            class="mb-4 flex size-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
                         >
                             <component :is="feature.icon" class="size-5" />
                         </span>
@@ -285,7 +285,7 @@ const steps = [
                                 {{ specialty.description }}
                             </p>
                             <p
-                                class="mt-3 text-xs font-medium text-teal-700 dark:text-teal-400"
+                                class="mt-3 text-xs font-medium text-brand-700 dark:text-brand-400"
                             >
                                 {{ specialty.doctors_count }}
                                 {{
@@ -316,7 +316,7 @@ const steps = [
                         class="rounded-xl border p-6"
                     >
                         <span
-                            class="text-sm font-semibold text-teal-700 dark:text-teal-400"
+                            class="text-sm font-semibold text-brand-700 dark:text-brand-400"
                             >Paso {{ index + 1 }}</span
                         >
                         <h3 class="mt-2 text-lg font-semibold">
@@ -334,7 +334,7 @@ const steps = [
             <div class="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3">
                 <div>
                     <p class="flex items-center gap-2 font-semibold">
-                        <HeartPulse class="size-5 text-teal-600" /> Médicos
+                        <HeartPulse class="size-5 text-brand-600" /> Médicos
                         Integrados
                     </p>
                     <p class="mt-2 text-sm text-muted-foreground">

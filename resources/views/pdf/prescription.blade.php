@@ -6,9 +6,9 @@
     <style>
         @page { margin: 34px 40px; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
-        .top { width: 100%; border-bottom: 3px solid #0d9488; padding-bottom: 12px; margin-bottom: 18px; }
+        .top { width: 100%; border-bottom: 3px solid {{ $brand }}; padding-bottom: 12px; margin-bottom: 18px; }
         .top td { vertical-align: top; }
-        .brand { color: #0d9488; font-size: 18px; font-weight: bold; }
+        .brand { color: {{ $brand }}; font-size: 18px; font-weight: bold; }
         .doc-title { text-align: right; }
         .doc-title h1 { font-size: 20px; margin: 0; color: #111827; }
         .muted { color: #6b7280; }
@@ -16,8 +16,8 @@
         .boxes { width: 100%; margin-bottom: 16px; }
         .boxes td { vertical-align: top; width: 50%; padding-right: 14px; }
         .name { font-size: 13px; font-weight: bold; }
-        .diagnosis { background: #f0fdfa; border-left: 3px solid #0d9488; padding: 6px 10px; margin-bottom: 16px; }
-        .rx { font-size: 26px; color: #0d9488; font-weight: bold; margin: 0 0 6px; }
+        .diagnosis { background: {{ $brandTint }}; border-left: 3px solid {{ $brand }}; padding: 6px 10px; margin-bottom: 16px; }
+        .rx { font-size: 26px; color: {{ $brand }}; font-weight: bold; margin: 0 0 6px; }
         .med { border-bottom: 1px solid #e5e7eb; padding: 8px 0; page-break-inside: avoid; }
         .med-name { font-size: 13px; font-weight: bold; }
         .med-detail { margin-top: 2px; }

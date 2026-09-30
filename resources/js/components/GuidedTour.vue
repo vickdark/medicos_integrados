@@ -51,7 +51,7 @@ const steps: Step[] = [
     },
     {
         icon: ClipboardList,
-        tone: 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300',
+        tone: 'bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300',
         title: 'Mi historial',
         description:
             'Consulta tus consultas, diagnósticos, recetas y archivos adjuntos. Esta información es privada: solo tú y tu equipo médico pueden verla.',

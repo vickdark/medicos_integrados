@@ -40,7 +40,7 @@ const roleTones: Record<string, string> = {
     admin: 'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300',
     receptionist:
         'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
-    doctor: 'bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-300',
+    doctor: 'bg-brand-100 text-brand-800 dark:bg-brand-500/15 dark:text-brand-300',
     patient:
         'bg-neutral-200 text-neutral-700 dark:bg-neutral-500/20 dark:text-neutral-300',
 };

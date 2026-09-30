@@ -30,18 +30,18 @@ defineProps<{
     <div class="flex flex-col gap-6">
         <section
             v-if="insights.next_appointment"
-            class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-teal-300 bg-teal-50 p-4 dark:border-teal-500/40 dark:bg-teal-500/10"
+            class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-brand-300 bg-brand-50 p-4 dark:border-brand-500/40 dark:bg-brand-500/10"
             aria-label="Próxima cita"
         >
             <div class="flex items-start gap-3">
                 <div
-                    class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white dark:bg-teal-400 dark:text-teal-950"
+                    class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white dark:bg-brand-400 dark:text-brand-950"
                 >
                     <CalendarClock class="size-5" />
                 </div>
                 <div class="min-w-0">
                     <p
-                        class="text-xs font-medium tracking-wide text-teal-800 uppercase dark:text-teal-300"
+                        class="text-xs font-medium tracking-wide text-brand-800 uppercase dark:text-brand-300"
                     >
                         Tu próxima cita
                     </p>
