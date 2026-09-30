@@ -386,3 +386,21 @@ npm run types:check                   # vue-tsc
 - **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
 - **API con Laravel Sanctum** para una futura app móvil.
 - **Pasarela de pagos en línea** (hoy los pagos se registran a mano).
+- **Diagnósticos con CIE-10 y generación de RIPS:** hoy el diagnóstico es texto libre. Si la clínica atiende pacientes de EPS o aseguradoras debe reportar los RIPS, y para eso necesita los diagnósticos codificados con CIE-10. Agregar también al paciente su EPS o aseguradora y su tipo de afiliación.
+- **Correcciones a la historia clínica con trazabilidad:** una consulta registrada no debe editarse ni borrarse; se corrige con notas aclaratorias (fecha, autor y motivo) que dejan visible el registro original. La auditoría actual registra accesos y cambios, pero no reemplaza este mecanismo.
+- **Documentos clínicos en PDF:** consentimiento informado, incapacidades, remisiones y órdenes de exámenes, generados desde la consulta como ya se hace con la receta.
+- **Derechos del titular de los datos (Ley 1581):** que el paciente pueda descargar sus datos y pedir su corrección o supresión desde el portal, con registro de cada solicitud y de su plazo de respuesta. Además, pedir de nuevo la aceptación de la política cuando cambie su versión (hoy la versión aceptada se guarda, pero no se vuelve a solicitar).
+- **Cifrado de los adjuntos clínicos:** guardar cifrados en disco los archivos de las consultas (hoy están en el disco privado, pero sin cifrar).
+
+**Consideraciones futuras**
+
+- **Facturación electrónica DIAN:** la factura en PDF que genera el sistema no es una factura electrónica válida. Si la clínica factura, se necesita un proveedor tecnológico autorizado o seguir usando su facturador actual.
+- **Bloqueos de agenda:** vacaciones del médico, festivos de Colombia y cierres puntuales (hoy el horario es semanal y fijo).
+- **Inasistencias:** marcar la cita como "no asistió" (hoy solo existe *cancelada*) para medirlas y, si se quiere, limitar a quien falta con frecuencia.
+- **Confirmar o cancelar la cita desde el recordatorio**, con un enlace, sin iniciar sesión.
+- **Recordatorios por WhatsApp o SMS**, además del correo y el push.
+- **Cierre de caja diario:** lo cobrado por método de pago y por usuario, con arqueo.
+- **Copias de seguridad automáticas** de la base de datos y de los archivos clínicos, con restauración probada.
+- **Envío de correo por API HTTPS** (Amazon SES, Postmark, Mailgun o Resend) para no depender del puerto SMTP, que algunas redes bloquean.
+- **2FA obligatoria para el personal** y cierre de sesión por inactividad (hoy la 2FA es opcional).
+- **Monitoreo de errores** (por ejemplo Sentry) y un supervisor para el worker de colas y el cron del programador en producción.
