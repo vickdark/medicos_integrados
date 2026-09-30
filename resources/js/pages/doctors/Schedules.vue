@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import DoctorScheduleController from '@/actions/App/Http/Controllers/DoctorScheduleController';
 import InputError from '@/components/InputError.vue';
+import TimeSelect from '@/components/TimeSelect.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -12,10 +13,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { formatTime } from '@/lib/format';
 import doctorRoutes from '@/routes/doctors';
 import scheduleRoutes from '@/routes/schedules';
 import type { BreadcrumbItem } from '@/types';
@@ -63,7 +64,7 @@ const schedulesByDay = computed(() =>
 function destroy(schedule: Schedule) {
     if (
         !confirm(
-            `¿Eliminar el bloque ${schedule.day_name} ${schedule.starts_at} – ${schedule.ends_at}?`,
+            `¿Eliminar el bloque ${schedule.day_name} ${formatTime(schedule.starts_at)} – ${formatTime(schedule.ends_at)}?`,
         )
     ) {
         return;
@@ -126,9 +127,8 @@ function destroy(schedule: Schedule) {
                         </div>
                         <div class="grid gap-2">
                             <Label for="starts_at">Desde</Label>
-                            <Input
+                            <TimeSelect
                                 id="starts_at"
-                                type="time"
                                 name="starts_at"
                                 default-value="08:00"
                                 required
@@ -137,9 +137,8 @@ function destroy(schedule: Schedule) {
                         </div>
                         <div class="grid gap-2">
                             <Label for="ends_at">Hasta</Label>
-                            <Input
+                            <TimeSelect
                                 id="ends_at"
-                                type="time"
                                 name="ends_at"
                                 default-value="12:00"
                                 required
@@ -170,11 +169,12 @@ function destroy(schedule: Schedule) {
                             :key="block.id"
                             class="inline-flex items-center gap-1 rounded-full border py-1 pr-1 pl-3 text-sm tabular-nums"
                         >
-                            {{ block.starts_at }} – {{ block.ends_at }}
+                            {{ formatTime(block.starts_at) }} –
+                            {{ formatTime(block.ends_at) }}
                             <button
                                 type="button"
                                 class="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
-                                :aria-label="`Eliminar bloque ${block.day_name} ${block.starts_at}`"
+                                :aria-label="`Eliminar bloque ${block.day_name} ${formatTime(block.starts_at)}`"
                                 @click="destroy(block)"
                             >
                                 <Trash2 class="size-3.5" />

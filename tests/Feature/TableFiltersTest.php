@@ -42,7 +42,7 @@ it('rejects an inverted date range', function () {
 
 it('filters payments by status and recalculates the totals', function () {
     Payment::factory()->count(2)->create(['amount' => 50]);
-    Payment::factory()->pending()->create(['amount' => 30, 'concept' => 'Laboratorio']);
+    Payment::factory()->pending()->create(['amount' => 30, 'concept' => 'Ecografía abdominal']);
 
     $this->actingAs(User::factory()->receptionist()->create())
         ->get(route('payments.index', ['status' => 'pending']))
@@ -53,7 +53,7 @@ it('filters payments by status and recalculates the totals', function () {
         );
 
     $this->actingAs(User::factory()->receptionist()->create())
-        ->get(route('payments.index', ['search' => 'Laboratorio']))
+        ->get(route('payments.index', ['search' => 'Ecografía']))
         ->assertInertia(fn (Assert $page) => $page->has('payments.data', 1));
 });
 

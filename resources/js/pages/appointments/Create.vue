@@ -3,6 +3,7 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppointmentController from '@/actions/App/Http/Controllers/AppointmentController';
 import InputError from '@/components/InputError.vue';
+import TimeSelect from '@/components/TimeSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,11 +45,18 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title, href: appointmentRoutes.create() },
 ];
 
-const minDateTime = new Date(
-    Date.now() - new Date().getTimezoneOffset() * 60000,
-)
+const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
     .toISOString()
-    .slice(0, 16);
+    .slice(0, 10);
+
+const appointmentDate = ref('');
+const appointmentTime = ref('');
+
+const scheduledAt = computed(() =>
+    appointmentDate.value && appointmentTime.value
+        ? `${appointmentDate.value}T${appointmentTime.value}`
+        : '',
+);
 </script>
 
 <template>
@@ -135,14 +143,25 @@ const minDateTime = new Date(
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="scheduled_at">Fecha y hora *</Label>
-                    <Input
-                        id="scheduled_at"
-                        type="datetime-local"
+                    <Label for="appointment_date">Fecha y hora *</Label>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <Input
+                            id="appointment_date"
+                            v-model="appointmentDate"
+                            type="date"
+                            :min="today"
+                            required
+                        />
+                        <TimeSelect
+                            id="appointment_time"
+                            v-model="appointmentTime"
+                            required
+                        />
+                    </div>
+                    <input
+                        type="hidden"
                         name="scheduled_at"
-                        :min="minDateTime"
-                        step="900"
-                        required
+                        :value="scheduledAt"
                     />
                     <InputError :message="errors.scheduled_at" />
                 </div>

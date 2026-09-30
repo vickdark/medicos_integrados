@@ -28,7 +28,7 @@ class AuditLogsExport extends TableExport
         foreach ($this->query->with(['user', 'patient'])->lazy(500) as $log) {
             /** @var AuditLog $log */
             yield [
-                $log->created_at?->format('d/m/Y H:i'),
+                $log->created_at?->format('d/m/Y g:i A'),
                 $log->user?->name ?? 'Usuario eliminado',
                 $log->user?->role->label(),
                 $log->action->label(),

@@ -38,7 +38,7 @@ class AppointmentRequested extends Notification implements ShouldQueue
             ->subject('Nueva solicitud de cita')
             ->greeting("Hola, {$notifiable->name}")
             ->line("{$this->appointment->patient->full_name} solicitó una cita:")
-            ->line('**Fecha:** '.$this->appointment->scheduled_at->translatedFormat('l j \\d\\e F \\d\\e Y, H:i'))
+            ->line('**Fecha:** '.$this->appointment->scheduled_at->translatedFormat('l j \\d\\e F \\d\\e Y, g:i A'))
             ->line("**Médico:** {$this->appointment->doctor->user->name}")
             ->line("**Motivo:** {$this->appointment->reason}")
             ->action('Revisar solicitudes', route('appointments.index', ['status' => 'requested']));

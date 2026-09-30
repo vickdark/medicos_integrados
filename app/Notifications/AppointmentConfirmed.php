@@ -38,7 +38,7 @@ class AppointmentConfirmed extends Notification implements ShouldQueue
             ->subject('Tu cita ha sido confirmada')
             ->greeting("Hola, {$notifiable->name}")
             ->line('Tu cita médica ha sido confirmada:')
-            ->line('**Fecha:** '.$this->appointment->scheduled_at->translatedFormat('l j \\d\\e F \\d\\e Y, H:i'))
+            ->line('**Fecha:** '.$this->appointment->scheduled_at->translatedFormat('l j \\d\\e F \\d\\e Y, g:i A'))
             ->line("**Médico:** {$this->appointment->doctor->user->name} ({$this->appointment->doctor->specialty->name})")
             ->line("**Motivo:** {$this->appointment->reason}")
             ->action('Ver mis citas', route('appointments.index'))

@@ -15,18 +15,37 @@ export function formatDate(value: string | null | undefined): string {
     });
 }
 
+/**
+ * Format hours and minutes (0-23, 0-59) as a 12-hour clock, e.g. "2:30 PM".
+ */
+export function formatClock(hours: number, minutes: number): string {
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hour12 = hours % 12 === 0 ? 12 : hours % 12;
+
+    return `${hour12}:${String(minutes).padStart(2, '0')} ${period}`;
+}
+
+/**
+ * Convert a 24-hour "HH:mm" value to a 12-hour label, e.g. "14:30" -> "2:30 PM".
+ */
+export function formatTime(value: string | null | undefined): string {
+    if (!value) {
+        return '—';
+    }
+
+    const [hours, minutes] = value.split(':').map(Number);
+
+    return formatClock(hours, minutes);
+}
+
 export function formatDateTime(value: string | null | undefined): string {
     if (!value) {
         return '—';
     }
 
-    return new Date(value).toLocaleString(locale, {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const date = new Date(value);
+
+    return `${formatDate(value)}, ${formatClock(date.getHours(), date.getMinutes())}`;
 }
 
 export function formatFileSize(bytes: number): string {

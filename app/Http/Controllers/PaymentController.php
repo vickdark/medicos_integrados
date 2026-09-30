@@ -114,7 +114,7 @@ class PaymentController extends Controller
                     ->get()
                     ->map(fn ($appointment): array => [
                         'id' => $appointment->id,
-                        'label' => $appointment->scheduled_at->format('d/m/Y H:i').' · '.$appointment->doctor->user->name.' · '.$appointment->reason,
+                        'label' => $appointment->scheduled_at->format('d/m/Y g:i A').' · '.$appointment->doctor->user->name.' · '.$appointment->reason,
                     ])
                 : [],
             'methods' => PaymentMethod::options(),

@@ -6,6 +6,7 @@ use Database\Factories\DoctorScheduleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class DoctorSchedule extends Model
 {
@@ -68,11 +69,19 @@ class DoctorSchedule extends Model
     }
 
     /**
-     * Get a readable summary such as "Lunes 08:00 – 12:00".
+     * Get a readable summary in a 12-hour clock such as "Lunes 8:00 AM – 12:00 PM".
      */
     public function summary(): string
     {
-        return self::DAY_NAMES[$this->day_of_week].' '.$this->startTime().' – '.$this->endTime();
+        return self::DAY_NAMES[$this->day_of_week].' '.$this->formatTime($this->startTime()).' – '.$this->formatTime($this->endTime());
+    }
+
+    /**
+     * Convert an "HH:MM" value to a 12-hour label such as "2:30 PM".
+     */
+    private function formatTime(string $time): string
+    {
+        return Carbon::createFromFormat('H:i', $time)->format('g:i A');
     }
 
     /**

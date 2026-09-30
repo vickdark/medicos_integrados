@@ -38,7 +38,7 @@ class AppointmentCancelled extends Notification implements ShouldQueue
             ->subject('Cita cancelada')
             ->greeting("Hola, {$notifiable->name}")
             ->line('La siguiente cita ha sido cancelada:')
-            ->line('**Fecha:** '.$this->appointment->scheduled_at->translatedFormat('l j \\d\\e F \\d\\e Y, H:i'))
+            ->line('**Fecha:** '.$this->appointment->scheduled_at->translatedFormat('l j \\d\\e F \\d\\e Y, g:i A'))
             ->line("**Paciente:** {$this->appointment->patient->full_name}")
             ->line("**Médico:** {$this->appointment->doctor->user->name}")
             ->action('Ver citas', route('appointments.index'));

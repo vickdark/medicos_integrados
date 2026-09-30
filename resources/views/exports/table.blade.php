@@ -26,7 +26,7 @@
         <div class="brand">{{ config('app.name') }}</div>
         <h1>{{ $title }}</h1>
         <div class="meta">
-            Generado el {{ $generatedAt->translatedFormat('d \d\e F \d\e Y, H:i') }}
+            Generado el {{ $generatedAt->translatedFormat('d \d\e F \d\e Y, g:i A') }}
             @if ($generatedBy)
                 por {{ $generatedBy }}
             @endif

@@ -29,7 +29,7 @@ class AppointmentsExport extends TableExport
             /** @var Appointment $appointment */
             yield [
                 $appointment->scheduled_at->format('d/m/Y'),
-                $appointment->scheduled_at->format('H:i'),
+                $appointment->scheduled_at->format('g:i A'),
                 $appointment->patient->full_name,
                 $appointment->patient->document_number,
                 $appointment->doctor->user->name,
