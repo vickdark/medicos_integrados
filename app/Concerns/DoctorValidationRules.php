@@ -13,7 +13,7 @@ trait DoctorValidationRules
      *
      * @var list<string>
      */
-    public const DOCTOR_FIELDS = ['specialty_id', 'license_number', 'phone', 'consultation_fee', 'bio'];
+    public const DOCTOR_FIELDS = ['specialty_id', 'license_number', 'phone', 'consultation_fee', 'slot_minutes', 'bio'];
 
     /**
      * Get the validation rules used to validate doctor profiles.
@@ -27,6 +27,7 @@ trait DoctorValidationRules
             'license_number' => ['required', 'string', 'max:50', Rule::unique(Doctor::class)->ignore($doctorId)],
             'phone' => ['nullable', 'string', 'max:30'],
             'consultation_fee' => ['required', 'numeric', 'min:0', 'max:99999999'],
+            'slot_minutes' => ['sometimes', 'required', 'integer', Rule::in(Doctor::SLOT_OPTIONS)],
             'bio' => ['nullable', 'string', 'max:2000'],
         ];
     }

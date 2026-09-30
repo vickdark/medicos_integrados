@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
@@ -62,13 +61,7 @@ class StoreAppointmentRequest extends FormRequest
                     return;
                 }
 
-                $slotIsTaken = Appointment::query()
-                    ->where('doctor_id', $this->integer('doctor_id'))
-                    ->where('scheduled_at', $this->date('scheduled_at'))
-                    ->whereIn('status', [AppointmentStatus::Requested, AppointmentStatus::Confirmed])
-                    ->exists();
-
-                if ($slotIsTaken) {
+                if ($doctor->hasConflictAt($this->date('scheduled_at'))) {
                     $validator->errors()->add('scheduled_at', 'El médico ya tiene una cita en ese horario.');
                 }
             },

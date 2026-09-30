@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDoctorScheduleRequest;
+use App\Http\Requests\UpdateDoctorSlotRequest;
 use App\Models\Doctor;
 use App\Models\DoctorSchedule;
 use Illuminate\Http\RedirectResponse;
@@ -26,7 +27,9 @@ class DoctorScheduleController extends Controller
                 'id' => $doctor->id,
                 'name' => $doctor->user->name,
                 'specialty' => $doctor->specialty->name,
+                'slot_minutes' => $doctor->slotLength(),
             ],
+            'slotOptions' => Doctor::SLOT_OPTIONS,
             'schedules' => $doctor->schedules()
                 ->orderBy('day_of_week')
                 ->orderBy('starts_at')
@@ -49,9 +52,27 @@ class DoctorScheduleController extends Controller
      */
     public function store(StoreDoctorScheduleRequest $request, Doctor $doctor): RedirectResponse
     {
-        $doctor->schedules()->create($request->validated());
+        $days = $request->dayList();
 
-        return back()->with('success', 'Horario agregado.');
+        foreach ($days as $day) {
+            $doctor->schedules()->create([
+                'day_of_week' => $day,
+                'starts_at' => $request->validated('starts_at'),
+                'ends_at' => $request->validated('ends_at'),
+            ]);
+        }
+
+        return back()->with('success', count($days) > 1 ? 'Horarios agregados.' : 'Horario agregado.');
+    }
+
+    /**
+     * Change how long each appointment of the doctor lasts.
+     */
+    public function updateSlot(UpdateDoctorSlotRequest $request, Doctor $doctor): RedirectResponse
+    {
+        $doctor->update($request->validated());
+
+        return back()->with('success', 'Duración de las citas actualizada.');
     }
 
     /**

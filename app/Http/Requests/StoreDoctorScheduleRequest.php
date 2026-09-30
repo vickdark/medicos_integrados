@@ -25,10 +25,24 @@ class StoreDoctorScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'day_of_week' => ['required', 'integer', 'between:0,6'],
+            'days' => ['required_without:day_of_week', 'array', 'min:1'],
+            'days.*' => ['integer', 'between:0,6', 'distinct'],
+            'day_of_week' => ['required_without:days', 'integer', 'between:0,6'],
             'starts_at' => ['required', 'date_format:H:i'],
             'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
         ];
+    }
+
+    /**
+     * Days of the week the block applies to.
+     *
+     * @return list<int>
+     */
+    public function dayList(): array
+    {
+        return array_values(array_map('intval', $this->has('days')
+            ? (array) $this->input('days')
+            : [$this->input('day_of_week')]));
     }
 
     /**
@@ -44,14 +58,16 @@ class StoreDoctorScheduleRequest extends FormRequest
                     return;
                 }
 
-                $overlaps = $this->route('doctor')->schedules()
-                    ->where('day_of_week', $this->integer('day_of_week'))
-                    ->where('starts_at', '<', $this->input('ends_at'))
-                    ->where('ends_at', '>', $this->input('starts_at'))
-                    ->exists();
+                $overlapping = collect($this->dayList())
+                    ->filter(fn (int $day): bool => $this->route('doctor')->schedules()
+                        ->where('day_of_week', $day)
+                        ->where('starts_at', '<', $this->input('ends_at'))
+                        ->where('ends_at', '>', $this->input('starts_at'))
+                        ->exists())
+                    ->map(fn (int $day): string => DoctorSchedule::DAY_NAMES[$day]);
 
-                if ($overlaps) {
-                    $validator->errors()->add('starts_at', 'El horario se cruza con otro bloque del mismo día.');
+                if ($overlapping->isNotEmpty()) {
+                    $validator->errors()->add('starts_at', 'El horario se cruza con otro bloque el día: '.$overlapping->implode(', ').'.');
                 }
             },
         ];
@@ -65,6 +81,7 @@ class StoreDoctorScheduleRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'days.required_without' => 'Elige al menos un día.',
             'ends_at.after' => 'La hora de fin debe ser posterior a la hora de inicio.',
         ];
     }

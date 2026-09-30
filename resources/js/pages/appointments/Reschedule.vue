@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import AppointmentController from '@/actions/App/Http/Controllers/AppointmentController';
+import SlotPicker from '@/components/appointments/SlotPicker.vue';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
-import TimeSelect from '@/components/TimeSelect.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { toISODate } from '@/lib/calendar';
 import { formatDateTime } from '@/lib/format';
 import appointmentRoutes from '@/routes/appointments';
 import type { BreadcrumbItem } from '@/types';
@@ -29,19 +27,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const current = new Date(props.appointment.scheduled_at);
-const today = toISODate(new Date());
-
-const appointmentDate = ref(toISODate(current));
-const appointmentTime = ref(
-    `${String(current.getHours()).padStart(2, '0')}:${String(current.getMinutes()).padStart(2, '0')}`,
-);
-
-const scheduledAt = computed(() =>
-    appointmentDate.value && appointmentTime.value
-        ? `${appointmentDate.value}T${appointmentTime.value}`
-        : '',
-);
+const scheduledAt = ref('');
 </script>
 
 <template>
@@ -91,30 +77,13 @@ const scheduledAt = computed(() =>
                 v-slot="{ errors, processing }"
             >
                 <div class="grid gap-2">
-                    <Label for="appointment_date">Nueva fecha y hora *</Label>
-                    <div
-                        v-if="schedules.length"
-                        class="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground"
-                    >
-                        <span class="font-medium text-foreground"
-                            >Horario de atención:</span
-                        >
-                        {{ schedules.join(' · ') }}
-                    </div>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <Input
-                            id="appointment_date"
-                            v-model="appointmentDate"
-                            type="date"
-                            :min="today"
-                            required
-                        />
-                        <TimeSelect
-                            id="appointment_time"
-                            v-model="appointmentTime"
-                            required
-                        />
-                    </div>
+                    <Label>Elige la nueva fecha y hora *</Label>
+                    <SlotPicker
+                        v-model="scheduledAt"
+                        :doctor-id="appointment.doctor?.id ?? null"
+                        :ignore-appointment-id="appointment.id"
+                        :current-at="appointment.scheduled_at"
+                    />
                     <input
                         type="hidden"
                         name="scheduled_at"
@@ -124,7 +93,7 @@ const scheduledAt = computed(() =>
                 </div>
 
                 <div class="flex gap-2">
-                    <Button :disabled="processing">
+                    <Button :disabled="processing || !scheduledAt">
                         {{
                             isStaff ? 'Reprogramar cita' : 'Solicitar el cambio'
                         }}

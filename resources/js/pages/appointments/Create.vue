@@ -2,8 +2,8 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppointmentController from '@/actions/App/Http/Controllers/AppointmentController';
+import SlotPicker from '@/components/appointments/SlotPicker.vue';
 import InputError from '@/components/InputError.vue';
-import TimeSelect from '@/components/TimeSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,8 @@ const props = defineProps<{
         name: string;
         specialty: string;
         consultation_fee: string;
-        schedules: string[];
+        slot_minutes: number;
+        schedule_summary: { days: string; ranges: string[] }[];
     }[];
     patients: {
         id: number;
@@ -45,17 +46,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title, href: appointmentRoutes.create() },
 ];
 
-const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 10);
+const scheduledAt = ref('');
 
-const appointmentDate = ref('');
-const appointmentTime = ref('');
-
-const scheduledAt = computed(() =>
-    appointmentDate.value && appointmentTime.value
-        ? `${appointmentDate.value}T${appointmentTime.value}`
-        : '',
+const selectedDoctorNumericId = computed(() =>
+    selectedDoctorId.value ? Number(selectedDoctorId.value) : null,
 );
 </script>
 
@@ -128,36 +122,59 @@ const scheduledAt = computed(() =>
                     <InputError :message="errors.doctor_id" />
                     <div
                         v-if="selectedDoctor"
-                        class="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground"
+                        class="overflow-hidden rounded-lg border"
                     >
-                        <template v-if="selectedDoctor.schedules.length">
-                            <span class="font-medium text-foreground"
-                                >Horario de atención:</span
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/50 px-4 py-2.5"
+                        >
+                            <p class="text-sm font-semibold">
+                                Horario de atención
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                Citas de {{ selectedDoctor.slot_minutes }} min ·
+                                {{
+                                    formatMoney(selectedDoctor.consultation_fee)
+                                }}
+                            </p>
+                        </div>
+                        <ul
+                            v-if="selectedDoctor.schedule_summary.length"
+                            class="divide-y"
+                        >
+                            <li
+                                v-for="row in selectedDoctor.schedule_summary"
+                                :key="row.days"
+                                class="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-2.5 text-sm"
                             >
-                            {{ selectedDoctor.schedules.join(' · ') }}
-                        </template>
-                        <template v-else>
-                            Este médico no tiene un horario registrado.
-                        </template>
+                                <span class="w-24 shrink-0 font-medium">{{
+                                    row.days
+                                }}</span>
+                                <span class="flex flex-wrap gap-1.5">
+                                    <span
+                                        v-for="range in row.ranges"
+                                        :key="range"
+                                        class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium whitespace-nowrap text-emerald-800 tabular-nums dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300"
+                                        >{{ range }}</span
+                                    >
+                                </span>
+                            </li>
+                        </ul>
+                        <p
+                            v-else
+                            class="px-4 py-3 text-sm text-muted-foreground"
+                        >
+                            Este médico no tiene un horario registrado; se
+                            aceptan citas en cualquier horario.
+                        </p>
                     </div>
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="appointment_date">Fecha y hora *</Label>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <Input
-                            id="appointment_date"
-                            v-model="appointmentDate"
-                            type="date"
-                            :min="today"
-                            required
-                        />
-                        <TimeSelect
-                            id="appointment_time"
-                            v-model="appointmentTime"
-                            required
-                        />
-                    </div>
+                    <Label>Fecha y hora *</Label>
+                    <SlotPicker
+                        v-model="scheduledAt"
+                        :doctor-id="selectedDoctorNumericId"
+                    />
                     <input
                         type="hidden"
                         name="scheduled_at"
@@ -184,7 +201,7 @@ const scheduledAt = computed(() =>
                 </div>
 
                 <div class="flex gap-2">
-                    <Button :disabled="processing">
+                    <Button :disabled="processing || !scheduledAt">
                         {{ isStaff ? 'Agendar cita' : 'Enviar solicitud' }}
                     </Button>
                     <Button variant="ghost" as-child>

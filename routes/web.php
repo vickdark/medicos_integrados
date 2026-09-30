@@ -5,6 +5,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ConsultationAttachmentController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorScheduleController;
 use App\Http\Controllers\HomeController;
@@ -49,6 +50,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('doctors/{doctor}/schedules', [DoctorScheduleController::class, 'index'])->name('schedules.index');
     Route::post('doctors/{doctor}/schedules', [DoctorScheduleController::class, 'store'])->name('schedules.store');
+    Route::patch('doctors/{doctor}/slot', [DoctorScheduleController::class, 'updateSlot'])->name('schedules.slot');
+    Route::get('doctors/{doctor}/availability', DoctorAvailabilityController::class)->name('doctors.availability');
     Route::delete('schedules/{schedule}', [DoctorScheduleController::class, 'destroy'])->name('schedules.destroy');
 
     Route::resource('specialties', SpecialtyController::class)->except(['show']);

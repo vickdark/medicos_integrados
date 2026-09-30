@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -59,14 +58,7 @@ class RescheduleAppointmentRequest extends FormRequest
                     return;
                 }
 
-                $slotIsTaken = Appointment::query()
-                    ->where('doctor_id', $appointment->doctor_id)
-                    ->where('scheduled_at', $scheduledAt)
-                    ->whereKeyNot($appointment->getKey())
-                    ->whereIn('status', [AppointmentStatus::Requested, AppointmentStatus::Confirmed])
-                    ->exists();
-
-                if ($slotIsTaken) {
+                if ($appointment->doctor->hasConflictAt($scheduledAt, $appointment->getKey())) {
                     $validator->errors()->add('scheduled_at', 'El médico ya tiene una cita en ese horario.');
                 }
             },

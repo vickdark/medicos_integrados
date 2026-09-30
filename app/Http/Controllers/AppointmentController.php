@@ -133,7 +133,8 @@ class AppointmentController extends Controller
                     'name' => $doctor->user->name,
                     'specialty' => $doctor->specialty->name,
                     'consultation_fee' => $doctor->consultation_fee,
-                    'schedules' => $doctor->schedules->map(fn (DoctorSchedule $schedule): string => $schedule->summary()),
+                    'slot_minutes' => $doctor->slotLength(),
+                    'schedule_summary' => $doctor->weeklyScheduleSummary(),
                 ]),
             'patients' => $isStaff
                 ? Patient::query()

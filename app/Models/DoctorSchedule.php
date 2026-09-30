@@ -77,6 +77,14 @@ class DoctorSchedule extends Model
     }
 
     /**
+     * Get the time range in a 12-hour clock such as "8:00 AM – 12:00 PM".
+     */
+    public function rangeLabel(): string
+    {
+        return $this->formatTime($this->startTime()).' – '.$this->formatTime($this->endTime());
+    }
+
+    /**
      * Convert an "HH:MM" value to a 12-hour label such as "2:30 PM".
      */
     private function formatTime(string $time): string

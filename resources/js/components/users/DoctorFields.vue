@@ -10,8 +10,11 @@ export type DoctorProfile = {
     license_number: string;
     phone: string | null;
     consultation_fee: string;
+    slot_minutes: number;
     bio: string | null;
 };
+
+const slotOptions = [10, 15, 20, 30, 45, 60];
 
 defineProps<{
     errors: Record<string, string>;
@@ -80,6 +83,24 @@ defineProps<{
                     required
                 />
                 <InputError :message="errors.consultation_fee" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="slot_minutes">Duración de cada cita *</Label>
+                <NativeSelect
+                    id="slot_minutes"
+                    name="slot_minutes"
+                    :default-value="doctor?.slot_minutes ?? 30"
+                    required
+                >
+                    <option
+                        v-for="minutes in slotOptions"
+                        :key="minutes"
+                        :value="minutes"
+                    >
+                        {{ minutes }} minutos
+                    </option>
+                </NativeSelect>
+                <InputError :message="errors.slot_minutes" />
             </div>
         </div>
         <div class="grid gap-2">

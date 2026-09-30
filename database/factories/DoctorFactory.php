@@ -26,6 +26,7 @@ class DoctorFactory extends Factory
             'phone' => fake()->phoneNumber(),
             'bio' => fake()->paragraph(),
             'consultation_fee' => fake()->randomElement([30, 40, 50, 60, 80]),
+            'slot_minutes' => 30,
         ];
     }
 }

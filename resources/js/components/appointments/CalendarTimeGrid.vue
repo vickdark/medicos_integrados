@@ -6,6 +6,7 @@ import {
     isSameDay,
     layoutOverlaps,
     minutesOfDay,
+    toISODate,
     weekdayShort,
 } from '@/lib/calendar';
 import { formatClock } from '@/lib/format';
@@ -22,6 +23,7 @@ const props = defineProps<{
     appointments: Appointment[];
     role: string;
     showDayHeader?: boolean;
+    workingHours?: Record<string, { start: string; end: string }[]> | null;
 }>();
 
 const emit = defineEmits<{ select: [appointment: Appointment] }>();
@@ -54,6 +56,13 @@ const hourRange = computed(() => {
                 end,
                 Math.ceil((minutesOfDay(date) + DEFAULT_DURATION) / 60),
             );
+        }
+    }
+
+    for (const day of props.days) {
+        for (const block of props.workingHours?.[toISODate(day)] ?? []) {
+            start = Math.min(start, Math.floor(toMinutes(block.start) / 60));
+            end = Math.max(end, Math.ceil(toMinutes(block.end) / 60));
         }
     }
 
@@ -110,6 +119,54 @@ const nowOffset = computed<number | null>(() => {
 });
 
 const isToday = (day: Date) => isSameDay(day, now.value);
+
+const toMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+
+    return hours * 60 + minutes;
+};
+
+/**
+ * Vertical bands (in px) of each day where the doctor does not attend.
+ */
+const closedBandsByDay = computed(() =>
+    props.days.map((day) => {
+        const blocks = props.workingHours?.[toISODate(day)];
+
+        if (!blocks) {
+            return [];
+        }
+
+        const rangeStart = hourRange.value.start * 60;
+        const rangeEnd = hourRange.value.end * 60;
+        const bands: { top: number; height: number }[] = [];
+        let cursor = rangeStart;
+
+        for (const block of [...blocks].sort((a, b) =>
+            a.start.localeCompare(b.start),
+        )) {
+            const blockStart = Math.max(toMinutes(block.start), rangeStart);
+
+            if (blockStart > cursor) {
+                bands.push({
+                    top: offsetOf(cursor),
+                    height: ((blockStart - cursor) / 60) * HOUR_HEIGHT,
+                });
+            }
+
+            cursor = Math.max(cursor, Math.min(toMinutes(block.end), rangeEnd));
+        }
+
+        if (cursor < rangeEnd) {
+            bands.push({
+                top: offsetOf(cursor),
+                height: ((rangeEnd - cursor) / 60) * HOUR_HEIGHT,
+            });
+        }
+
+        return bands;
+    }),
+);
 
 function title(appointment: Appointment): string {
     return props.role === 'patient'
@@ -215,6 +272,17 @@ watch(
                             class="absolute inset-x-0 top-1/2 border-t border-dashed border-border/60"
                         />
                     </div>
+
+                    <div
+                        v-for="(band, bandIndex) in closedBandsByDay[dayIndex]"
+                        :key="`closed-${bandIndex}`"
+                        class="pointer-events-none absolute inset-x-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,var(--border)_5px,var(--border)_6px)] opacity-70"
+                        :style="{
+                            top: `${band.top}px`,
+                            height: `${band.height}px`,
+                        }"
+                        title="Fuera del horario de atención"
+                    />
 
                     <div
                         v-if="isToday(day) && nowOffset !== null"

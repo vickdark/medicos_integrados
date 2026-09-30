@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { useMediaQuery } from '@vueuse/core';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -29,6 +29,7 @@ import {
 } from '@/lib/calendar';
 import { formatClock, formatDateTime } from '@/lib/format';
 import appointmentRoutes from '@/routes/appointments';
+import doctorRoutes from '@/routes/doctors';
 import patientRoutes from '@/routes/patients';
 import type { Appointment } from '@/types/models';
 
@@ -64,6 +65,54 @@ const viewOptions = computed<{ value: CalendarView; label: string }[]>(() =>
               { value: 'agenda', label: 'Agenda' },
           ],
 );
+
+const page = usePage();
+const ownDoctorId = computed(() =>
+    props.role === 'doctor' ? page.props.auth.doctorId : null,
+);
+const workingHours = ref<Record<
+    string,
+    { start: string; end: string }[]
+> | null>(null);
+
+async function loadWorkingHours(from: string, to: string) {
+    if (!ownDoctorId.value) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            doctorRoutes.availability(ownDoctorId.value, {
+                query: { from, to },
+            }).url,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            },
+        );
+
+        if (response.ok) {
+            const payload = (await response.json()) as {
+                days: Record<
+                    string,
+                    { blocks: { start: string; end: string }[] }
+                >;
+            };
+
+            workingHours.value = Object.fromEntries(
+                Object.entries(payload.days).map(([date, day]) => [
+                    date,
+                    day.blocks,
+                ]),
+            );
+        }
+    } catch {
+        workingHours.value = null;
+    }
+}
 
 const appointments = ref<Appointment[]>([]);
 const loading = ref(false);
@@ -103,6 +152,11 @@ async function load(force = false) {
         }
 
         const payload = (await response.json()) as { data: Appointment[] };
+
+        void loadWorkingHours(
+            toISODate(start),
+            toISODate(addDays(start, MONTH_GRID_DAYS - 1)),
+        );
 
         if (currentRequest === requestId) {
             appointments.value = payload.data;
@@ -294,6 +348,7 @@ defineExpose({ reload: () => load(true) });
                 </p>
                 <CalendarTimeGrid
                     :days="[selected]"
+                    :working-hours="workingHours"
                     :appointments="dayAppointments"
                     :role="role"
                     @select="detail = $event"
@@ -303,6 +358,7 @@ defineExpose({ reload: () => load(true) });
             <CalendarTimeGrid
                 v-else-if="view === 'week'"
                 show-day-header
+                :working-hours="workingHours"
                 :days="weekDays(selected)"
                 :appointments="appointments"
                 :role="role"
