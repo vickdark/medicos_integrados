@@ -36,11 +36,22 @@ const props = defineProps<{
     doctorId: number | null;
     ignoreAppointmentId?: number;
     currentAt?: string;
+    initialDate?: string;
 }>();
 
 const selected = defineModel<string>({ default: '' });
 
-const focusDate = ref(startOfDay(new Date()));
+function startingDay(): Date {
+    const initial = props.initialDate
+        ? startOfDay(new Date(props.initialDate))
+        : null;
+
+    return initial && initial.getTime() >= startOfDay(new Date()).getTime()
+        ? initial
+        : startOfDay(new Date());
+}
+
+const focusDate = ref(startingDay());
 const availability = ref<Availability | null>(null);
 const loading = ref(false);
 const loadFailed = ref(false);

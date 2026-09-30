@@ -2,6 +2,7 @@
 
 namespace App\Actions\Payments;
 
+use App\Enums\AppointmentStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Appointment;
@@ -38,6 +39,38 @@ class OpenAppointmentCharge
             'status' => PaymentStatus::Pending,
             'concept' => 'Consulta médica · '.$appointment->doctor->user->name,
         ]);
+    }
+
+    /**
+     * Keep the pending charge in line with the doctor who now attends the
+     * appointment. Charges already paid are left untouched.
+     */
+    public function syncDoctor(Appointment $appointment): void
+    {
+        $appointment->load('doctor.user');
+
+        $fee = (float) $appointment->doctor->consultation_fee;
+
+        if ($fee <= 0) {
+            $this->void($appointment);
+
+            return;
+        }
+
+        $pending = $appointment->payments()->where('status', PaymentStatus::Pending)->get();
+
+        if ($pending->isEmpty()) {
+            if ($appointment->status !== AppointmentStatus::Requested) {
+                $this->open($appointment);
+            }
+
+            return;
+        }
+
+        $pending->each(fn (Payment $payment) => $payment->update([
+            'amount' => $fee,
+            'concept' => 'Consulta médica · '.$appointment->doctor->user->name,
+        ]));
     }
 
     /**

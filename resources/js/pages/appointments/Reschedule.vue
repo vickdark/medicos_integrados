@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import AppointmentController from '@/actions/App/Http/Controllers/AppointmentController';
 import SlotPicker from '@/components/appointments/SlotPicker.vue';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, formatMoney } from '@/lib/format';
 import appointmentRoutes from '@/routes/appointments';
 import type { BreadcrumbItem } from '@/types';
 import type { Appointment } from '@/types/models';
@@ -17,6 +20,13 @@ const props = defineProps<{
     appointment: Appointment;
     schedules: string[];
     isStaff: boolean;
+    canChangeDoctor: boolean;
+    doctors: {
+        id: number;
+        name: string;
+        specialty: string;
+        consultation_fee: string;
+    }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -28,20 +38,35 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const scheduledAt = ref('');
+const selectedDoctorId = ref<string | number>(
+    props.appointment.doctor?.id ?? '',
+);
+
+const doctorId = computed(() =>
+    selectedDoctorId.value ? Number(selectedDoctorId.value) : null,
+);
+const doctorChanged = computed(
+    () => doctorId.value !== (props.appointment.doctor?.id ?? null),
+);
+const newDoctor = computed(() =>
+    props.doctors.find((doctor) => doctor.id === doctorId.value),
+);
 </script>
 
 <template>
     <Head title="Reprogramar cita" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4">
+        <div class="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-4">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">
                     Reprogramar cita
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Elige la nueva fecha y hora. Se avisará por correo a las
-                    personas involucradas.
+                    Elige la nueva fecha y hora{{
+                        canChangeDoctor ? ' y, si hace falta, otro médico' : ''
+                    }}. Puedes moverla al mismo día si hay espacios libres. Se
+                    avisará por correo a las personas involucradas.
                 </p>
             </div>
 
@@ -67,8 +92,11 @@ const scheduledAt = ref('');
                 v-if="!isStaff"
                 class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
             >
-                Tu cambio de fecha quedará pendiente hasta que la clínica lo
-                confirme.
+                {{
+                    canChangeDoctor
+                        ? 'Tu cita aún no está confirmada, por eso puedes cambiar el médico, el motivo y el horario. La clínica revisará los cambios.'
+                        : 'Tu cambio de fecha quedará pendiente hasta que la clínica lo confirme. Ya no puedes cambiar el médico porque la cita estaba confirmada.'
+                }}
             </p>
 
             <Form
@@ -76,13 +104,66 @@ const scheduledAt = ref('');
                 class="space-y-6"
                 v-slot="{ errors, processing }"
             >
+                <div v-if="canChangeDoctor" class="grid gap-2">
+                    <Label for="doctor_id">Médico</Label>
+                    <NativeSelect
+                        id="doctor_id"
+                        v-model="selectedDoctorId"
+                        name="doctor_id"
+                    >
+                        <option
+                            v-for="doctor in doctors"
+                            :key="doctor.id"
+                            :value="doctor.id"
+                        >
+                            {{ doctor.name }} · {{ doctor.specialty }} ({{
+                                formatMoney(doctor.consultation_fee)
+                            }})
+                        </option>
+                    </NativeSelect>
+                    <p
+                        v-if="doctorChanged && newDoctor"
+                        class="rounded-md border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200"
+                    >
+                        La cita pasará a {{ newDoctor.name }}. Se avisará al
+                        paciente y a ambos médicos, y el cobro pendiente se
+                        ajustará a la tarifa del nuevo médico.
+                    </p>
+                    <InputError :message="errors.doctor_id" />
+                </div>
+
+                <div v-if="canChangeDoctor" class="grid gap-4">
+                    <div class="grid gap-2">
+                        <Label for="reason">Motivo de la consulta *</Label>
+                        <Input
+                            id="reason"
+                            name="reason"
+                            :default-value="appointment.reason"
+                            required
+                        />
+                        <InputError :message="errors.reason" />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="notes">Notas adicionales</Label>
+                        <Textarea
+                            id="notes"
+                            name="notes"
+                            :default-value="appointment.notes ?? ''"
+                        />
+                        <InputError :message="errors.notes" />
+                    </div>
+                </div>
+
                 <div class="grid gap-2">
                     <Label>Elige la nueva fecha y hora *</Label>
                     <SlotPicker
                         v-model="scheduledAt"
-                        :doctor-id="appointment.doctor?.id ?? null"
+                        :doctor-id="doctorId"
                         :ignore-appointment-id="appointment.id"
-                        :current-at="appointment.scheduled_at"
+                        :current-at="
+                            doctorChanged ? undefined : appointment.scheduled_at
+                        "
+                        :initial-date="appointment.scheduled_at"
                     />
                     <input
                         type="hidden"

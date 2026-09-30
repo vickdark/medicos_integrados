@@ -3,6 +3,7 @@
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
+use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\AppointmentCancelled;
 use App\Notifications\AppointmentConfirmed;
@@ -162,4 +163,140 @@ it('shows the reprogramming form and offers the action in the calendar feed', fu
             'to' => $appointment->scheduled_at->copy()->addDay()->toDateString(),
         ]))
         ->assertJsonPath('data.0.can.reschedule', true);
+});
+
+it('lets an appointment move to another time of the same day when there is room', function () {
+    $doctor = Doctor::factory()->create(['slot_minutes' => 30]);
+    $day = now()->addDays(3)->startOfDay();
+    $appointment = Appointment::factory()->confirmed()->create(['doctor_id' => $doctor->id, 'scheduled_at' => $day->copy()->setTime(10, 0)]);
+    Appointment::factory()->confirmed()->create(['doctor_id' => $doctor->id, 'scheduled_at' => $day->copy()->setTime(12, 0)]);
+    $receptionist = User::factory()->receptionist()->create();
+    $move = fn (int $hour, int $minute) => $this->actingAs($receptionist)
+        ->put(route('appointments.update', $appointment), ['scheduled_at' => $day->copy()->setTime($hour, $minute)->format('Y-m-d\TH:i')]);
+
+    $move(12, 0)->assertSessionHasErrors('scheduled_at');
+    $move(11, 45)->assertSessionHasErrors('scheduled_at');
+
+    $move(10, 15)->assertSessionHasNoErrors();
+    expect($appointment->fresh()->scheduled_at->format('H:i'))->toBe('10:15');
+
+    $move(15, 0)->assertSessionHasNoErrors();
+    expect($appointment->fresh()->scheduled_at->format('Y-m-d H:i'))->toBe($day->copy()->setTime(15, 0)->format('Y-m-d H:i'));
+});
+
+it('lets reception and admin reprogram the appointment with another doctor', function (string $role) {
+    $oldDoctor = Doctor::factory()->create(['consultation_fee' => 40]);
+    $newDoctor = Doctor::factory()->create(['consultation_fee' => 90]);
+    $patient = Patient::factory()->withAccount()->create();
+    $appointment = Appointment::factory()->for($patient)->confirmed()->create(['doctor_id' => $oldDoctor->id, 'scheduled_at' => now()->addDays(3)->setTime(10, 0)]);
+    $charge = Payment::factory()->pending()->create(['appointment_id' => $appointment->id, 'patient_id' => $patient->id, 'amount' => 40]);
+    $newDate = now()->addDays(4)->setTime(11, 0);
+    $user = User::factory()->{$role}()->create();
+
+    $this->actingAs($user)
+        ->put(route('appointments.update', $appointment), ['doctor_id' => $newDoctor->id, 'scheduled_at' => $newDate->format('Y-m-d\TH:i')])
+        ->assertRedirect(route('appointments.index'))
+        ->assertSessionHasNoErrors();
+
+    $appointment->refresh();
+
+    expect($appointment->doctor_id)->toBe($newDoctor->id)
+        ->and($appointment->status->value)->toBe('confirmed')
+        ->and($charge->fresh()->amount)->toBe('90.00')
+        ->and($charge->fresh()->concept)->toContain($newDoctor->user->name);
+
+    Notification::assertSentTo([$patient->user, $oldDoctor->user, $newDoctor->user], AppointmentRescheduled::class);
+})->with(['admin', 'receptionist']);
+
+it('checks the availability of the new doctor when changing doctor', function () {
+    $oldDoctor = Doctor::factory()->create();
+    $newDoctor = Doctor::factory()->create(['slot_minutes' => 30]);
+    $date = now()->addDays(3)->setTime(10, 0);
+    $appointment = Appointment::factory()->confirmed()->create(['doctor_id' => $oldDoctor->id, 'scheduled_at' => $date]);
+    Appointment::factory()->confirmed()->create(['doctor_id' => $newDoctor->id, 'scheduled_at' => $date]);
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->put(route('appointments.update', $appointment), ['doctor_id' => $newDoctor->id, 'scheduled_at' => $date->format('Y-m-d\TH:i')])
+        ->assertSessionHasErrors('scheduled_at');
+
+    expect($appointment->fresh()->doctor_id)->toBe($oldDoctor->id);
+});
+
+it('lets the same time stay when only the doctor changes', function () {
+    $appointment = Appointment::factory()->confirmed()->create(['scheduled_at' => now()->addDays(3)->setTime(10, 0)]);
+    $newDoctor = Doctor::factory()->create();
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->put(route('appointments.update', $appointment), ['doctor_id' => $newDoctor->id, 'scheduled_at' => now()->addDays(3)->setTime(10, 0)->format('Y-m-d\TH:i')])
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->fresh()->doctor_id)->toBe($newDoctor->id);
+});
+
+it('does not let patients or doctors change the doctor of an appointment', function () {
+    $patient = Patient::factory()->withAccount()->create();
+    $appointment = Appointment::factory()->for($patient)->confirmed()->create(['scheduled_at' => now()->addDays(3)->setTime(10, 0)]);
+    $other = Doctor::factory()->create();
+    $body = ['doctor_id' => $other->id, 'scheduled_at' => now()->addDays(5)->setTime(9, 0)->format('Y-m-d\TH:i')];
+
+    $this->actingAs($patient->user)
+        ->put(route('appointments.update', $appointment), $body)->assertSessionHasErrors('doctor_id');
+    $this->actingAs($appointment->doctor->user)
+        ->put(route('appointments.update', $appointment), $body)->assertSessionHasErrors('doctor_id');
+});
+
+it('offers the doctor list only to reception and admin in the reprogramming form', function () {
+    $appointment = Appointment::factory()->confirmed()->create();
+    Doctor::factory()->count(2)->create();
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->get(route('appointments.edit', $appointment))
+        ->assertInertia(fn ($page) => $page->where('canChangeDoctor', true)->has('doctors', 3));
+
+    $this->actingAs($appointment->doctor->user)
+        ->get(route('appointments.edit', $appointment))
+        ->assertInertia(fn ($page) => $page->where('canChangeDoctor', false)->has('doctors', 0));
+});
+
+it('lets the patient edit the doctor and details while the appointment is not confirmed', function () {
+    $admin = User::factory()->admin()->create();
+    $oldDoctor = Doctor::factory()->create();
+    $newDoctor = Doctor::factory()->create();
+    $patient = Patient::factory()->withAccount()->create();
+    $appointment = Appointment::factory()->for($patient)->create(['doctor_id' => $oldDoctor->id, 'scheduled_at' => now()->addDays(3)->setTime(10, 0), 'reason' => 'Control']);
+
+    $this->actingAs($patient->user)
+        ->get(route('appointments.edit', $appointment))
+        ->assertInertia(fn ($page) => $page->where('canChangeDoctor', true)->has('doctors', 2));
+
+    $this->actingAs($patient->user)
+        ->put(route('appointments.update', $appointment), [
+            'doctor_id' => $newDoctor->id,
+            'reason' => 'Dolor de cabeza',
+            'notes' => 'Desde hace tres días',
+            'scheduled_at' => now()->addDays(5)->setTime(9, 0)->format('Y-m-d\TH:i'),
+        ])
+        ->assertSessionHasNoErrors();
+
+    $appointment->refresh();
+
+    expect($appointment->doctor_id)->toBe($newDoctor->id)
+        ->and($appointment->reason)->toBe('Dolor de cabeza')
+        ->and($appointment->notes)->toBe('Desde hace tres días')
+        ->and($appointment->status->value)->toBe('requested');
+
+    Notification::assertSentTo([$admin, $newDoctor->user, $oldDoctor->user], AppointmentRescheduled::class);
+});
+
+it('locks the doctor and details for the patient once the appointment is confirmed', function () {
+    $patient = Patient::factory()->withAccount()->create();
+    $appointment = Appointment::factory()->for($patient)->confirmed()->create(['scheduled_at' => now()->addDays(3)->setTime(10, 0)]);
+
+    $this->actingAs($patient->user)
+        ->get(route('appointments.edit', $appointment))
+        ->assertInertia(fn ($page) => $page->where('canChangeDoctor', false)->has('doctors', 0));
+
+    $this->actingAs($patient->user)
+        ->put(route('appointments.update', $appointment), ['reason' => 'Otro motivo', 'scheduled_at' => now()->addDays(6)->setTime(9, 0)->format('Y-m-d\TH:i')])
+        ->assertSessionHasErrors('reason');
 });

@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\Appointment;
+use App\Models\Doctor;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class RescheduleAppointmentRequest extends FormRequest
@@ -26,6 +28,13 @@ class RescheduleAppointmentRequest extends FormRequest
     {
         return [
             'scheduled_at' => ['required', 'date', 'after:now'],
+            'reason' => ['sometimes', 'required', 'string', 'max:255', Rule::prohibitedIf(! $this->canChangeDoctor())],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:2000', Rule::prohibitedIf(! $this->canChangeDoctor())],
+            'doctor_id' => [
+                'nullable',
+                Rule::prohibitedIf(! $this->canChangeDoctor()),
+                Rule::exists(Doctor::class, 'id'),
+            ],
         ];
     }
 
@@ -45,24 +54,44 @@ class RescheduleAppointmentRequest extends FormRequest
                 /** @var Appointment $appointment */
                 $appointment = $this->route('appointment');
                 $scheduledAt = $this->date('scheduled_at');
+                $doctor = $this->targetDoctor();
 
-                if ($scheduledAt->equalTo($appointment->scheduled_at)) {
+                if ($doctor->is($appointment->doctor) && $scheduledAt->equalTo($appointment->scheduled_at)) {
                     $validator->errors()->add('scheduled_at', 'Elige una fecha u hora distinta a la actual.');
 
                     return;
                 }
 
-                if (! $appointment->doctor->isAvailableAt($scheduledAt)) {
+                if (! $doctor->isAvailableAt($scheduledAt)) {
                     $validator->errors()->add('scheduled_at', 'El médico no atiende en ese día u horario.');
 
                     return;
                 }
 
-                if ($appointment->doctor->hasConflictAt($scheduledAt, $appointment->getKey())) {
+                if ($doctor->hasConflictAt($scheduledAt, $appointment->getKey())) {
                     $validator->errors()->add('scheduled_at', 'El médico ya tiene una cita en ese horario.');
                 }
             },
         ];
+    }
+
+    /**
+     * The doctor and the details of the appointment can be edited by the clinic, or
+     * by the patient while it is still not confirmed.
+     */
+    public function canChangeDoctor(): bool
+    {
+        return $this->user()->can('editDetails', $this->route('appointment'));
+    }
+
+    /**
+     * The doctor who will attend the appointment: the chosen one, or the current one.
+     */
+    public function targetDoctor(): Doctor
+    {
+        return $this->filled('doctor_id')
+            ? Doctor::query()->findOrFail($this->integer('doctor_id'))
+            : $this->route('appointment')->doctor;
     }
 
     /**
@@ -73,6 +102,9 @@ class RescheduleAppointmentRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'doctor_id.prohibited' => 'Ya no puedes cambiar el médico: la cita está confirmada.',
+            'reason.prohibited' => 'Ya no puedes editar el motivo: la cita está confirmada.',
+            'notes.prohibited' => 'Ya no puedes editar las notas: la cita está confirmada.',
             'scheduled_at.after' => 'La cita debe reprogramarse a una fecha futura.',
         ];
     }

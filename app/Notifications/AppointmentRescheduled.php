@@ -20,6 +20,7 @@ class AppointmentRescheduled extends Notification implements ShouldQueue
         public Appointment $appointment,
         public CarbonInterface $previousDate,
         public bool $needsConfirmation = false,
+        public ?string $previousDoctor = null,
     ) {}
 
     /**
@@ -49,6 +50,10 @@ class AppointmentRescheduled extends Notification implements ShouldQueue
             ->line('**Nueva fecha:** '.$this->appointment->scheduled_at->translatedFormat($format))
             ->line("**Médico:** {$this->appointment->doctor->user->name}")
             ->line("**Motivo:** {$this->appointment->reason}");
+
+        if ($this->previousDoctor) {
+            $message->line("**Médico anterior:** {$this->previousDoctor}");
+        }
 
         if ($this->needsConfirmation) {
             $message->line('La nueva fecha queda pendiente de confirmación por la clínica.');

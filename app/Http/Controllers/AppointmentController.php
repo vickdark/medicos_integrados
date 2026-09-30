@@ -197,6 +197,20 @@ class AppointmentController extends Controller
                 ->map(fn (DoctorSchedule $schedule): string => $schedule->summary())
                 ->values(),
             'isStaff' => $request->user()->isStaff(),
+            'canChangeDoctor' => $request->user()->can('editDetails', $appointment),
+            'doctors' => $request->user()->can('editDetails', $appointment)
+                ? Doctor::query()
+                    ->with(['user', 'specialty'])
+                    ->get()
+                    ->sortBy('user.name')
+                    ->values()
+                    ->map(fn (Doctor $doctor): array => [
+                        'id' => $doctor->id,
+                        'name' => $doctor->user->name,
+                        'specialty' => $doctor->specialty->name,
+                        'consultation_fee' => $doctor->consultation_fee,
+                    ])
+                : [],
         ]);
     }
 
@@ -204,31 +218,55 @@ class AppointmentController extends Controller
      * Move the appointment to another date and time. A patient's change goes back
      * to the clinic for confirmation; the rest of the roles keep the status.
      */
-    public function update(RescheduleAppointmentRequest $request, Appointment $appointment): RedirectResponse
+    public function update(RescheduleAppointmentRequest $request, Appointment $appointment, OpenAppointmentCharge $charge): RedirectResponse
     {
         $user = $request->user();
         $previousDate = $appointment->scheduled_at->copy();
         $needsConfirmation = $user->role === UserRole::Patient;
 
+        $previousDoctor = $appointment->doctor;
+        $newDoctor = $request->targetDoctor();
+        $doctorChanged = ! $newDoctor->is($previousDoctor);
+
         $appointment->update([
+            'doctor_id' => $newDoctor->id,
+            'reason' => $request->validated('reason', $appointment->reason),
+            'notes' => $request->has('notes') ? $request->validated('notes') : $appointment->notes,
             'scheduled_at' => $request->date('scheduled_at'),
             'status' => $needsConfirmation ? AppointmentStatus::Requested : $appointment->status,
         ]);
+        $appointment->unsetRelation('doctor');
 
-        $notification = new AppointmentRescheduled($appointment, $previousDate, $needsConfirmation);
+        if ($doctorChanged) {
+            $charge->syncDoctor($appointment);
+        }
+
+        $notification = new AppointmentRescheduled(
+            $appointment,
+            $previousDate,
+            $needsConfirmation,
+            $doctorChanged ? $previousDoctor->user->name : null,
+        );
 
         if ($needsConfirmation) {
-            Notification::send(
-                User::query()->whereIn('role', [UserRole::Admin, UserRole::Receptionist])->get()->push($appointment->doctor->user),
-                $notification,
-            );
+            $recipients = User::query()->whereIn('role', [UserRole::Admin, UserRole::Receptionist])->get()->push($appointment->doctor->user);
+
+            if ($doctorChanged) {
+                $recipients->push($previousDoctor->user);
+            }
+
+            Notification::send($recipients, $notification);
         } else {
             $appointment->patient->user?->notify($notification);
+
+            if ($doctorChanged) {
+                Notification::send([$previousDoctor->user, $appointment->doctor->user], $notification);
+            }
         }
 
         return to_route('appointments.index')->with('success', $needsConfirmation
-            ? 'Solicitaste el cambio de fecha. La clínica lo confirmará pronto.'
-            : 'Cita reprogramada correctamente.');
+            ? 'Guardamos los cambios de tu cita. La clínica los confirmará pronto.'
+            : ($doctorChanged ? 'Cita reprogramada con el nuevo médico.' : 'Cita reprogramada correctamente.'));
     }
 
     /**
