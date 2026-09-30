@@ -11,6 +11,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SpecialtyController;
+use App\Http\Controllers\TourController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('schedules/{schedule}', [DoctorScheduleController::class, 'destroy'])->name('schedules.destroy');
 
     Route::resource('specialties', SpecialtyController::class)->except(['show']);
+
+    Route::post('tour', [TourController::class, 'store'])->name('tour.store');
 
     Route::patch('users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
     Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);

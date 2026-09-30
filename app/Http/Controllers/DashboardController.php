@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Enums\AppointmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
+use App\Http\Middleware\EnsureDeviceId;
 use App\Http\Resources\AppointmentResource;
 use App\Http\Resources\ConsultationResource;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Payment;
+use App\Models\TourView;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,6 +39,8 @@ class DashboardController extends Controller
             'stats' => $this->statsFor($user),
             'upcomingAppointments' => AppointmentResource::collection($upcomingAppointments),
             'profileReminder' => $this->profileReminderFor($user),
+            'showTour' => $user->role === UserRole::Patient
+                && ! $user->hasSeenTour(TourView::PATIENT_ONBOARDING, EnsureDeviceId::from($request)),
             'recentConsultations' => $user->role === UserRole::Patient && $user->patient
                 ? ConsultationResource::collection(
                     $user->patient->consultations()

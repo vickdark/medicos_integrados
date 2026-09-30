@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -55,6 +56,25 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
         ];
+    }
+
+    /**
+     * @return HasMany<TourView, $this>
+     */
+    public function tourViews(): HasMany
+    {
+        return $this->hasMany(TourView::class);
+    }
+
+    /**
+     * Whether the user already saw the guided tour on the given device.
+     */
+    public function hasSeenTour(string $tour, string $deviceId): bool
+    {
+        return $this->tourViews()
+            ->where('tour', $tour)
+            ->where('device_id', $deviceId)
+            ->exists();
     }
 
     /**

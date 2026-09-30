@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarPlus, ClipboardEdit, UserPlus } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import {
+    CalendarPlus,
+    ClipboardEdit,
+    CircleHelp,
+    UserPlus,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import GuidedTour from '@/components/GuidedTour.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +23,7 @@ import { dashboard } from '@/routes';
 import appointmentRoutes from '@/routes/appointments';
 import consultationRoutes from '@/routes/consultations';
 import patientRoutes from '@/routes/patients';
+import tourRoutes from '@/routes/tour';
 import type { BreadcrumbItem } from '@/types';
 import type { Appointment, Consultation, RoleValue } from '@/types/models';
 
@@ -24,6 +31,7 @@ const props = defineProps<{
     stats: { label: string; value: number | string }[];
     upcomingAppointments: Appointment[];
     recentConsultations: Consultation[];
+    showTour: boolean;
     profileReminder: {
         patient_id: number;
         incomplete: boolean;
@@ -33,7 +41,21 @@ const props = defineProps<{
 
 const page = usePage();
 const role = computed(() => page.props.auth.role?.value as RoleValue);
-const firstName = computed(() => page.props.auth.user.name.split(' ')[0]);
+const fullName = computed(() => page.props.auth.user.name);
+
+const tourOpen = ref(props.showTour);
+
+function onTourToggle(open: boolean) {
+    tourOpen.value = open;
+
+    if (!open && props.showTour) {
+        router.post(
+            tourRoutes.store().url,
+            {},
+            { preserveScroll: true, preserveState: true },
+        );
+    }
+}
 
 const reminderNeedsAction = computed(
     () =>
@@ -60,6 +82,12 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-1 flex-col gap-6 p-4">
+            <GuidedTour
+                v-if="role === 'patient'"
+                :open="tourOpen"
+                @update:open="onTourToggle"
+            />
+
             <div
                 v-if="profileReminder"
                 class="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm"
@@ -109,7 +137,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">
-                        Hola, {{ firstName }}
+                        Hola, {{ fullName }}
                     </h1>
                     <p class="text-sm text-muted-foreground">
                         {{ page.props.auth.role?.label }} · Resumen de tu
@@ -117,6 +145,13 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                     </p>
                 </div>
                 <div class="flex gap-2">
+                    <Button
+                        v-if="role === 'patient'"
+                        variant="outline"
+                        @click="tourOpen = true"
+                    >
+                        <CircleHelp /> Ver visita guiada
+                    </Button>
                     <Button
                         v-if="role === 'admin' || role === 'receptionist'"
                         variant="outline"
