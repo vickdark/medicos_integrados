@@ -41,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configureBranding(): void
     {
         Gate::define('manage-branding', fn (User $user): bool => $user->hasRole(UserRole::Admin));
+        Gate::define('manage-cie10', fn (User $user): bool => $user->hasRole(UserRole::Admin));
         Gate::define('view-reports', fn (User $user): bool => $user->hasRole(UserRole::Admin, UserRole::Receptionist)
             || ($user->hasRole(UserRole::Doctor) && $user->doctor !== null));
 

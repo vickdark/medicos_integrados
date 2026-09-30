@@ -47,6 +47,7 @@ export type Patient = {
     full_name: string;
     first_name: string;
     last_name: string;
+    document_type: Option | null;
     document_number: string | null;
     email: string | null;
     phone: string | null;
@@ -55,6 +56,8 @@ export type Patient = {
     gender: Option | null;
     address: string | null;
     blood_type: string | null;
+    insurer: { id: number; name: string } | null;
+    affiliation_type: Option | null;
     emergency_contact_name: string | null;
     emergency_contact_phone: string | null;
     has_account: boolean;
@@ -94,12 +97,21 @@ export type Prescription = {
     instructions: string | null;
 };
 
+export type CodedDiagnosis = {
+    id: number;
+    code: string;
+    description: string;
+};
+
 export type Consultation = {
     id: number;
     consulted_at: string;
     reason: string;
     symptoms: string | null;
     diagnosis: string;
+    primary_diagnosis?: CodedDiagnosis | null;
+    diagnosis_type?: Option | null;
+    related_diagnoses?: CodedDiagnosis[];
     treatment: string | null;
     notes?: string | null;
     weight_kg: string | null;

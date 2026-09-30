@@ -28,4 +28,14 @@ class StorePatientRequest extends FormRequest
     {
         return $this->patientRules();
     }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->patientMessages();
+    }
 }

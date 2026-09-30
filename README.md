@@ -16,6 +16,7 @@ Sistema integral para la gestión de pacientes de un centro médico: historias c
 - [Seguridad y privacidad](#seguridad-y-privacidad)
 - [Pruebas y calidad de código](#pruebas-y-calidad-de-código)
 - [Convenciones](#convenciones)
+- [Catálogo CIE-10 (ETL)](#catálogo-cie-10-etl)
 - [Próximos pasos](#próximos-pasos)
 
 ## Funcionalidades
@@ -33,6 +34,8 @@ El sistema tiene tres partes:
    - **El paciente edita su cita mientras no esté confirmada:** con la cita en estado *Solicitada* puede cambiar el médico, el motivo, las notas y el horario (`GET/PUT /appointments/{id}`, política `editDetails`); la cita sigue solicitada y se avisa a admin, recepción y a ambos médicos. Una vez confirmada solo puede pedir otro horario (vuelve a *Solicitada* para que la clínica la reconfirme) y el médico y el motivo quedan bloqueados. Los médicos no pueden cambiar la cita a otro médico.
    - **Pago rápido:** el botón de pago en la fila de una cita abre el formulario con paciente, cita, concepto y monto (tarifa del médico) precargados; en Pagos, los pendientes se marcan como pagados desde un diálogo (`PATCH /payments/{id}/paid`).
    - **Facturas en PDF:** cada pago pagado tiene su factura (`GET /payments/{id}/invoice`, número `F-000123`), descargable por admin, recepción y por el propio paciente desde Pagos, el detalle del pago y su historial. Los pagos pendientes no se facturan.
+   - **Diagnósticos codificados con CIE-10:** cada consulta nueva exige un diagnóstico principal CIE-10 con su tipo (impresión diagnóstica, confirmado nuevo o confirmado repetido) y admite hasta tres diagnósticos relacionados; la descripción en texto libre se mantiene. El selector busca en el servidor por código (`J00`, `E11.9`) o por palabras. Los códigos aparecen en el detalle de la consulta, la historia clínica en PDF y la receta. Las consultas anteriores conservan solo su diagnóstico en texto. El catálogo trae una muestra de códigos frecuentes para desarrollo; en producción se carga la tabla oficial con el ETL descrito en [Catálogo CIE-10](#catálogo-cie-10-etl).
+   - **Datos de afiliación del paciente:** tipo de documento (códigos de RIPS: CC, TI, RC, CE, PA, PE, PT, etc.), EPS o aseguradora y tipo de afiliación (contributivo, subsidiado, particular, etc.). El tipo de documento es obligatorio si se escribe el número, y el paciente lo completa con sus datos básicos; la EPS y la afiliación solo las registra el personal.
    - **Historia clínica en PDF:** desde la ficha del paciente (`GET /patients/{id}/clinical-history?from&to`). Con rango de fechas incluye solo las consultas de ese período; sin fechas, todo el historial. Incluye datos del paciente, antecedentes, consultas con signos vitales y recetas. Las notas privadas solo se incluyen para el personal, solo la ven quienes pueden leer la historia clínica y cada descarga queda en la auditoría.
    - **Receta en PDF:** desde el detalle de una consulta con medicamentos (`GET /consultations/{id}/prescription`), se abre en una pestaña nueva. El médico que la escribió obtiene la copia oficial (datos del paciente y del médico, diagnóstico, medicamentos con dosis, frecuencia y duración, indicaciones y firma) y puede enviarla por correo como adjunto al correo registrado del paciente o a otro que este le indique (`POST /consultations/{id}/prescription/email`, sin cola para no guardar el PDF en `jobs`). El administrador puede verla, pero como copia marcada "Este documento no es válido" con marca de agua, solo de consulta. Recepción y pacientes no tienen acceso. Cada emisión, consulta o envío queda en la auditoría.
    - **Color de la aplicación (solo admin):** en Configuración → Color de la aplicación el administrador elige el color de acento global (colores sugeridos o uno personalizado, con vista previa en vivo). Se guarda en la tabla `app_settings` (`brand_color`), se aplica como variable CSS `--brand` y de ella salen los tonos `brand-50…950` de Tailwind que usan el logo, las gráficas, las etiquetas, la página de inicio y la visita guiada; también colorea los PDF (facturas, receta, historia clínica, tablas) y el encabezado de los Excel. Se rechazan colores demasiado claros (contraste mínimo 3:1 con blanco) y hay botón para restablecer el original (verde azulado). Los cambios quedan en la auditoría.
@@ -73,6 +76,7 @@ Los roles están en el enum `App\Enums\UserRole`. Cada permiso se aplica mediant
 | Médicos y especialidades | ✅ | ❌ | ❌ | ❌ |
 | Horarios de atención | Todos | ❌ | El suyo | ❌ |
 | Catálogo de medicamentos | ✅ | ❌ | ✅ | ❌ |
+| Catálogo de aseguradoras (EPS) | ✅ | ❌ | ❌ | ❌ |
 | Turnos | Todos | Todos | Su fila | El suyo (en Inicio) |
 | Reportes | Citas, ingresos y consultas | Citas, ingresos y consultas | Sus citas y consultas | ❌ |
 | Auditoría | ✅ | ❌ | ❌ | ❌ |
@@ -286,6 +290,9 @@ El menú lateral (`AppSidebar.vue`) se arma según `auth.role`.
 | `/users` | Usuarios: cuentas, roles y perfil (solo admin) |
 | `/doctors` y `/doctors/{doctor}/schedules` | Médicos y horarios |
 | `/specialties` | Especialidades |
+| `/cie10` | Catálogo CIE-10: carga de la tabla oficial (ETL), resultado, historial y búsqueda de códigos (solo admin) |
+| `/insurers` | Catálogo de EPS y aseguradoras con su código (solo admin); no se puede eliminar una asignada a pacientes |
+| `GET /diagnoses/search?q=` | Búsqueda en el catálogo CIE-10 por código o descripción (personal de la clínica); la usa el selector de diagnósticos |
 | `/turns` | Turnos del día: recepción genera turnos (pacientes sin cita o citas de hoy al llegar), llama, marca atendido, devuelve a la fila o cancela; el médico gestiona solo su fila y abre la consulta del paciente llamado |
 | `/pantalla-de-turnos` | Pantalla pública para la sala de espera: turnos en atención y próximos (solo código y médico, nunca nombres de pacientes); se actualiza cada 5 s |
 | `/reports` | Reportes de citas, ingresos y consultas, agrupados por médico o especialidad y filtrables por período, médico y especialidad; exportables a Excel y PDF (admin y recepción; el médico ve solo sus citas y consultas, sin ingresos) |
@@ -316,6 +323,31 @@ Estados:
 
 - **Cita:** `requested` (solicitada) → `confirmed` (confirmada) → `completed` (completada), o `cancelled` (cancelada). Pasa a completada automáticamente al registrar la consulta asociada.
 - **Pago:** `pending` (pendiente) o `paid` (pagado). Existe también `voided` (anulado): admin y recepción pueden anular un pago pendiente o pagado desde el listado indicando el motivo (queda en las notas); también se aplica al cancelar una cita con cobro pendiente.
+
+## Catálogo CIE-10 (ETL)
+
+**Fuente oficial:** tabla de referencia `CIE10` de SISPRO (Ministerio de Salud y Protección Social), la misma que usan los validadores de RIPS:
+<https://web.sispro.gov.co/WebPublico/Consultas/ConsultarDetalleReferenciaBasica.aspx?Code=CIE10>
+
+Para descargarla: abrir el enlace, escribir un correo en *Email para envío de datos exportados* y exportar. El archivo (Excel o CSV) llega a ese correo. Trae, entre otras, las columnas `Codigo`, `Nombre`, `Descripcion`, `Habilitado` y `Extra_VI:Capitulo`.
+
+**Carga desde la interfaz (solo admin):** menú *Catálogo CIE-10* (`/cie10`). Muestra cuántos códigos hay habilitados y deshabilitados y la fecha de la última carga; permite subir el archivo (Excel o CSV, hasta 50 MB) con las opciones *Solo simular* (marcada por defecto) y *Deshabilitar los códigos que ya no vienen en la tabla*; presenta el resultado con las filas rechazadas y su descarga en CSV; guarda el historial de cargas (también las de consola) y permite buscar en el catálogo cargado. El archivo subido se elimina después de procesarlo y cada carga real queda en la auditoría.
+
+**Carga desde la consola:**
+
+```bash
+php artisan diagnoses:import ruta/CIE10.xlsx --dry-run              # simula y muestra el resultado, sin guardar
+php artisan diagnoses:import ruta/CIE10.xlsx                        # carga o actualiza
+php artisan diagnoses:import ruta/CIE10.xlsx --deactivate-missing   # además deshabilita los códigos retirados
+```
+
+Lo que hace cada etapa (`App\Actions\Diagnoses\ImportCie10Catalog`):
+
+- **Extracción:** lee Excel (`.xlsx`, `.xls`, `.ods`) o CSV/TXT (detecta el separador `;` `,` `|` o tabulador, y convierte de Windows-1252 a UTF-8). Ubica las columnas por su encabezado; si el archivo no tiene encabezado, toma el código de la primera columna y la descripción de la segunda.
+- **Transformación:** normaliza el código al formato de cuatro caracteres (`I10` → `I10X`, `E11.9` → `E119`), toma `Nombre` como descripción, `Descripcion` como categoría y `Capitulo` como capítulo, e interpreta `Habilitado` (SI/NO). Rechaza las filas sin código, con código inválido, sin descripción o con el código repetido, e indica el motivo.
+- **Carga:** inserta los códigos nuevos y actualiza los que cambiaron, por lotes; los que no cambian no se tocan, así que se puede ejecutar varias veces con el mismo archivo. Los códigos nunca se borran, porque puede haber consultas que los usan: con `--deactivate-missing` los que ya no vienen en la tabla quedan deshabilitados. Úsalo solo con la tabla completa.
+
+Al terminar muestra un resumen (leídas, válidas, rechazadas, nuevas, actualizadas, sin cambios y deshabilitadas). Si hubo rechazos, guarda el detalle en `storage/app/private/imports/cie10-rechazos-<fecha>.csv`. Los códigos deshabilitados no aparecen en el buscador ni se pueden asignar a consultas nuevas, pero se siguen mostrando en las consultas que ya los tienen.
 
 ## Tablas: búsqueda, filtros y exportación
 
@@ -386,7 +418,7 @@ npm run types:check                   # vue-tsc
 - **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
 - **API con Laravel Sanctum** para una futura app móvil.
 - **Pasarela de pagos en línea** (hoy los pagos se registran a mano).
-- **Diagnósticos con CIE-10 y generación de RIPS:** hoy el diagnóstico es texto libre. Si la clínica atiende pacientes de EPS o aseguradoras debe reportar los RIPS, y para eso necesita los diagnósticos codificados con CIE-10. Agregar también al paciente su EPS o aseguradora y su tipo de afiliación.
+- **Generación del archivo RIPS (Resolución 2275 de 2023):** los diagnósticos ya se codifican con CIE-10 y el paciente ya tiene tipo de documento, EPS y tipo de afiliación. Para generar el JSON de RIPS falta: (1) la **factura electrónica**, porque cada RIPS se reporta asociado a una factura y se valida en el MUV del Ministerio de Salud, que devuelve el CUV; (2) el **código de habilitación del prestador** (REPS) y el NIT; (3) en la consulta, el **código CUPS** del servicio, la finalidad, la causa externa, la modalidad y el grupo de servicio, el número de autorización y el valor pagado por el usuario (copago o cuota moderadora); (4) en el paciente, el **país, municipio (DIVIPOLA) y zona de residencia**; y (5) cargar las tablas de referencia oficiales de SISPRO para esos campos. Validar el formato con quien radica las cuentas ante las EPS.
 - **Correcciones a la historia clínica con trazabilidad:** una consulta registrada no debe editarse ni borrarse; se corrige con notas aclaratorias (fecha, autor y motivo) que dejan visible el registro original. La auditoría actual registra accesos y cambios, pero no reemplaza este mecanismo.
 - **Documentos clínicos en PDF:** consentimiento informado, incapacidades, remisiones y órdenes de exámenes, generados desde la consulta como ya se hace con la receta.
 - **Derechos del titular de los datos (Ley 1581):** que el paciente pueda descargar sus datos y pedir su corrección o supresión desde el portal, con registro de cada solicitud y de su plazo de respuesta. Además, pedir de nuevo la aceptación de la política cuando cambie su versión (hoy la versión aceptada se guarda, pero no se vuelve a solicitar).

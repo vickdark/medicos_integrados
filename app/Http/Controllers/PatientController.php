@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AffiliationType;
 use App\Enums\AuditAction;
+use App\Enums\DocumentType;
 use App\Enums\Gender;
 use App\Enums\UserRole;
 use App\Exports\PatientsExport;
@@ -19,6 +21,7 @@ use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Consultation;
 use App\Models\Doctor;
+use App\Models\Insurer;
 use App\Models\Patient;
 use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
@@ -130,7 +133,7 @@ class PatientController extends Controller
             'consultations' => $canViewMedicalHistory
                 ? ConsultationResource::collection(
                     $patient->consultations()
-                        ->with(['doctor.user', 'doctor.specialty', 'prescriptions'])
+                        ->with(['doctor.user', 'doctor.specialty', 'prescriptions', 'primaryDiagnosis', 'relatedDiagnoses'])
                         ->latest('consulted_at')
                         ->get()
                 )
@@ -194,6 +197,9 @@ class PatientController extends Controller
         return [
             'genders' => Gender::options(),
             'bloodTypes' => ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'],
+            'documentTypes' => DocumentType::options(),
+            'affiliationTypes' => AffiliationType::options(),
+            'insurers' => Insurer::query()->orderBy('name')->get(['id', 'name'])->map(fn (Insurer $insurer): array => ['value' => $insurer->id, 'label' => $insurer->name]),
         ];
     }
 }

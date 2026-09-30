@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import {
+    BookMarked,
     CalendarDays,
     ChartColumn,
     ClipboardList,
     Clock,
+    Landmark,
     LayoutGrid,
     Pill,
     ShieldCheck,
@@ -31,7 +33,9 @@ import {
 import { dashboard } from '@/routes';
 import appointmentRoutes from '@/routes/appointments';
 import auditLogRoutes from '@/routes/audit-logs';
+import cie10Routes from '@/routes/cie10';
 import doctorRoutes from '@/routes/doctors';
+import insurerRoutes from '@/routes/insurers';
 import medicationRoutes from '@/routes/medications';
 import patientRoutes from '@/routes/patients';
 import paymentRoutes from '@/routes/payments';
@@ -156,6 +160,16 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: 'Medicamentos',
                 href: medicationRoutes.index(),
                 icon: Pill,
+            },
+            {
+                title: 'Catálogo CIE-10',
+                href: cie10Routes.index(),
+                icon: BookMarked,
+            },
+            {
+                title: 'Aseguradoras (EPS)',
+                href: insurerRoutes.index(),
+                icon: Landmark,
             },
             {
                 title: 'Auditoría',

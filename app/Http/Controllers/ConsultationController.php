@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Payments\OpenAppointmentCharge;
 use App\Enums\AppointmentStatus;
 use App\Enums\AuditAction;
+use App\Enums\DiagnosisType;
 use App\Http\Requests\StoreConsultationRequest;
 use App\Http\Resources\ConsultationResource;
 use App\Models\AuditLog;
@@ -47,6 +48,7 @@ class ConsultationController extends Controller
                 'reason' => $appointment->reason,
             ]),
             'selectedAppointmentId' => $request->integer('appointment_id') ?: null,
+            'diagnosisTypes' => DiagnosisType::options(),
             'medications' => Medication::query()
                 ->orderBy('name')
                 ->orderBy('concentration')
@@ -68,10 +70,18 @@ class ConsultationController extends Controller
     {
         $consultation = DB::transaction(function () use ($request, $patient, $charge): Consultation {
             $consultation = $patient->consultations()->create([
-                ...$request->safe()->except('prescriptions'),
+                ...$request->safe()->except(['prescriptions', 'related_diagnosis_ids']),
                 'doctor_id' => $request->user()->doctor->id,
                 'consulted_at' => now(),
             ]);
+
+            $consultation->relatedDiagnoses()->sync(
+                collect($request->validated('related_diagnosis_ids', []))
+                    ->filter()
+                    ->values()
+                    ->mapWithKeys(fn (int|string $diagnosisId, int $index): array => [$diagnosisId => ['position' => $index + 1]])
+                    ->all(),
+            );
 
             $consultation->prescriptions()->createMany($request->validated('prescriptions', []));
 
@@ -95,7 +105,7 @@ class ConsultationController extends Controller
     {
         Gate::authorize('view', $consultation);
 
-        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments']);
+        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments', 'primaryDiagnosis', 'relatedDiagnoses']);
 
         if ($request->user()->isStaff()) {
             AuditLog::record(AuditAction::Viewed, $consultation, 'Consultó el detalle de una consulta', $consultation->patient);

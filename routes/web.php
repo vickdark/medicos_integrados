@@ -2,15 +2,18 @@
 
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\Cie10CatalogController;
 use App\Http\Controllers\ConsultationAttachmentController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\ConsultationPrescriptionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DiagnosisSearchController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorPhotoController;
 use App\Http\Controllers\DoctorScheduleController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InsurerController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientHistoryController;
@@ -80,6 +83,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('specialties', SpecialtyController::class)->except(['show']);
 
     Route::resource('medications', MedicationController::class)->except(['show']);
+
+    Route::get('diagnoses/search', DiagnosisSearchController::class)->name('diagnoses.search');
+    Route::get('cie10', [Cie10CatalogController::class, 'index'])->name('cie10.index');
+    Route::post('cie10/imports', [Cie10CatalogController::class, 'store'])->name('cie10.imports.store');
+    Route::get('cie10/imports/{import}/rejections', [Cie10CatalogController::class, 'rejections'])->name('cie10.imports.rejections');
+    Route::resource('insurers', InsurerController::class)->except(['show']);
 
     Route::get('turns', [TurnController::class, 'index'])->name('turns.index');
     Route::post('turns', [TurnController::class, 'store'])->name('turns.store');

@@ -71,6 +71,7 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            ...$this->patientMessages(),
             'photo.image' => 'La foto debe ser una imagen.',
             'photo.mimes' => 'La foto debe ser JPG, PNG o WebP.',
             'photo.max' => 'La foto no puede superar los 2 MB.',

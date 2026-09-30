@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\AffiliationType;
+use App\Enums\DocumentType;
 use App\Enums\Gender;
 use Database\Factories\PatientFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +27,7 @@ class Patient extends Model
         'user_id',
         'first_name',
         'last_name',
+        'document_type',
         'document_number',
         'email',
         'phone',
@@ -32,6 +35,8 @@ class Patient extends Model
         'gender',
         'address',
         'blood_type',
+        'insurer_id',
+        'affiliation_type',
         'allergies',
         'chronic_conditions',
         'medical_background',
@@ -58,6 +63,8 @@ class Patient extends Model
         return [
             'birth_date' => 'date:Y-m-d',
             'gender' => Gender::class,
+            'document_type' => DocumentType::class,
+            'affiliation_type' => AffiliationType::class,
             'allergies' => 'encrypted',
             'chronic_conditions' => 'encrypted',
             'medical_background' => 'encrypted',
@@ -86,9 +93,18 @@ class Patient extends Model
     public function hasCompleteBasicProfile(): bool
     {
         return filled($this->document_number)
+            && $this->document_type !== null
             && filled($this->phone)
             && $this->birth_date !== null
             && $this->gender !== null;
+    }
+
+    /**
+     * @return BelongsTo<Insurer, $this>
+     */
+    public function insurer(): BelongsTo
+    {
+        return $this->belongsTo(Insurer::class);
     }
 
     /**

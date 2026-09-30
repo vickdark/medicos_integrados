@@ -4,6 +4,7 @@ use App\Enums\AuditAction;
 use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Consultation;
+use App\Models\Diagnosis;
 use App\Models\Patient;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -43,6 +44,8 @@ it('records created consultations and which patient fields changed', function ()
         ->post(route('consultations.store', $appointment->patient), [
             'reason' => 'Control',
             'diagnosis' => 'Sano',
+            'primary_diagnosis_id' => Diagnosis::factory()->create()->id,
+            'diagnosis_type' => '1',
         ]);
 
     $this->actingAs(User::factory()->admin()->create())
@@ -50,6 +53,7 @@ it('records created consultations and which patient fields changed', function ()
             'first_name' => $appointment->patient->first_name,
             'last_name' => $appointment->patient->last_name,
             'document_number' => $appointment->patient->document_number,
+            'document_type' => 'CC',
             'phone' => '000',
         ]);
 

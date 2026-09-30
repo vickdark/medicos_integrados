@@ -3,6 +3,7 @@
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\Consultation;
+use App\Models\Diagnosis;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\Payment;
@@ -17,6 +18,8 @@ it('lets the doctor record a consultation with prescriptions and completes the a
             'appointment_id' => $appointment->id,
             'reason' => 'Dolor de garganta',
             'diagnosis' => 'Faringitis aguda',
+            'primary_diagnosis_id' => Diagnosis::factory()->create()->id,
+            'diagnosis_type' => '1',
             'treatment' => 'Reposo e hidratación',
             'blood_pressure' => '120/80',
             'temperature_c' => '38.2',
@@ -56,6 +59,8 @@ it('does not allow linking an appointment of another patient', function () {
             'appointment_id' => $foreignAppointment->id,
             'reason' => 'Control',
             'diagnosis' => 'Sano',
+            'primary_diagnosis_id' => Diagnosis::factory()->create()->id,
+            'diagnosis_type' => '1',
         ])
         ->assertSessionHasErrors('appointment_id');
 });
@@ -107,6 +112,8 @@ it('opens the pending charge of the appointment when the consultation completes 
             'appointment_id' => $appointment->id,
             'reason' => 'Control',
             'diagnosis' => 'Sano',
+            'primary_diagnosis_id' => Diagnosis::factory()->create()->id,
+            'diagnosis_type' => '1',
         ]);
 
     expect(Payment::query()->where('appointment_id', $appointment->id)->sole()->status->value)->toBe('pending');

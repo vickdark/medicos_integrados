@@ -111,6 +111,7 @@ it('creates a patient account and record in one step', function () {
             'first_name' => 'Lucía',
             'last_name' => 'Fernández Soto',
             'document_number' => '44556677',
+            'document_type' => 'CC',
             'birth_date' => '1992-03-14',
             'gender' => 'female',
             'blood_type' => 'O+',
@@ -138,6 +139,7 @@ it('links a new patient account to the record the clinic already registered', fu
             'first_name' => 'Pedro',
             'last_name' => 'Ramos',
             'document_number' => '11223344',
+            'document_type' => 'CC',
         ])
         ->assertSessionHasNoErrors();
 
@@ -306,6 +308,7 @@ it('updates the patient record and keeps the account in sync', function () {
             'first_name' => 'Carla',
             'last_name' => 'Mena',
             'document_number' => $patient->document_number,
+            'document_type' => 'CC',
             'phone' => '987 654 321',
         ])
         ->assertSessionHasNoErrors();

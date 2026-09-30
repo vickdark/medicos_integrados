@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDateTime } from '@/lib/format';
 import consultationRoutes from '@/routes/consultations';
+import diagnosisRoutes from '@/routes/diagnoses';
 import patientRoutes from '@/routes/patients';
 import type { BreadcrumbItem } from '@/types';
 
@@ -33,6 +34,7 @@ const props = defineProps<{
     };
     appointments: { id: number; scheduled_at: string; reason: string }[];
     selectedAppointmentId: number | null;
+    diagnosisTypes: { value: string; label: string }[];
     medications: {
         id: number;
         name: string;
@@ -53,6 +55,21 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: consultationRoutes.create(props.patient.id),
     },
 ];
+
+const diagnosisSearchUrl = diagnosisRoutes.search().url;
+
+let nextRelatedKey = 0;
+const relatedRows = ref<number[]>([]);
+
+function addRelated() {
+    if (relatedRows.value.length < 3) {
+        relatedRows.value.push(nextRelatedKey++);
+    }
+}
+
+function removeRelated(key: number) {
+    relatedRows.value = relatedRows.value.filter((row) => row !== key);
+}
 
 let nextPrescriptionKey = 0;
 const prescriptionRows = ref<{ key: number; medication: string }[]>([]);
@@ -219,9 +236,109 @@ const vitals = [
                         <Textarea id="symptoms" name="symptoms" />
                         <InputError :message="errors.symptoms" />
                     </div>
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="grid content-start gap-2 sm:col-span-2">
+                            <Label for="primary_diagnosis_id"
+                                >Diagnóstico principal (CIE-10) *</Label
+                            >
+                            <SearchableSelect
+                                id="primary_diagnosis_id"
+                                name="primary_diagnosis_id"
+                                :options="[]"
+                                :search-url="diagnosisSearchUrl"
+                                placeholder="Busca por código o descripción"
+                                search-placeholder="Ej.: J00, hipertensión, lumbago"
+                                required
+                            />
+                            <InputError
+                                :message="errors.primary_diagnosis_id"
+                            />
+                        </div>
+                        <div class="grid content-start gap-2">
+                            <Label for="diagnosis_type"
+                                >Tipo de diagnóstico *</Label
+                            >
+                            <NativeSelect
+                                id="diagnosis_type"
+                                name="diagnosis_type"
+                                default-value=""
+                                required
+                            >
+                                <option value="" disabled>Selecciona</option>
+                                <option
+                                    v-for="diagnosisType in diagnosisTypes"
+                                    :key="diagnosisType.value"
+                                    :value="diagnosisType.value"
+                                >
+                                    {{ diagnosisType.label }}
+                                </option>
+                            </NativeSelect>
+                            <InputError :message="errors.diagnosis_type" />
+                        </div>
+                    </div>
                     <div class="grid gap-2">
-                        <Label for="diagnosis">Diagnóstico *</Label>
-                        <Textarea id="diagnosis" name="diagnosis" required />
+                        <div class="flex items-center justify-between gap-2">
+                            <Label>Diagnósticos relacionados (CIE-10)</Label>
+                            <Button
+                                v-if="relatedRows.length < 3"
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                @click="addRelated"
+                            >
+                                <Plus /> Agregar
+                            </Button>
+                        </div>
+                        <p
+                            v-if="relatedRows.length === 0"
+                            class="text-xs text-muted-foreground"
+                        >
+                            Opcional, hasta tres.
+                        </p>
+                        <div
+                            v-for="(rowKey, index) in relatedRows"
+                            :key="rowKey"
+                            class="flex items-start gap-2"
+                        >
+                            <div class="grid flex-1 gap-1">
+                                <SearchableSelect
+                                    :id="`related-diagnosis-${rowKey}`"
+                                    :name="`related_diagnosis_ids[${index}]`"
+                                    :options="[]"
+                                    :search-url="diagnosisSearchUrl"
+                                    placeholder="Busca por código o descripción"
+                                    search-placeholder="Ej.: E11, diabetes"
+                                    required
+                                />
+                                <InputError
+                                    :message="
+                                        errors[`related_diagnosis_ids.${index}`]
+                                    "
+                                />
+                            </div>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                class="text-destructive"
+                                aria-label="Quitar diagnóstico relacionado"
+                                @click="removeRelated(rowKey)"
+                            >
+                                <Trash2 />
+                            </Button>
+                        </div>
+                        <InputError :message="errors.related_diagnosis_ids" />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="diagnosis"
+                            >Descripción del diagnóstico *</Label
+                        >
+                        <Textarea
+                            id="diagnosis"
+                            name="diagnosis"
+                            placeholder="Hallazgos y análisis clínico que sustentan el diagnóstico"
+                            required
+                        />
                         <InputError :message="errors.diagnosis" />
                     </div>
                     <div class="grid gap-2">
@@ -266,7 +383,9 @@ const vitals = [
                         class="grid gap-x-4 gap-y-3 rounded-lg border p-4 sm:grid-cols-3"
                     >
                         <div class="grid content-start gap-2 sm:col-span-3">
-                            <div class="flex items-center justify-between gap-2">
+                            <div
+                                class="flex items-center justify-between gap-2"
+                            >
                                 <Label :for="`medication-${row.key}`"
                                     >Medicamento *</Label
                                 >

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onClickOutside } from '@vueuse/core';
+import { onClickOutside, useDebounceFn } from '@vueuse/core';
 import { Check, ChevronsUpDown, Search } from 'lucide-vue-next';
 import type { HTMLAttributes } from 'vue';
 import { computed, nextTick, ref, watch } from 'vue';
@@ -24,6 +24,8 @@ const props = withDefaults(
         required?: boolean;
         disabled?: boolean;
         class?: HTMLAttributes['class'];
+        searchUrl?: string;
+        selectedLabel?: string | null;
     }>(),
     {
         placeholder: 'Selecciona una opción',
@@ -43,6 +45,12 @@ const activeIndex = ref(0);
 const root = ref<HTMLElement | null>(null);
 const searchInput = ref<HTMLInputElement | null>(null);
 const list = ref<HTMLElement | null>(null);
+const remoteOptions = ref<SelectOption[]>([]);
+const searching = ref(false);
+const knownLabel = ref<string | null>(props.selectedLabel ?? null);
+let searchRequest = 0;
+
+const REMOTE_MIN_LENGTH = 2;
 
 watch(
     () => props.modelValue,
@@ -52,16 +60,27 @@ watch(
 );
 
 const normalize = (text: string) =>
-    text
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
-        .toLowerCase();
+    text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-const selected = computed(() =>
-    props.options.find((option) => String(option.value) === String(value.value)),
-);
+const selected = computed<SelectOption | undefined>(() => {
+    const match = [...props.options, ...remoteOptions.value].find(
+        (option) => String(option.value) === String(value.value),
+    );
+
+    if (match) {
+        return match;
+    }
+
+    return value.value !== '' && knownLabel.value
+        ? { value: value.value, label: knownLabel.value }
+        : undefined;
+});
 
 const filtered = computed(() => {
+    if (props.searchUrl) {
+        return [...props.options, ...remoteOptions.value];
+    }
+
     const terms = normalize(query.value).split(/\s+/).filter(Boolean);
 
     return props.options.filter((option) => {
@@ -71,8 +90,60 @@ const filtered = computed(() => {
     });
 });
 
-watch(query, () => {
+const searchRemote = useDebounceFn(async (term: string) => {
+    const current = ++searchRequest;
+
+    try {
+        const response = await fetch(
+            `${props.searchUrl}?q=${encodeURIComponent(term)}`,
+            {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            },
+        );
+        const results = response.ok
+            ? ((await response.json()) as SelectOption[])
+            : [];
+
+        if (current === searchRequest) {
+            remoteOptions.value = results;
+        }
+    } finally {
+        if (current === searchRequest) {
+            searching.value = false;
+        }
+    }
+}, 250);
+
+watch(query, (term) => {
     activeIndex.value = 0;
+
+    if (!props.searchUrl) {
+        return;
+    }
+
+    if (term.trim().length < REMOTE_MIN_LENGTH) {
+        searchRequest++;
+        remoteOptions.value = [];
+        searching.value = false;
+
+        return;
+    }
+
+    searching.value = true;
+    searchRemote(term.trim());
+});
+
+const emptyMessage = computed(() => {
+    if (!props.searchUrl) {
+        return 'Sin resultados.';
+    }
+
+    if (query.value.trim().length < REMOTE_MIN_LENGTH) {
+        return 'Escribe al menos dos caracteres para buscar.';
+    }
+
+    return searching.value ? 'Buscando…' : 'Sin resultados.';
 });
 
 function toggle() {
@@ -108,6 +179,7 @@ function close() {
 
 function choose(option: SelectOption) {
     value.value = option.value;
+    knownLabel.value = option.label;
     emit('update:modelValue', option.value);
     emit('change', option.value);
     close();
@@ -210,7 +282,7 @@ onClickOutside(root, close);
                     v-if="filtered.length === 0"
                     class="px-2 py-6 text-center text-sm text-muted-foreground"
                 >
-                    Sin resultados.
+                    {{ emptyMessage }}
                 </li>
                 <li
                     v-for="(option, index) in filtered"

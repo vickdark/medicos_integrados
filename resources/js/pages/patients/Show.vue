@@ -100,7 +100,17 @@ const breadcrumbs: BreadcrumbItem[] = isOwnRecord.value
       ];
 
 const details: { label: string; value: string | null }[] = [
-    { label: 'Documento', value: props.patient.document_number },
+    {
+        label: 'Documento',
+        value: props.patient.document_number
+            ? [
+                  props.patient.document_type?.value,
+                  props.patient.document_number,
+              ]
+                  .filter(Boolean)
+                  .join(' ')
+            : null,
+    },
     {
         label: 'Nacimiento',
         value: props.patient.birth_date
@@ -109,6 +119,11 @@ const details: { label: string; value: string | null }[] = [
     },
     { label: 'Sexo', value: props.patient.gender?.label ?? null },
     { label: 'Grupo sanguíneo', value: props.patient.blood_type },
+    { label: 'EPS o aseguradora', value: props.patient.insurer?.name ?? null },
+    {
+        label: 'Tipo de afiliación',
+        value: props.patient.affiliation_type?.label ?? null,
+    },
     { label: 'Correo', value: props.patient.email },
     { label: 'Teléfono', value: props.patient.phone },
     { label: 'Dirección', value: props.patient.address },
@@ -329,6 +344,16 @@ const details: { label: string; value: string | null }[] = [
                                     class="flex flex-wrap items-baseline justify-between gap-2"
                                 >
                                     <p class="font-medium">
+                                        <span
+                                            v-if="
+                                                consultation.primary_diagnosis
+                                            "
+                                            class="font-mono text-xs text-muted-foreground"
+                                            >{{
+                                                consultation.primary_diagnosis
+                                                    .code
+                                            }}</span
+                                        >
                                         {{ consultation.diagnosis }}
                                     </p>
                                     <p class="text-xs text-muted-foreground">

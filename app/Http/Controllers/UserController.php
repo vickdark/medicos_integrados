@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Actions\Users\CreateUserWithProfile;
 use App\Actions\Users\UpdateUserWithProfile;
+use App\Enums\AffiliationType;
 use App\Enums\AuditAction;
+use App\Enums\DocumentType;
 use App\Enums\Gender;
 use App\Enums\UserRole;
 use App\Exports\TableExporter;
@@ -16,6 +18,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\PatientResource;
 use App\Http\Resources\UserResource;
 use App\Models\AuditLog;
+use App\Models\Insurer;
 use App\Models\Specialty;
 use App\Models\User;
 use App\Notifications\AccountCredentials;
@@ -210,6 +213,9 @@ class UserController extends Controller
             'specialties' => Specialty::query()->orderBy('name')->get(['id', 'name']),
             'genders' => Gender::options(),
             'bloodTypes' => ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'],
+            'documentTypes' => DocumentType::options(),
+            'affiliationTypes' => AffiliationType::options(),
+            'insurers' => Insurer::query()->orderBy('name')->get(['id', 'name'])->map(fn (Insurer $insurer): array => ['value' => $insurer->id, 'label' => $insurer->name]),
         ];
     }
 }

@@ -2,7 +2,10 @@
 
 namespace App\Concerns;
 
+use App\Enums\AffiliationType;
+use App\Enums\DocumentType;
 use App\Enums\Gender;
+use App\Models\Insurer;
 use App\Models\Patient;
 use Illuminate\Validation\Rule;
 
@@ -17,12 +20,15 @@ trait PatientValidationRules
     public const PATIENT_FIELDS = [
         'first_name',
         'last_name',
+        'document_type',
         'document_number',
         'phone',
         'birth_date',
         'gender',
         'address',
         'blood_type',
+        'insurer_id',
+        'affiliation_type',
         'allergies',
         'chronic_conditions',
         'medical_background',
@@ -40,6 +46,7 @@ trait PatientValidationRules
         return [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
+            'document_type' => ['nullable', 'required_with:document_number', Rule::enum(DocumentType::class)],
             'document_number' => [
                 'nullable',
                 'string',
@@ -52,11 +59,25 @@ trait PatientValidationRules
             'gender' => ['nullable', Rule::enum(Gender::class)],
             'address' => ['nullable', 'string', 'max:255'],
             'blood_type' => ['nullable', Rule::in(['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'])],
+            'insurer_id' => ['nullable', Rule::exists(Insurer::class, 'id')],
+            'affiliation_type' => ['nullable', Rule::enum(AffiliationType::class)],
             'allergies' => ['nullable', 'string', 'max:2000'],
             'chronic_conditions' => ['nullable', 'string', 'max:2000'],
             'medical_background' => ['nullable', 'string', 'max:5000'],
             'emergency_contact_name' => ['nullable', 'string', 'max:150'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:30'],
+        ];
+    }
+
+    /**
+     * Get custom messages for the patient validation rules.
+     *
+     * @return array<string, string>
+     */
+    protected function patientMessages(): array
+    {
+        return [
+            'document_type.required_with' => 'Indica el tipo de documento.',
         ];
     }
 }

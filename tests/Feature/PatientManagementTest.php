@@ -44,6 +44,7 @@ it('registers a patient with encrypted clinical data', function () {
             'first_name' => 'Ana',
             'last_name' => 'Torres',
             'document_number' => '12345678',
+            'document_type' => 'CC',
             'email' => 'ana@example.com',
             'birth_date' => '1990-05-10',
             'gender' => 'female',
@@ -66,6 +67,7 @@ it('validates the patient data', function () {
         ->post(route('patients.store'), [
             'first_name' => '',
             'document_number' => '11111111',
+            'document_type' => 'CC',
             'birth_date' => now()->addDay()->toDateString(),
             'blood_type' => 'Z+',
         ])
@@ -80,6 +82,7 @@ it('updates a patient record', function () {
             'first_name' => 'Nuevo',
             'last_name' => 'Nombre',
             'document_number' => $patient->document_number,
+            'document_type' => 'CC',
         ])
         ->assertRedirect(route('patients.show', $patient));
 

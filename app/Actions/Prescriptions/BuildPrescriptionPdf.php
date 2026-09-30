@@ -18,7 +18,7 @@ class BuildPrescriptionPdf
      */
     public function handle(Consultation $consultation, bool $isOfficial): PDF
     {
-        $consultation->loadMissing(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions']);
+        $consultation->loadMissing(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'primaryDiagnosis']);
 
         return PdfFacade::loadView('pdf.prescription', [
             'consultation' => $consultation,

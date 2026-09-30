@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\DocumentType;
 use App\Enums\Gender;
 use App\Models\Patient;
 use App\Models\User;
@@ -23,6 +24,7 @@ class PatientFactory extends Factory
             'user_id' => null,
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
+            'document_type' => DocumentType::CitizenshipCard,
             'document_number' => fake()->unique()->numerify('########'),
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->phoneNumber(),

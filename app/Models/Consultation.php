@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\DiagnosisType;
 use Database\Factories\ConsultationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Consultation extends Model
@@ -26,6 +28,8 @@ class Consultation extends Model
         'reason',
         'symptoms',
         'diagnosis',
+        'primary_diagnosis_id',
+        'diagnosis_type',
         'treatment',
         'notes',
         'weight_kg',
@@ -47,6 +51,7 @@ class Consultation extends Model
             'reason' => 'encrypted',
             'symptoms' => 'encrypted',
             'diagnosis' => 'encrypted',
+            'diagnosis_type' => DiagnosisType::class,
             'treatment' => 'encrypted',
             'notes' => 'encrypted',
             'weight_kg' => 'decimal:2',
@@ -78,6 +83,28 @@ class Consultation extends Model
     public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
+    }
+
+    /**
+     * Main CIE-10 diagnosis. Consultations recorded before coding existed have none.
+     *
+     * @return BelongsTo<Diagnosis, $this>
+     */
+    public function primaryDiagnosis(): BelongsTo
+    {
+        return $this->belongsTo(Diagnosis::class, 'primary_diagnosis_id');
+    }
+
+    /**
+     * Up to three related CIE-10 diagnoses, in the order the doctor entered them.
+     *
+     * @return BelongsToMany<Diagnosis, $this>
+     */
+    public function relatedDiagnoses(): BelongsToMany
+    {
+        return $this->belongsToMany(Diagnosis::class)
+            ->withPivot('position')
+            ->orderByPivot('position');
     }
 
     /**

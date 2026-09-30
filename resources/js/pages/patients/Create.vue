@@ -11,6 +11,9 @@ import type { Option } from '@/types/models';
 defineProps<{
     genders: Option[];
     bloodTypes: string[];
+    documentTypes: Option[];
+    affiliationTypes: Option[];
+    insurers: { value: number; label: string }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -37,6 +40,9 @@ const breadcrumbs: BreadcrumbItem[] = [
                     :errors="errors"
                     :genders="genders"
                     :blood-types="bloodTypes"
+                    :document-types="documentTypes"
+                    :affiliation-types="affiliationTypes"
+                    :insurers="insurers"
                     show-clinical-fields
                 />
 

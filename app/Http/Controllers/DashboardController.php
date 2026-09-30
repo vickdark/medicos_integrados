@@ -55,7 +55,7 @@ class DashboardController extends Controller
             'recentConsultations' => $user->role === UserRole::Patient && $user->patient
                 ? ConsultationResource::collection(
                     $user->patient->consultations()
-                        ->with(['doctor.user', 'doctor.specialty'])
+                        ->with(['doctor.user', 'doctor.specialty', 'primaryDiagnosis'])
                         ->latest('consulted_at')
                         ->limit(3)
                         ->get()

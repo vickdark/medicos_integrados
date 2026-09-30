@@ -1,21 +1,28 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import type { Option, Patient } from '@/types/models';
 
-defineProps<{
-    errors: Record<string, string>;
-    genders: Option[];
-    bloodTypes: string[];
-    patient?: Patient;
-    showClinicalFields?: boolean;
-    contactOnly?: boolean;
-    preliminary?: boolean;
-    hideEmail?: boolean;
-}>();
+withDefaults(
+    defineProps<{
+        errors: Record<string, string>;
+        genders: Option[];
+        bloodTypes: string[];
+        documentTypes?: Option[];
+        affiliationTypes?: Option[];
+        insurers?: { value: number; label: string }[];
+        patient?: Patient;
+        showClinicalFields?: boolean;
+        contactOnly?: boolean;
+        preliminary?: boolean;
+        hideEmail?: boolean;
+    }>(),
+    { documentTypes: () => [], affiliationTypes: () => [], insurers: () => [] },
+);
 </script>
 
 <template>
@@ -51,8 +58,29 @@ defineProps<{
                 <InputError :message="errors.last_name" />
             </div>
             <div class="grid gap-2">
+                <Label for="document_type"
+                    >Tipo de documento{{ contactOnly ? ' *' : '' }}</Label
+                >
+                <NativeSelect
+                    id="document_type"
+                    name="document_type"
+                    :default-value="patient?.document_type?.value ?? ''"
+                    :required="contactOnly"
+                >
+                    <option value="">Sin especificar</option>
+                    <option
+                        v-for="documentType in documentTypes"
+                        :key="documentType.value"
+                        :value="documentType.value"
+                    >
+                        {{ documentType.value }} · {{ documentType.label }}
+                    </option>
+                </NativeSelect>
+                <InputError :message="errors.document_type" />
+            </div>
+            <div class="grid gap-2">
                 <Label for="document_number"
-                    >Documento de identidad{{ contactOnly ? ' *' : '' }}</Label
+                    >Número de documento{{ contactOnly ? ' *' : '' }}</Label
                 >
                 <Input
                     id="document_number"
@@ -111,6 +139,48 @@ defineProps<{
                     </option>
                 </NativeSelect>
                 <InputError :message="errors.blood_type" />
+            </div>
+        </div>
+    </section>
+
+    <section v-if="!contactOnly" class="space-y-4">
+        <h2
+            class="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
+        >
+            Afiliación en salud
+        </h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-2">
+                <Label for="insurer_id">EPS o aseguradora</Label>
+                <SearchableSelect
+                    id="insurer_id"
+                    name="insurer_id"
+                    :options="[
+                        { value: '', label: 'Sin aseguradora (particular)' },
+                        ...insurers,
+                    ]"
+                    :default-value="patient?.insurer?.id ?? ''"
+                    search-placeholder="Buscar EPS o aseguradora"
+                />
+                <InputError :message="errors.insurer_id" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="affiliation_type">Tipo de afiliación</Label>
+                <NativeSelect
+                    id="affiliation_type"
+                    name="affiliation_type"
+                    :default-value="patient?.affiliation_type?.value ?? ''"
+                >
+                    <option value="">Sin especificar</option>
+                    <option
+                        v-for="affiliationType in affiliationTypes"
+                        :key="affiliationType.value"
+                        :value="affiliationType.value"
+                    >
+                        {{ affiliationType.label }}
+                    </option>
+                </NativeSelect>
+                <InputError :message="errors.affiliation_type" />
             </div>
         </div>
     </section>

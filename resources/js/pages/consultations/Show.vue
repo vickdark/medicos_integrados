@@ -169,6 +169,44 @@ const sections = computed(() =>
 
             <Card>
                 <CardContent class="space-y-5">
+                    <div v-if="consultation.primary_diagnosis">
+                        <h2 class="mb-2 text-sm font-semibold">
+                            Diagnósticos CIE-10
+                        </h2>
+                        <ul class="grid gap-1.5 text-sm">
+                            <li class="flex flex-wrap items-center gap-2">
+                                <span
+                                    class="rounded bg-brand-50 px-1.5 py-0.5 font-mono text-xs font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                                >
+                                    {{ consultation.primary_diagnosis.code }}
+                                </span>
+                                <span>{{
+                                    consultation.primary_diagnosis.description
+                                }}</span>
+                                <span
+                                    v-if="consultation.diagnosis_type"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    · Principal ·
+                                    {{ consultation.diagnosis_type.label }}
+                                </span>
+                            </li>
+                            <li
+                                v-for="related in consultation.related_diagnoses ??
+                                []"
+                                :key="related.id"
+                                class="flex flex-wrap items-center gap-2 text-muted-foreground"
+                            >
+                                <span
+                                    class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-semibold"
+                                >
+                                    {{ related.code }}
+                                </span>
+                                <span>{{ related.description }}</span>
+                                <span class="text-xs">· Relacionado</span>
+                            </li>
+                        </ul>
+                    </div>
                     <div v-for="section in sections" :key="section.title">
                         <h2 class="mb-1 text-sm font-semibold">
                             {{ section.title }}

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\DiagnosisType;
 use App\Models\Appointment;
 use App\Models\Consultation;
+use App\Models\Diagnosis;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -34,6 +36,10 @@ class StoreConsultationRequest extends FormRequest
             'reason' => ['required', 'string', 'max:2000'],
             'symptoms' => ['nullable', 'string', 'max:5000'],
             'diagnosis' => ['required', 'string', 'max:5000'],
+            'primary_diagnosis_id' => ['required', Rule::exists(Diagnosis::class, 'id')->where('is_active', true)],
+            'diagnosis_type' => ['required', Rule::enum(DiagnosisType::class)],
+            'related_diagnosis_ids' => ['nullable', 'array', 'max:3'],
+            'related_diagnosis_ids.*' => ['distinct', 'different:primary_diagnosis_id', Rule::exists(Diagnosis::class, 'id')->where('is_active', true)],
             'treatment' => ['nullable', 'string', 'max:5000'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'weight_kg' => ['nullable', 'numeric', 'between:0.5,500'],
@@ -59,6 +65,11 @@ class StoreConsultationRequest extends FormRequest
     {
         return [
             'appointment_id.unique' => 'Esta cita ya tiene una consulta registrada.',
+            'primary_diagnosis_id.required' => 'Selecciona el diagnóstico principal (CIE-10).',
+            'diagnosis_type.required' => 'Indica el tipo de diagnóstico principal.',
+            'related_diagnosis_ids.max' => 'Puedes agregar hasta tres diagnósticos relacionados.',
+            'related_diagnosis_ids.*.distinct' => 'No repitas diagnósticos relacionados.',
+            'related_diagnosis_ids.*.different' => 'Un diagnóstico relacionado no puede ser igual al principal.',
             'blood_pressure.regex' => 'La presión arterial debe tener el formato 120/80.',
         ];
     }

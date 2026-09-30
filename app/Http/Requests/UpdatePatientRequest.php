@@ -31,6 +31,7 @@ class UpdatePatientRequest extends FormRequest
      * @var list<string>
      */
     public const PRELIMINARY_FIELDS = [
+        'document_type',
         'document_number',
         'birth_date',
         'gender',
@@ -43,6 +44,7 @@ class UpdatePatientRequest extends FormRequest
      * @var list<string>
      */
     public const REQUIRED_PRELIMINARY_FIELDS = [
+        'document_type',
         'document_number',
         'birth_date',
         'gender',
@@ -81,5 +83,15 @@ class UpdatePatientRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->patientMessages();
     }
 }

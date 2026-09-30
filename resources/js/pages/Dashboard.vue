@@ -293,6 +293,16 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
                                     class="block rounded-lg border p-3 transition-colors hover:bg-accent"
                                 >
                                     <p class="text-sm font-medium">
+                                        <span
+                                            v-if="
+                                                consultation.primary_diagnosis
+                                            "
+                                            class="font-mono text-xs text-muted-foreground"
+                                            >{{
+                                                consultation.primary_diagnosis
+                                                    .code
+                                            }}</span
+                                        >
                                         {{ consultation.diagnosis }}
                                     </p>
                                     <p class="text-xs text-muted-foreground">

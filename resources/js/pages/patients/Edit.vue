@@ -14,6 +14,9 @@ const props = defineProps<{
     preliminaryEditable: boolean;
     genders: Option[];
     bloodTypes: string[];
+    documentTypes: Option[];
+    affiliationTypes: Option[];
+    insurers: { value: number; label: string }[];
 }>();
 
 const title = props.contactOnly ? 'Actualizar mis datos' : 'Editar paciente';
@@ -60,6 +63,9 @@ const breadcrumbs: BreadcrumbItem[] = props.contactOnly
                     :errors="errors"
                     :genders="genders"
                     :blood-types="bloodTypes"
+                    :document-types="documentTypes"
+                    :affiliation-types="affiliationTypes"
+                    :insurers="insurers"
                     :patient="patient"
                     :show-clinical-fields="patient.allergies !== undefined"
                     :contact-only="contactOnly"

@@ -26,6 +26,9 @@ const props = defineProps<{
     specialties: { id: number; name: string }[];
     genders: Option[];
     bloodTypes: string[];
+    documentTypes: Option[];
+    affiliationTypes: Option[];
+    insurers: { value: number; label: string }[];
 }>();
 
 const isEditing = computed(() => props.user !== null);
@@ -248,6 +251,9 @@ const formAction = computed(() =>
                         :errors="errors"
                         :genders="genders"
                         :blood-types="bloodTypes"
+                        :document-types="documentTypes"
+                        :affiliation-types="affiliationTypes"
+                        :insurers="insurers"
                         :patient="patient ?? undefined"
                         show-clinical-fields
                         hide-email

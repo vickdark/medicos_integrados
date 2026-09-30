@@ -81,6 +81,9 @@
     @if ($consultation->diagnosis)
         <div class="diagnosis">
             <h2>Diagnóstico</h2>
+            @if ($consultation->primaryDiagnosis)
+                <strong>{{ $consultation->primaryDiagnosis->code }}</strong> · {{ $consultation->primaryDiagnosis->description }}<br>
+            @endif
             {{ $consultation->diagnosis }}
         </div>
     @endif

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Consultation;
+use App\Models\Diagnosis;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,6 +25,19 @@ class ConsultationResource extends JsonResource
             'reason' => $this->reason,
             'symptoms' => $this->symptoms,
             'diagnosis' => $this->diagnosis,
+            'primary_diagnosis' => $this->whenLoaded('primaryDiagnosis', fn (): ?array => $this->primaryDiagnosis ? [
+                'id' => $this->primaryDiagnosis->id,
+                'code' => $this->primaryDiagnosis->code,
+                'description' => $this->primaryDiagnosis->description,
+            ] : null),
+            'diagnosis_type' => $this->diagnosis_type?->toOption(),
+            'related_diagnoses' => $this->whenLoaded('relatedDiagnoses', fn (): array => $this->relatedDiagnoses
+                ->map(fn (Diagnosis $diagnosis): array => [
+                    'id' => $diagnosis->id,
+                    'code' => $diagnosis->code,
+                    'description' => $diagnosis->description,
+                ])
+                ->all()),
             'treatment' => $this->treatment,
             'notes' => $this->when((bool) $request->user()?->isStaff(), $this->notes),
             'weight_kg' => $this->weight_kg,

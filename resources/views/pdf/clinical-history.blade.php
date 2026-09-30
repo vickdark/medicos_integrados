@@ -92,6 +92,12 @@
             @if ($consultation->symptoms)
                 <p class="field"><strong>Síntomas</strong>{{ $consultation->symptoms }}</p>
             @endif
+            @if ($consultation->primaryDiagnosis)
+                <p class="field"><strong>CIE-10</strong>{{ $consultation->primaryDiagnosis->code }} · {{ $consultation->primaryDiagnosis->description }}@if ($consultation->diagnosis_type) ({{ $consultation->diagnosis_type->label() }})@endif</p>
+                @if ($consultation->relatedDiagnoses->isNotEmpty())
+                    <p class="field"><strong>Relacionados</strong>{{ $consultation->relatedDiagnoses->map(fn ($diagnosis) => $diagnosis->code.' · '.$diagnosis->description)->implode('; ') }}</p>
+                @endif
+            @endif
             <p class="field"><strong>Diagnóstico</strong>{{ $consultation->diagnosis }}</p>
             @if ($consultation->treatment)
                 <p class="field"><strong>Tratamiento</strong>{{ $consultation->treatment }}</p>

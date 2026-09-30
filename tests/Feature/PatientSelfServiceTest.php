@@ -67,6 +67,7 @@ it('lets the patient provide their basic data until the first consultation', fun
     $this->actingAs($patient->user)
         ->put(route('patients.update', $patient), [
             'document_number' => '45678901',
+            'document_type' => 'CC',
             'birth_date' => '1990-05-20',
             'gender' => 'female',
             'blood_type' => 'O+',
