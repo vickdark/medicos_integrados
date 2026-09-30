@@ -11,6 +11,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorPhotoController;
 use App\Http\Controllers\DoctorScheduleController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\PaymentController;
@@ -33,6 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('doctors/export', [DoctorController::class, 'export'])->name('doctors.export');
     Route::get('specialties/export', [SpecialtyController::class, 'export'])->name('specialties.export');
     Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
+    Route::get('medications/export', [MedicationController::class, 'export'])->name('medications.export');
     Route::get('users/export', [UserController::class, 'export'])->name('users.export');
 
     Route::get('patients/{patient}/clinical-history', PatientHistoryController::class)->name('patients.history');
@@ -66,6 +68,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('schedules/{schedule}', [DoctorScheduleController::class, 'destroy'])->name('schedules.destroy');
 
     Route::resource('specialties', SpecialtyController::class)->except(['show']);
+
+    Route::resource('medications', MedicationController::class)->except(['show']);
 
     Route::post('tour', [TourController::class, 'store'])->name('tour.store');
 

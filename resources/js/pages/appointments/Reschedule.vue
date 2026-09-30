@@ -4,11 +4,11 @@ import { computed, ref } from 'vue';
 import AppointmentController from '@/actions/App/Http/Controllers/AppointmentController';
 import SlotPicker from '@/components/appointments/SlotPicker.vue';
 import InputError from '@/components/InputError.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDateTime, formatMoney } from '@/lib/format';
@@ -28,6 +28,13 @@ const props = defineProps<{
         consultation_fee: string;
     }[];
 }>();
+
+const doctorOptions = computed(() =>
+    props.doctors.map((doctor) => ({
+        value: doctor.id,
+        label: `${doctor.name} · ${doctor.specialty} (${formatMoney(doctor.consultation_fee)})`,
+    })),
+);
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Citas', href: appointmentRoutes.index() },
@@ -106,21 +113,13 @@ const newDoctor = computed(() =>
             >
                 <div v-if="canChangeDoctor" class="grid gap-2">
                     <Label for="doctor_id">Médico</Label>
-                    <NativeSelect
+                    <SearchableSelect
                         id="doctor_id"
                         v-model="selectedDoctorId"
                         name="doctor_id"
-                    >
-                        <option
-                            v-for="doctor in doctors"
-                            :key="doctor.id"
-                            :value="doctor.id"
-                        >
-                            {{ doctor.name }} · {{ doctor.specialty }} ({{
-                                formatMoney(doctor.consultation_fee)
-                            }})
-                        </option>
-                    </NativeSelect>
+                        :options="doctorOptions"
+                        search-placeholder="Buscar por nombre o especialidad"
+                    />
                     <p
                         v-if="doctorChanged && newDoctor"
                         class="rounded-md border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200"

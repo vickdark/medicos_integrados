@@ -5,6 +5,7 @@ import {
     ClipboardList,
     Clock,
     LayoutGrid,
+    Pill,
     ShieldCheck,
     Stethoscope,
     Tags,
@@ -29,6 +30,7 @@ import { dashboard } from '@/routes';
 import appointmentRoutes from '@/routes/appointments';
 import auditLogRoutes from '@/routes/audit-logs';
 import doctorRoutes from '@/routes/doctors';
+import medicationRoutes from '@/routes/medications';
 import patientRoutes from '@/routes/patients';
 import paymentRoutes from '@/routes/payments';
 import scheduleRoutes from '@/routes/schedules';
@@ -100,6 +102,14 @@ const mainNavItems = computed<NavItem[]>(() => {
         });
     }
 
+    if (role === 'doctor') {
+        items.push({
+            title: 'Medicamentos',
+            href: medicationRoutes.index(),
+            icon: Pill,
+        });
+    }
+
     if (role === 'admin') {
         items.push(
             {
@@ -116,6 +126,11 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: 'Especialidades',
                 href: specialtyRoutes.index(),
                 icon: Tags,
+            },
+            {
+                title: 'Medicamentos',
+                href: medicationRoutes.index(),
+                icon: Pill,
             },
             {
                 title: 'Auditoría',

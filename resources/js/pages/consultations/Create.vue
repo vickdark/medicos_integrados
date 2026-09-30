@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { Plus, Trash2, TriangleAlert } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import ConsultationController from '@/actions/App/Http/Controllers/ConsultationController';
+import MedicationController from '@/actions/App/Http/Controllers/MedicationController';
 import InputError from '@/components/InputError.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -24,6 +33,13 @@ const props = defineProps<{
     };
     appointments: { id: number; scheduled_at: string; reason: string }[];
     selectedAppointmentId: number | null;
+    medications: {
+        id: number;
+        name: string;
+        presentation: string | null;
+        concentration: string | null;
+        label: string;
+    }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -39,16 +55,48 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 let nextPrescriptionKey = 0;
-const prescriptionRows = ref<number[]>([]);
+const prescriptionRows = ref<{ key: number; medication: string }[]>([]);
 
 function addPrescription() {
-    prescriptionRows.value.push(nextPrescriptionKey++);
+    prescriptionRows.value.push({ key: nextPrescriptionKey++, medication: '' });
 }
 
 function removePrescription(key: number) {
     prescriptionRows.value = prescriptionRows.value.filter(
-        (row) => row !== key,
+        (row) => row.key !== key,
     );
+}
+
+const medicationOptions = computed(() =>
+    props.medications.map((medication) => ({
+        value: medication.label,
+        label: medication.label,
+    })),
+);
+
+const newMedicationRow = ref<number | null>(null);
+const medicationDialogOpen = computed({
+    get: () => newMedicationRow.value !== null,
+    set: (open) => {
+        if (!open) {
+            newMedicationRow.value = null;
+        }
+    },
+});
+
+function selectCreatedMedication() {
+    const row = prescriptionRows.value.find(
+        (item) => item.key === newMedicationRow.value,
+    );
+    const created = props.medications.reduce((newest, medication) =>
+        medication.id > newest.id ? medication : newest,
+    );
+
+    if (row && created) {
+        row.medication = created.label;
+    }
+
+    newMedicationRow.value = null;
 }
 
 const vitals = [
@@ -213,17 +261,30 @@ const vitals = [
                         Sin medicamentos recetados.
                     </p>
                     <div
-                        v-for="(rowKey, index) in prescriptionRows"
-                        :key="rowKey"
-                        class="grid gap-3 rounded-lg border p-4 sm:grid-cols-2"
+                        v-for="(row, index) in prescriptionRows"
+                        :key="row.key"
+                        class="grid gap-x-4 gap-y-3 rounded-lg border p-4 sm:grid-cols-3"
                     >
-                        <div class="grid gap-2">
-                            <Label :for="`medication-${rowKey}`"
-                                >Medicamento *</Label
-                            >
-                            <Input
-                                :id="`medication-${rowKey}`"
+                        <div class="grid content-start gap-2 sm:col-span-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <Label :for="`medication-${row.key}`"
+                                    >Medicamento *</Label
+                                >
+                                <button
+                                    type="button"
+                                    class="text-xs text-primary hover:underline"
+                                    @click="newMedicationRow = row.key"
+                                >
+                                    ¿No está en el catálogo? Crear medicamento
+                                </button>
+                            </div>
+                            <SearchableSelect
+                                :id="`medication-${row.key}`"
+                                v-model="row.medication"
                                 :name="`prescriptions[${index}][medication]`"
+                                :options="medicationOptions"
+                                placeholder="Elige del catálogo"
+                                search-placeholder="Buscar medicamento"
                                 required
                             />
                             <InputError
@@ -232,10 +293,10 @@ const vitals = [
                                 "
                             />
                         </div>
-                        <div class="grid gap-2">
-                            <Label :for="`dosage-${rowKey}`">Dosis *</Label>
+                        <div class="grid content-start gap-2">
+                            <Label :for="`dosage-${row.key}`">Dosis *</Label>
                             <Input
-                                :id="`dosage-${rowKey}`"
+                                :id="`dosage-${row.key}`"
                                 :name="`prescriptions[${index}][dosage]`"
                                 placeholder="500 mg"
                                 required
@@ -246,12 +307,12 @@ const vitals = [
                                 "
                             />
                         </div>
-                        <div class="grid gap-2">
-                            <Label :for="`frequency-${rowKey}`"
+                        <div class="grid content-start gap-2">
+                            <Label :for="`frequency-${row.key}`"
                                 >Frecuencia *</Label
                             >
                             <Input
-                                :id="`frequency-${rowKey}`"
+                                :id="`frequency-${row.key}`"
                                 :name="`prescriptions[${index}][frequency]`"
                                 placeholder="Cada 8 horas"
                                 required
@@ -262,30 +323,30 @@ const vitals = [
                                 "
                             />
                         </div>
-                        <div class="grid gap-2">
-                            <Label :for="`duration-${rowKey}`">Duración</Label>
+                        <div class="grid content-start gap-2">
+                            <Label :for="`duration-${row.key}`">Duración</Label>
                             <Input
-                                :id="`duration-${rowKey}`"
+                                :id="`duration-${row.key}`"
                                 :name="`prescriptions[${index}][duration]`"
                                 placeholder="7 días"
                             />
                         </div>
-                        <div class="grid gap-2 sm:col-span-2">
-                            <Label :for="`instructions-${rowKey}`"
+                        <div class="grid content-start gap-2 sm:col-span-3">
+                            <Label :for="`instructions-${row.key}`"
                                 >Instrucciones</Label
                             >
                             <Input
-                                :id="`instructions-${rowKey}`"
+                                :id="`instructions-${row.key}`"
                                 :name="`prescriptions[${index}][instructions]`"
                             />
                         </div>
-                        <div class="sm:col-span-2">
+                        <div class="sm:col-span-3">
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="ghost"
                                 class="text-destructive"
-                                @click="removePrescription(rowKey)"
+                                @click="removePrescription(row.key)"
                             >
                                 <Trash2 /> Quitar
                             </Button>
@@ -302,6 +363,64 @@ const vitals = [
                     </Button>
                 </div>
             </Form>
+
+            <Dialog v-model:open="medicationDialogOpen">
+                <DialogContent class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Nuevo medicamento</DialogTitle>
+                        <DialogDescription>
+                            Se agrega al catálogo y queda seleccionado en la
+                            receta.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form
+                        v-bind="MedicationController.store.form()"
+                        class="grid gap-4"
+                        :options="{ preserveState: true, preserveScroll: true }"
+                        v-slot="{ errors, processing }"
+                        @success="selectCreatedMedication"
+                    >
+                        <input type="hidden" name="inline" value="1" />
+                        <div class="grid gap-2">
+                            <Label for="new-medication-name">Nombre *</Label>
+                            <Input
+                                id="new-medication-name"
+                                name="name"
+                                required
+                            />
+                            <InputError :message="errors.name" />
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="new-medication-presentation"
+                                    >Presentación</Label
+                                >
+                                <Input
+                                    id="new-medication-presentation"
+                                    name="presentation"
+                                    placeholder="Tabletas"
+                                />
+                                <InputError :message="errors.presentation" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="new-medication-concentration"
+                                    >Concentración</Label
+                                >
+                                <Input
+                                    id="new-medication-concentration"
+                                    name="concentration"
+                                    placeholder="500 mg"
+                                />
+                                <InputError :message="errors.concentration" />
+                            </div>
+                        </div>
+                        <Button :disabled="processing">
+                            Agregar al catálogo
+                        </Button>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     </AppLayout>
 </template>

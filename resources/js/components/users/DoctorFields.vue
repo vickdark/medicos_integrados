@@ -2,6 +2,7 @@
 import { ImagePlus } from 'lucide-vue-next';
 import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -44,23 +45,20 @@ function onPhotoChange(event: Event) {
         <div class="grid gap-4 sm:grid-cols-2">
             <div class="grid gap-2">
                 <Label for="specialty_id">Especialidad *</Label>
-                <NativeSelect
+                <SearchableSelect
                     id="specialty_id"
                     name="specialty_id"
+                    :options="
+                        specialties.map((specialty) => ({
+                            value: specialty.id,
+                            label: specialty.name,
+                        }))
+                    "
                     :default-value="doctor?.specialty_id ?? ''"
+                    placeholder="Selecciona una especialidad"
+                    search-placeholder="Buscar especialidad"
                     required
-                >
-                    <option value="" disabled>
-                        Selecciona una especialidad
-                    </option>
-                    <option
-                        v-for="specialty in specialties"
-                        :key="specialty.id"
-                        :value="specialty.id"
-                    >
-                        {{ specialty.name }}
-                    </option>
-                </NativeSelect>
+                />
                 <InputError :message="errors.specialty_id" />
             </div>
             <div class="grid gap-2">

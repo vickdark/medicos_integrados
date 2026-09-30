@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Form, Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import InputError from '@/components/InputError.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,9 +40,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 const status = ref('paid');
 const today = new Date().toISOString().slice(0, 10);
 
-function loadPatientAppointments(event: Event) {
-    const patientId = (event.target as HTMLSelectElement).value;
+const patientOptions = computed(() =>
+    props.patients.map((patient) => ({
+        value: patient.id,
+        label: patient.document_number
+            ? `${patient.full_name} · ${patient.document_number}`
+            : patient.full_name,
+    })),
+);
 
+function loadPatientAppointments(patientId: string | number) {
     router.reload({
         data: { patient_id: patientId },
         only: ['appointments', 'selectedPatientId'],
@@ -65,29 +73,16 @@ function loadPatientAppointments(event: Event) {
             >
                 <div class="grid gap-2">
                     <Label for="patient_id">Paciente *</Label>
-                    <NativeSelect
+                    <SearchableSelect
                         id="patient_id"
                         name="patient_id"
+                        :options="patientOptions"
                         :default-value="props.selectedPatientId ?? ''"
+                        placeholder="Selecciona un paciente"
+                        search-placeholder="Buscar por nombre o documento"
                         required
                         @change="loadPatientAppointments"
-                    >
-                        <option value="" disabled>
-                            Selecciona un paciente
-                        </option>
-                        <option
-                            v-for="patient in props.patients"
-                            :key="patient.id"
-                            :value="patient.id"
-                        >
-                            {{ patient.full_name
-                            }}{{
-                                patient.document_number
-                                    ? ` · ${patient.document_number}`
-                                    : ''
-                            }}
-                        </option>
-                    </NativeSelect>
+                    />
                     <InputError :message="errors.patient_id" />
                 </div>
 

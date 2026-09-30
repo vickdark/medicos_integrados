@@ -4,10 +4,10 @@ import { computed, ref } from 'vue';
 import AppointmentController from '@/actions/App/Http/Controllers/AppointmentController';
 import SlotPicker from '@/components/appointments/SlotPicker.vue';
 import InputError from '@/components/InputError.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatMoney } from '@/lib/format';
@@ -39,6 +39,22 @@ const selectedDoctor = computed(() =>
     props.doctors.find(
         (doctor) => doctor.id === Number(selectedDoctorId.value),
     ),
+);
+
+const patientOptions = computed(() =>
+    props.patients.map((patient) => ({
+        value: patient.id,
+        label: patient.document_number
+            ? `${patient.full_name} · ${patient.document_number}`
+            : patient.full_name,
+    })),
+);
+
+const doctorOptions = computed(() =>
+    props.doctors.map((doctor) => ({
+        value: doctor.id,
+        label: `${doctor.name} · ${doctor.specialty} (${formatMoney(doctor.consultation_fee)})`,
+    })),
 );
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -75,50 +91,29 @@ const selectedDoctorNumericId = computed(() =>
             >
                 <div v-if="isStaff" class="grid gap-2">
                     <Label for="patient_id">Paciente *</Label>
-                    <NativeSelect
+                    <SearchableSelect
                         id="patient_id"
                         name="patient_id"
+                        :options="patientOptions"
                         :default-value="selectedPatientId ?? ''"
+                        placeholder="Selecciona un paciente"
+                        search-placeholder="Buscar por nombre o documento"
                         required
-                    >
-                        <option value="" disabled>
-                            Selecciona un paciente
-                        </option>
-                        <option
-                            v-for="patient in patients"
-                            :key="patient.id"
-                            :value="patient.id"
-                        >
-                            {{ patient.full_name
-                            }}{{
-                                patient.document_number
-                                    ? ` · ${patient.document_number}`
-                                    : ''
-                            }}
-                        </option>
-                    </NativeSelect>
+                    />
                     <InputError :message="errors.patient_id" />
                 </div>
 
                 <div class="grid gap-2">
                     <Label for="doctor_id">Médico *</Label>
-                    <NativeSelect
+                    <SearchableSelect
                         id="doctor_id"
                         v-model="selectedDoctorId"
                         name="doctor_id"
+                        :options="doctorOptions"
+                        placeholder="Selecciona un médico"
+                        search-placeholder="Buscar por nombre o especialidad"
                         required
-                    >
-                        <option value="" disabled>Selecciona un médico</option>
-                        <option
-                            v-for="doctor in doctors"
-                            :key="doctor.id"
-                            :value="doctor.id"
-                        >
-                            {{ doctor.name }} · {{ doctor.specialty }} ({{
-                                formatMoney(doctor.consultation_fee)
-                            }})
-                        </option>
-                    </NativeSelect>
+                    />
                     <InputError :message="errors.doctor_id" />
                     <div
                         v-if="selectedDoctor"

@@ -9,6 +9,7 @@ use App\Http\Requests\StoreConsultationRequest;
 use App\Http\Resources\ConsultationResource;
 use App\Models\AuditLog;
 use App\Models\Consultation;
+use App\Models\Medication;
 use App\Models\Patient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,6 +47,17 @@ class ConsultationController extends Controller
                 'reason' => $appointment->reason,
             ]),
             'selectedAppointmentId' => $request->integer('appointment_id') ?: null,
+            'medications' => Medication::query()
+                ->orderBy('name')
+                ->orderBy('concentration')
+                ->get()
+                ->map(fn (Medication $medication): array => [
+                    'id' => $medication->id,
+                    'name' => $medication->name,
+                    'presentation' => $medication->presentation,
+                    'concentration' => $medication->concentration,
+                    'label' => $medication->label,
+                ]),
         ]);
     }
 

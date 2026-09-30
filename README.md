@@ -72,6 +72,7 @@ Los roles están en el enum `App\Enums\UserRole`. Cada permiso se aplica mediant
 | Usuarios (crear cuentas y asignar rol) | ✅ | ❌ | ❌ | ❌ |
 | Médicos y especialidades | ✅ | ❌ | ❌ | ❌ |
 | Horarios de atención | Todos | ❌ | El suyo | ❌ |
+| Catálogo de medicamentos | ✅ | ❌ | ✅ | ❌ |
 | Auditoría | ✅ | ❌ | ❌ | ❌ |
 
 Un médico "atiende" a un paciente cuando tiene al menos una cita o una consulta con él.
@@ -276,6 +277,7 @@ El menú lateral (`AppSidebar.vue`) se arma según `auth.role`.
 | `/users` | Usuarios: cuentas, roles y perfil (solo admin) |
 | `/doctors` y `/doctors/{doctor}/schedules` | Médicos y horarios |
 | `/specialties` | Especialidades |
+| `/medications` | Catálogo de medicamentos (admin y médicos) |
 | `GET /audit-logs` | Auditoría |
 | `/settings/*` | Perfil, seguridad (contraseña, 2FA) y apariencia |
 
@@ -318,6 +320,7 @@ Todas las tablas funcionan del lado del servidor:
 | Usuarios | Nombre, correo | Rol |
 | Médicos | Nombre, correo, especialidad, colegiatura | — |
 | Especialidades | Nombre, descripción | — |
+| Medicamentos | Nombre, presentación, concentración | — |
 | Auditoría | Usuario, paciente, descripción, IP | Acción, paciente, rango de fechas |
 
 Sobre la exportación (`GET /{tabla}/export?format=xlsx|pdf&…filtros`):
@@ -368,7 +371,6 @@ npm run types:check                   # vue-tsc
 
 - **Sistema de turnos:** pensado para dos casos: el paciente que nunca apartó cita y se registra en sitio (recepción le genera un turno), y el paciente que ya tiene una cita y quiere ver su orden de atención. Incluye una **pantalla de turnos** (visible en la sala de espera) que muestre qué turno se está atendiendo y cuáles siguen, además de la consulta del turno propio desde el portal del paciente.
 - **Política de tratamiento de datos personales:** redactar y publicar la política (enlace en la landing, el registro y el pie de página) y registrar la aceptación del paciente al crear su cuenta, con fecha y versión.
-- **Catálogo de medicamentos (CRUD):** módulo para administrar los medicamentos (nombre, presentación, concentración, etc.), disponible solo para admin y médicos, de modo que el médico los elija al recetar en vez de escribirlos a mano. Desde la atención el médico también podrá crear un medicamento nuevo al momento.
 - **Recordatorios automáticos de citas** (correo o mensaje) un día antes de la cita.
 - **Reportes:** los dashboards ya muestran ingresos, citas por día, consultas por mes y médicos con más citas; faltan reportes filtrables y exportables por rango, médico y especialidad.
 - **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
