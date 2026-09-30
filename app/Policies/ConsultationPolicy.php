@@ -33,6 +33,34 @@ class ConsultationPolicy
     }
 
     /**
+     * Determine whether the user can open the prescription PDF. The prescribing
+     * doctor gets the official copy; the administrator only gets a reference copy
+     * marked as not valid.
+     */
+    public function downloadPrescription(User $user, Consultation $consultation): bool
+    {
+        return $user->hasRole(UserRole::Admin) || $this->issuePrescription($user, $consultation);
+    }
+
+    /**
+     * Determine whether the user is the doctor who wrote the prescription, the only
+     * one who can issue it officially and send it to the patient.
+     */
+    public function issuePrescription(User $user, Consultation $consultation): bool
+    {
+        return $user->hasRole(UserRole::Doctor)
+            && $consultation->doctor_id === $user->doctor?->id;
+    }
+
+    /**
+     * Determine whether the user can email the prescription to the patient.
+     */
+    public function emailPrescription(User $user, Consultation $consultation): bool
+    {
+        return $this->issuePrescription($user, $consultation);
+    }
+
+    /**
      * Determine whether the user can upload or remove attachments of the consultation.
      */
     public function manageAttachments(User $user, Consultation $consultation): bool

@@ -93,7 +93,14 @@ class ConsultationController extends Controller
             'consultation' => new ConsultationResource($consultation),
             'can' => [
                 'manage_attachments' => $request->user()->can('manageAttachments', $consultation),
+                'download_prescription' => $consultation->prescriptions->isNotEmpty()
+                    && $request->user()->can('downloadPrescription', $consultation),
+                'email_prescription' => $consultation->prescriptions->isNotEmpty()
+                    && $request->user()->can('emailPrescription', $consultation),
             ],
+            'patientEmail' => $request->user()->can('emailPrescription', $consultation)
+                ? ($consultation->patient->email ?: $consultation->patient->user?->email)
+                : null,
         ]);
     }
 }

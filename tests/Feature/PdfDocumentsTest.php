@@ -1,13 +1,16 @@
 <?php
 
 use App\Enums\AuditAction;
+use App\Mail\PrescriptionMail;
 use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Consultation;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\Payment;
+use App\Models\Prescription;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 
 /**
@@ -150,4 +153,138 @@ it('tells the interface whether the invoice can be downloaded', function () {
         ->assertInertia(fn ($page) => $page
             ->where('payments.data', fn ($rows) => collect($rows)->firstWhere('id', $paid->id)['can']['download_invoice'] === true
                 && collect($rows)->where('can.download_invoice', true)->count() === 1));
+});
+
+it('lets the doctor who wrote the consultation open the prescription PDF', function () {
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->count(2)->create(['consultation_id' => $consultation->id]);
+    $captured = capturePdfData('pdf.prescription');
+
+    $this->actingAs($consultation->doctor->user)
+        ->get(route('consultations.prescription', $consultation))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+
+    expect($captured->data['consultation']->prescriptions)->toHaveCount(2)
+        ->and(AuditLog::query()->where('description', 'like', '%receta%')->exists())->toBeTrue();
+});
+
+it('gives the administrator a reference copy marked as not valid', function () {
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+    $captured = capturePdfData('pdf.prescription');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('consultations.prescription', $consultation))
+        ->assertOk();
+
+    expect($captured->data['isOfficial'])->toBeFalse()
+        ->and(AuditLog::query()->where('description', 'like', '%sin validez%')->exists())->toBeTrue();
+
+    $this->actingAs($consultation->doctor->user)->get(route('consultations.prescription', $consultation));
+
+    expect($captured->data['isOfficial'])->toBeTrue();
+});
+
+it('shows the not valid notice in the rendered prescription of the administrator', function () {
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+    $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions']);
+
+    $copy = view('pdf.prescription', ['consultation' => $consultation, 'isOfficial' => false, 'generatedAt' => now()])->render();
+    $official = view('pdf.prescription', ['consultation' => $consultation, 'isOfficial' => true, 'generatedAt' => now()])->render();
+
+    expect($copy)->toContain('Este documento no es válido')->toContain('consulte con el médico responsable')
+        ->and($official)->not->toContain('Este documento no es válido');
+});
+
+it('does not let anyone else open the prescription', function () {
+    $patient = Patient::factory()->withAccount()->create();
+    $consultation = Consultation::factory()->create(['patient_id' => $patient->id]);
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+
+    $this->actingAs($patient->user)->get(route('consultations.prescription', $consultation))->assertForbidden();
+    $this->actingAs(User::factory()->receptionist()->create())->get(route('consultations.prescription', $consultation))->assertForbidden();
+    $this->actingAs(Doctor::factory()->create()->user)->get(route('consultations.prescription', $consultation))->assertForbidden();
+});
+
+it('returns not found when the consultation has no prescriptions', function () {
+    $consultation = Consultation::factory()->create();
+
+    $this->actingAs($consultation->doctor->user)
+        ->get(route('consultations.prescription', $consultation))
+        ->assertNotFound();
+});
+
+it('offers the prescription button only to the prescribing doctor', function () {
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+
+    $this->actingAs($consultation->doctor->user)
+        ->get(route('consultations.show', $consultation))
+        ->assertInertia(fn ($page) => $page->where('can.email_prescription', true)->where('patientEmail', $consultation->patient->email));
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('consultations.show', $consultation))
+        ->assertInertia(fn ($page) => $page
+            ->where('can.download_prescription', true)
+            ->where('can.email_prescription', false)
+            ->where('patientEmail', null));
+});
+
+it('emails the official prescription to the address the doctor confirms', function () {
+    Mail::fake();
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+
+    $this->actingAs($consultation->doctor->user)
+        ->post(route('consultations.prescription.email', $consultation), ['email' => 'otro@example.com'])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    Mail::assertSent(PrescriptionMail::class, fn (PrescriptionMail $mail) => $mail->hasTo('otro@example.com')
+        && $mail->consultation->is($consultation));
+
+    expect(AuditLog::query()->where('description', 'like', '%por correo a otro@example.com%')->exists())->toBeTrue();
+});
+
+it('builds the prescription email with a PDF attachment', function () {
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+
+    $attachments = (new PrescriptionMail($consultation))->attachments();
+
+    expect($attachments)->toHaveCount(1);
+});
+
+it('validates the email address of the prescription', function () {
+    Mail::fake();
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+
+    $this->actingAs($consultation->doctor->user)
+        ->post(route('consultations.prescription.email', $consultation), ['email' => 'no-es-un-correo'])
+        ->assertSessionHasErrors('email');
+
+    $this->actingAs($consultation->doctor->user)
+        ->post(route('consultations.prescription.email', $consultation), [])
+        ->assertSessionHasErrors('email');
+
+    Mail::assertNothingSent();
+});
+
+it('only lets the prescribing doctor email the prescription', function () {
+    Mail::fake();
+    $consultation = Consultation::factory()->create();
+    Prescription::factory()->create(['consultation_id' => $consultation->id]);
+    $body = ['email' => 'paciente@example.com'];
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('consultations.prescription.email', $consultation), $body)->assertForbidden();
+    $this->actingAs(Doctor::factory()->create()->user)
+        ->post(route('consultations.prescription.email', $consultation), $body)->assertForbidden();
+    $this->actingAs($consultation->patient->user ?? User::factory()->create())
+        ->post(route('consultations.prescription.email', $consultation), $body)->assertForbidden();
+
+    Mail::assertNothingSent();
 });

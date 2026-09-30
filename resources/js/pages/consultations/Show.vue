@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { Form, Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Download, FileImage, FileText, Trash2, Upload } from 'lucide-vue-next';
-import { computed } from 'vue';
+import {
+    Download,
+    FileImage,
+    FileText,
+    Mail,
+    Trash2,
+    TriangleAlert,
+    Upload,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import ConsultationAttachmentController from '@/actions/App/Http/Controllers/ConsultationAttachmentController';
+import SendConsultationPrescriptionController from '@/actions/App/Http/Controllers/SendConsultationPrescriptionController';
 import IconButton from '@/components/IconButton.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -13,6 +22,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -26,8 +42,15 @@ import type { Attachment, Consultation } from '@/types/models';
 
 const props = defineProps<{
     consultation: Consultation;
-    can: { manage_attachments: boolean };
+    can: {
+        manage_attachments: boolean;
+        download_prescription: boolean;
+        email_prescription: boolean;
+    };
+    patientEmail: string | null;
 }>();
+
+const emailDialogOpen = ref(false);
 
 async function destroyAttachment(attachment: Attachment) {
     const accepted = await confirmAction({
@@ -167,6 +190,51 @@ const sections = computed(() =>
                     </CardDescription>
                 </CardHeader>
                 <CardContent v-if="consultation.prescriptions?.length">
+                    <div
+                        v-if="
+                            can.download_prescription && !can.email_prescription
+                        "
+                        class="mb-3 flex items-start gap-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+                    >
+                        <TriangleAlert class="mt-0.5 size-4 shrink-0" />
+                        <p>
+                            <strong>Este documento no es válido.</strong> Es
+                            solo una copia de consulta para el administrador del
+                            sistema. Para más información, consulta con el
+                            médico responsable: {{ consultation.doctor?.name }}.
+                        </p>
+                    </div>
+                    <div
+                        v-if="can.download_prescription"
+                        class="mb-3 flex flex-wrap justify-end gap-2"
+                    >
+                        <Button
+                            v-if="can.email_prescription"
+                            size="sm"
+                            variant="outline"
+                            @click="emailDialogOpen = true"
+                        >
+                            <Mail /> Enviar por correo
+                        </Button>
+                        <Button size="sm" as-child>
+                            <a
+                                :href="
+                                    consultationRoutes.prescription(
+                                        consultation.id,
+                                    ).url
+                                "
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                <FileText />
+                                {{
+                                    can.email_prescription
+                                        ? 'Receta en PDF'
+                                        : 'Ver receta (solo consulta)'
+                                }}
+                            </a>
+                        </Button>
+                    </div>
                     <ul class="divide-y">
                         <li
                             v-for="prescription in consultation.prescriptions"
@@ -300,5 +368,67 @@ const sections = computed(() =>
                 </CardContent>
             </Card>
         </div>
+        <Dialog v-model:open="emailDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Enviar receta por correo</DialogTitle>
+                    <DialogDescription>
+                        Se enviará el PDF de la receta como adjunto. Usa el
+                        correo registrado del paciente o escribe otro si te lo
+                        dio en la consulta.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Form
+                    v-bind="
+                        SendConsultationPrescriptionController.form(
+                            consultation.id,
+                        )
+                    "
+                    :options="{ preserveScroll: true }"
+                    class="grid gap-4"
+                    v-slot="{ errors, processing }"
+                    @success="emailDialogOpen = false"
+                >
+                    <div class="grid gap-2">
+                        <Label for="prescription-email">
+                            Correo del paciente *
+                        </Label>
+                        <Input
+                            id="prescription-email"
+                            type="email"
+                            name="email"
+                            :default-value="patientEmail ?? ''"
+                            placeholder="paciente@correo.com"
+                            required
+                        />
+                        <p
+                            v-if="patientEmail"
+                            class="text-xs text-muted-foreground"
+                        >
+                            Correo registrado en el sistema:
+                            {{ patientEmail }}
+                        </p>
+                        <p v-else class="text-xs text-muted-foreground">
+                            El paciente no tiene un correo registrado; escribe
+                            el que te indique.
+                        </p>
+                        <InputError :message="errors.email" />
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            @click="emailDialogOpen = false"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button :disabled="processing">
+                            <Mail /> Enviar receta
+                        </Button>
+                    </div>
+                </Form>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>
