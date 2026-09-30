@@ -1,24 +1,37 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import Pagination from '@/components/Pagination.vue';
+import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
+import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import specialtyRoutes from '@/routes/specialties';
 import type { BreadcrumbItem } from '@/types';
+import type { Paginated, TableFilters } from '@/types/models';
 
-defineProps<{
-    specialties: {
+const props = defineProps<{
+    specialties: Paginated<{
         id: number;
         name: string;
         description: string | null;
         doctors_count: number;
         can_delete: boolean;
-    }[];
+    }>;
+    filters: TableFilters;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Especialidades', href: specialtyRoutes.index() },
 ];
+
+const { filters, activeFilters, hasActiveFilters, reset } = useTableFilters(
+    () => specialtyRoutes.index().url,
+    { search: props.filters.search },
+);
+
+const exportUrl = (format: 'xlsx' | 'pdf') =>
+    specialtyRoutes.export({ query: { ...activeFilters.value, format } }).url;
 
 function destroy(id: number, name: string) {
     if (!confirm(`¿Eliminar la especialidad «${name}»?`)) {
@@ -45,6 +58,14 @@ function destroy(id: number, name: string) {
                 </Button>
             </div>
 
+            <TableToolbar
+                v-model:search="filters.search"
+                placeholder="Buscar especialidad"
+                :export-url="exportUrl"
+                :can-reset="hasActiveFilters"
+                @reset="reset"
+            />
+
             <div class="overflow-x-auto rounded-lg border">
                 <table class="w-full text-sm">
                     <thead class="bg-muted/50 text-left text-muted-foreground">
@@ -57,16 +78,16 @@ function destroy(id: number, name: string) {
                         </tr>
                     </thead>
                     <tbody class="divide-y">
-                        <tr v-if="specialties.length === 0">
+                        <tr v-if="props.specialties.data.length === 0">
                             <td
                                 colspan="3"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
-                                Aún no hay especialidades registradas.
+                                No se encontraron especialidades.
                             </td>
                         </tr>
                         <tr
-                            v-for="specialty in specialties"
+                            v-for="specialty in props.specialties.data"
                             :key="specialty.id"
                         >
                             <td class="px-4 py-3">
@@ -115,6 +136,9 @@ function destroy(id: number, name: string) {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination :paginator="props.specialties" />
+
             <p class="text-xs text-muted-foreground">
                 Solo se pueden eliminar las especialidades sin médicos
                 asignados.

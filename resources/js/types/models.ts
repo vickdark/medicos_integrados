@@ -8,6 +8,15 @@ export type RoleValue = 'admin' | 'doctor' | 'receptionist' | 'patient';
 export type AppointmentStatusValue =
     'requested' | 'confirmed' | 'completed' | 'cancelled';
 
+export type TableFilters = {
+    search: string;
+    status: string;
+    action: string;
+    patient_id: number | null;
+    from: string;
+    to: string;
+};
+
 export type Paginated<T> = {
     data: T[];
     current_page: number;

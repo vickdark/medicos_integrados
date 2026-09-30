@@ -14,10 +14,12 @@ enum AuditAction: string
     case Uploaded = 'uploaded';
     case Downloaded = 'downloaded';
     case Deleted = 'deleted';
+    case Exported = 'exported';
 
     public function label(): string
     {
         return match ($this) {
+            self::Exported => 'Exportó',
             self::Viewed => 'Consultó',
             self::Created => 'Creó',
             self::Updated => 'Modificó',

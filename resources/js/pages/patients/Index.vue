@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { useDebounceFn } from '@vueuse/core';
-import { Search, UserPlus } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { UserPlus } from 'lucide-vue-next';
 import Pagination from '@/components/Pagination.vue';
+import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import patientRoutes from '@/routes/patients';
 import type { BreadcrumbItem } from '@/types';
-import type { Paginated, Patient } from '@/types/models';
+import type { Paginated, Patient, TableFilters } from '@/types/models';
 
 const props = defineProps<{
     patients: Paginated<Patient>;
-    filters: { search: string };
+    filters: TableFilters;
     can: { create: boolean };
 }>();
 
@@ -21,16 +20,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Pacientes', href: patientRoutes.index() },
 ];
 
-const search = ref(props.filters.search);
+const { filters, activeFilters, hasActiveFilters, reset } = useTableFilters(
+    () => patientRoutes.index().url,
+    { search: props.filters.search },
+);
 
-const applySearch = useDebounceFn((term: string) => {
-    router.get(patientRoutes.index().url, term ? { search: term } : {}, {
-        preserveState: true,
-        replace: true,
-    });
-}, 300);
-
-watch(search, (term) => applySearch(term));
+const exportUrl = (format: 'xlsx' | 'pdf') =>
+    patientRoutes.export({ query: { ...activeFilters.value, format } }).url;
 </script>
 
 <template>
@@ -47,17 +43,13 @@ watch(search, (term) => applySearch(term));
                 </Button>
             </div>
 
-            <div class="relative max-w-sm">
-                <Search
-                    class="absolute top-2.5 left-3 size-4 text-muted-foreground"
-                />
-                <Input
-                    v-model="search"
-                    class="pl-9"
-                    placeholder="Buscar por nombre, documento o correo"
-                    aria-label="Buscar pacientes"
-                />
-            </div>
+            <TableToolbar
+                v-model:search="filters.search"
+                placeholder="Buscar por nombre, documento o correo"
+                :export-url="exportUrl"
+                :can-reset="hasActiveFilters"
+                @reset="reset"
+            />
 
             <div class="overflow-x-auto rounded-lg border">
                 <table class="w-full text-sm">

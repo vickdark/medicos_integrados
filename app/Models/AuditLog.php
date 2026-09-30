@@ -47,7 +47,7 @@ class AuditLog extends Model
     /**
      * Record an access or change over clinical information made by the authenticated user.
      */
-    public static function record(AuditAction $action, Model $auditable, string $description, ?Patient $patient = null): self
+    public static function record(AuditAction $action, ?Model $auditable, string $description, ?Patient $patient = null): self
     {
         $request = request();
 
@@ -55,8 +55,8 @@ class AuditLog extends Model
             'user_id' => $request->user()?->id,
             'patient_id' => $patient?->id ?? ($auditable instanceof Patient ? $auditable->id : null),
             'action' => $action,
-            'auditable_type' => $auditable->getMorphClass(),
-            'auditable_id' => $auditable->getKey(),
+            'auditable_type' => $auditable?->getMorphClass(),
+            'auditable_id' => $auditable?->getKey(),
             'description' => $description,
             'ip_address' => $request->ip(),
             'user_agent' => str($request->userAgent() ?? '')->limit(250)->toString() ?: null,

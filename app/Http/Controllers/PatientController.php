@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\AuditAction;
 use App\Enums\Gender;
 use App\Enums\UserRole;
+use App\Exports\PatientsExport;
+use App\Exports\TableExporter;
+use App\Http\Requests\ExportTableRequest;
 use App\Http\Requests\StorePatientRequest;
+use App\Http\Requests\TableQueryRequest;
 use App\Http\Requests\UpdatePatientRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Http\Resources\ConsultationResource;
@@ -17,38 +21,63 @@ use App\Models\Consultation;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\Payment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class PatientController extends Controller
 {
     /**
      * Display the list of patients visible to the user.
      */
-    public function index(Request $request): Response
+    public function index(TableQueryRequest $request): Response
     {
         Gate::authorize('viewAny', Patient::class);
 
-        $user = $request->user();
-
-        $patients = Patient::query()
-            ->when($user->role === UserRole::Doctor, fn ($query) => $query->treatedBy($user->doctor ?? new Doctor))
-            ->search($request->string('search')->toString())
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+        $patients = $this->filteredQuery($request)
             ->paginate(15)
             ->withQueryString()
             ->through(fn (Patient $patient): array => (new PatientResource($patient))->resolve($request));
 
         return Inertia::render('patients/Index', [
             'patients' => $patients,
-            'filters' => ['search' => $request->string('search')->toString()],
-            'can' => ['create' => $user->can('create', Patient::class)],
+            'filters' => $request->filters(),
+            'can' => ['create' => $request->user()->can('create', Patient::class)],
         ]);
+    }
+
+    /**
+     * Export the filtered patient directory to Excel or PDF.
+     */
+    public function export(ExportTableRequest $request, TableExporter $exporter): SymfonyResponse
+    {
+        Gate::authorize('viewAny', Patient::class);
+
+        return $exporter->download(
+            new PatientsExport($this->filteredQuery($request), $request->filters()),
+            $request->exportFormat(),
+        );
+    }
+
+    /**
+     * Patients visible to the user, filtered by the table search.
+     *
+     * @return Builder<Patient>
+     */
+    private function filteredQuery(TableQueryRequest $request): Builder
+    {
+        $user = $request->user();
+
+        return Patient::query()
+            ->when($user->role === UserRole::Doctor, fn (Builder $query) => $query->treatedBy($user->doctor ?? new Doctor))
+            ->search($request->searchTerm())
+            ->orderBy('last_name')
+            ->orderBy('first_name');
     }
 
     /**

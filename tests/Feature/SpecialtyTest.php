@@ -13,7 +13,7 @@ it('lists the specialties for the admin', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('specialties/Index')
-            ->has('specialties', 3)
+            ->has('specialties.data', 3)
         );
 });
 

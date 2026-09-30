@@ -18,6 +18,13 @@ Route::get('/', HomeController::class)->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
+    Route::get('patients/export', [PatientController::class, 'export'])->name('patients.export');
+    Route::get('appointments/export', [AppointmentController::class, 'export'])->name('appointments.export');
+    Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
+    Route::get('doctors/export', [DoctorController::class, 'export'])->name('doctors.export');
+    Route::get('specialties/export', [SpecialtyController::class, 'export'])->name('specialties.export');
+    Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
+
     Route::resource('patients', PatientController::class)->except(['destroy']);
 
     Route::get('patients/{patient}/consultations/create', [ConsultationController::class, 'create'])->name('consultations.create');

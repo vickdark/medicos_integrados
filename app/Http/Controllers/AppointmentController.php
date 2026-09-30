@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Enums\AppointmentStatus;
 use App\Enums\UserRole;
+use App\Exports\AppointmentsExport;
+use App\Exports\TableExporter;
+use App\Http\Requests\ExportTableRequest;
 use App\Http\Requests\StoreAppointmentRequest;
+use App\Http\Requests\TableQueryRequest;
 use App\Http\Requests\UpdateAppointmentStatusRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Models\Appointment;
@@ -15,42 +19,72 @@ use App\Models\User;
 use App\Notifications\AppointmentCancelled;
 use App\Notifications\AppointmentConfirmed;
 use App\Notifications\AppointmentRequested;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class AppointmentController extends Controller
 {
     /**
      * Display the appointments visible to the user.
      */
-    public function index(Request $request): Response
+    public function index(TableQueryRequest $request): Response
     {
         Gate::authorize('viewAny', Appointment::class);
 
-        $request->validate([
-            'status' => ['nullable', Rule::enum(AppointmentStatus::class)],
-        ]);
-
-        $appointments = Appointment::query()
-            ->visibleTo($request->user())
+        $appointments = $this->filteredQuery($request)
             ->with(['patient', 'doctor.user', 'doctor.specialty', 'consultation'])
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
-            ->latest('scheduled_at')
             ->paginate(15)
             ->withQueryString()
             ->through(fn (Appointment $appointment): array => (new AppointmentResource($appointment))->resolve($request));
 
         return Inertia::render('appointments/Index', [
             'appointments' => $appointments,
-            'filters' => ['status' => $request->string('status')->toString()],
+            'filters' => $request->filters(),
             'statuses' => AppointmentStatus::options(),
             'can' => ['create' => $request->user()->can('create', Appointment::class)],
         ]);
+    }
+
+    /**
+     * Export the filtered appointments to Excel or PDF.
+     */
+    public function export(ExportTableRequest $request, TableExporter $exporter): SymfonyResponse
+    {
+        Gate::authorize('viewAny', Appointment::class);
+
+        return $exporter->download(
+            new AppointmentsExport($this->filteredQuery($request), $request->filters()),
+            $request->exportFormat(),
+        );
+    }
+
+    /**
+     * Appointments visible to the user, narrowed by the table filters.
+     *
+     * @return Builder<Appointment>
+     */
+    private function filteredQuery(TableQueryRequest $request): Builder
+    {
+        $term = $request->searchTerm();
+        $status = AppointmentStatus::tryFrom($request->string('status')->toString());
+
+        return Appointment::query()
+            ->visibleTo($request->user())
+            ->when($term, fn (Builder $query) => $query->where(function (Builder $query) use ($term): void {
+                $query->where('reason', 'like', "%{$term}%")
+                    ->orWhereHas('patient', fn (Builder $query) => $query->search($term))
+                    ->orWhereHas('doctor.user', fn (Builder $query) => $query->where('name', 'like', "%{$term}%"));
+            }))
+            ->when($status, fn (Builder $query) => $query->where('status', $status))
+            ->when($request->filled('from'), fn (Builder $query) => $query->whereDate('scheduled_at', '>=', $request->date('from')))
+            ->when($request->filled('to'), fn (Builder $query) => $query->whereDate('scheduled_at', '<=', $request->date('to')))
+            ->latest('scheduled_at');
     }
 
     /**

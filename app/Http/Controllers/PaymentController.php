@@ -4,33 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Exports\PaymentsExport;
+use App\Exports\TableExporter;
+use App\Http\Requests\ExportTableRequest;
 use App\Http\Requests\StorePaymentRequest;
+use App\Http\Requests\TableQueryRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Patient;
 use App\Models\Payment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class PaymentController extends Controller
 {
     /**
      * Display the payments visible to the user.
      */
-    public function index(Request $request): Response
+    public function index(TableQueryRequest $request): Response
     {
         Gate::authorize('viewAny', Payment::class);
 
-        $user = $request->user();
+        $filteredPayments = $this->filteredQuery($request);
 
-        $visiblePayments = Payment::query()->visibleTo($user);
-
-        $payments = (clone $visiblePayments)
+        $payments = (clone $filteredPayments)
             ->with('patient')
-            ->latest('paid_at')
-            ->latest()
             ->paginate(15)
             ->withQueryString()
             ->through(fn (Payment $payment): array => (new PaymentResource($payment))->resolve($request));
@@ -38,11 +40,50 @@ class PaymentController extends Controller
         return Inertia::render('payments/Index', [
             'payments' => $payments,
             'totals' => [
-                'paid' => (float) (clone $visiblePayments)->where('status', PaymentStatus::Paid)->sum('amount'),
-                'pending' => (float) (clone $visiblePayments)->where('status', PaymentStatus::Pending)->sum('amount'),
+                'paid' => (float) (clone $filteredPayments)->reorder()->where('status', PaymentStatus::Paid)->sum('amount'),
+                'pending' => (float) (clone $filteredPayments)->reorder()->where('status', PaymentStatus::Pending)->sum('amount'),
             ],
-            'can' => ['create' => $user->can('create', Payment::class)],
+            'filters' => $request->filters(),
+            'statuses' => PaymentStatus::options(),
+            'can' => ['create' => $request->user()->can('create', Payment::class)],
         ]);
+    }
+
+    /**
+     * Export the filtered payments to Excel or PDF.
+     */
+    public function export(ExportTableRequest $request, TableExporter $exporter): SymfonyResponse
+    {
+        Gate::authorize('viewAny', Payment::class);
+
+        return $exporter->download(
+            new PaymentsExport($this->filteredQuery($request), $request->filters()),
+            $request->exportFormat(),
+        );
+    }
+
+    /**
+     * Payments visible to the user, narrowed by the table filters.
+     *
+     * @return Builder<Payment>
+     */
+    private function filteredQuery(TableQueryRequest $request): Builder
+    {
+        $term = $request->searchTerm();
+        $status = PaymentStatus::tryFrom($request->string('status')->toString());
+
+        return Payment::query()
+            ->visibleTo($request->user())
+            ->when($term, fn (Builder $query) => $query->where(function (Builder $query) use ($term): void {
+                $query->where('concept', 'like', "%{$term}%")
+                    ->orWhere('reference', 'like', "%{$term}%")
+                    ->orWhereHas('patient', fn (Builder $query) => $query->search($term));
+            }))
+            ->when($status, fn (Builder $query) => $query->where('status', $status))
+            ->when($request->filled('from'), fn (Builder $query) => $query->whereDate('paid_at', '>=', $request->date('from')))
+            ->when($request->filled('to'), fn (Builder $query) => $query->whereDate('paid_at', '<=', $request->date('to')))
+            ->latest('paid_at')
+            ->latest('id');
     }
 
     /**

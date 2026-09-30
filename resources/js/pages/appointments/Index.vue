@@ -2,9 +2,12 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { CalendarPlus } from 'lucide-vue-next';
 import { computed } from 'vue';
+import DateRangeFilter from '@/components/DateRangeFilter.vue';
 import Pagination from '@/components/Pagination.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
+import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDateTime } from '@/lib/format';
 import appointmentRoutes from '@/routes/appointments';
@@ -17,14 +20,28 @@ import type {
     Option,
     Paginated,
     RoleValue,
+    TableFilters,
 } from '@/types/models';
 
 const props = defineProps<{
     appointments: Paginated<Appointment>;
-    filters: { status: string };
+    filters: TableFilters;
     statuses: Option[];
     can: { create: boolean };
 }>();
+
+const { filters, activeFilters, hasActiveFilters, reset } = useTableFilters(
+    () => appointmentRoutes.index().url,
+    {
+        search: props.filters.search,
+        status: props.filters.status,
+        from: props.filters.from,
+        to: props.filters.to,
+    },
+);
+
+const exportUrl = (format: 'xlsx' | 'pdf') =>
+    appointmentRoutes.export({ query: { ...activeFilters.value, format } }).url;
 
 const page = usePage();
 const role = computed(() => page.props.auth.role?.value as RoleValue);
@@ -40,13 +57,6 @@ const title = computed(() =>
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Citas', href: appointmentRoutes.index() },
 ];
-
-function filterBy(status: string) {
-    router.get(appointmentRoutes.index().url, status ? { status } : {}, {
-        preserveState: true,
-        replace: true,
-    });
-}
 
 function changeStatus(
     appointment: Appointment,
@@ -96,7 +106,7 @@ function changeStatus(
                 <Button
                     size="sm"
                     :variant="filters.status === '' ? 'default' : 'outline'"
-                    @click="filterBy('')"
+                    @click="filters.status = ''"
                 >
                     Todas
                 </Button>
@@ -107,11 +117,30 @@ function changeStatus(
                     :variant="
                         filters.status === status.value ? 'default' : 'outline'
                     "
-                    @click="filterBy(status.value)"
+                    @click="filters.status = status.value"
                 >
                     {{ status.label }}
                 </Button>
             </div>
+
+            <TableToolbar
+                v-model:search="filters.search"
+                :placeholder="
+                    role === 'patient'
+                        ? 'Buscar por médico o motivo'
+                        : 'Buscar por paciente, documento, médico o motivo'
+                "
+                :export-url="exportUrl"
+                :can-reset="hasActiveFilters"
+                @reset="reset"
+            >
+                <template #filters>
+                    <DateRangeFilter
+                        v-model:from="filters.from"
+                        v-model:to="filters.to"
+                    />
+                </template>
+            </TableToolbar>
 
             <div class="overflow-x-auto rounded-lg border">
                 <table class="w-full text-sm">

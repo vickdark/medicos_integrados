@@ -2,21 +2,32 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { Clock, UserPlus } from 'lucide-vue-next';
 import Pagination from '@/components/Pagination.vue';
+import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
+import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatMoney } from '@/lib/format';
 import doctorRoutes from '@/routes/doctors';
 import scheduleRoutes from '@/routes/schedules';
 import type { BreadcrumbItem } from '@/types';
-import type { Doctor, Paginated } from '@/types/models';
+import type { Doctor, Paginated, TableFilters } from '@/types/models';
 
 const props = defineProps<{
     doctors: Paginated<Doctor>;
+    filters: TableFilters;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Médicos', href: doctorRoutes.index() },
 ];
+
+const { filters, activeFilters, hasActiveFilters, reset } = useTableFilters(
+    () => doctorRoutes.index().url,
+    { search: props.filters.search },
+);
+
+const exportUrl = (format: 'xlsx' | 'pdf') =>
+    doctorRoutes.export({ query: { ...activeFilters.value, format } }).url;
 </script>
 
 <template>
@@ -32,6 +43,14 @@ const breadcrumbs: BreadcrumbItem[] = [
                     >
                 </Button>
             </div>
+
+            <TableToolbar
+                v-model:search="filters.search"
+                placeholder="Buscar por nombre, correo, especialidad o colegiatura"
+                :export-url="exportUrl"
+                :can-reset="hasActiveFilters"
+                @reset="reset"
+            />
 
             <div class="overflow-x-auto rounded-lg border">
                 <table class="w-full text-sm">
@@ -50,6 +69,14 @@ const breadcrumbs: BreadcrumbItem[] = [
                         </tr>
                     </thead>
                     <tbody class="divide-y">
+                        <tr v-if="props.doctors.data.length === 0">
+                            <td
+                                colspan="6"
+                                class="px-4 py-10 text-center text-muted-foreground"
+                            >
+                                No se encontraron médicos.
+                            </td>
+                        </tr>
                         <tr
                             v-for="doctor in props.doctors.data"
                             :key="doctor.id"

@@ -18,7 +18,7 @@ class SpecialtyFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->randomElement([
+            'name' => fake()->randomElement([
                 'Medicina General', 'Pediatría', 'Cardiología', 'Dermatología', 'Ginecología',
                 'Traumatología', 'Neurología', 'Oftalmología', 'Psiquiatría', 'Endocrinología',
             ]).' '.fake()->unique()->numberBetween(1, 9999),

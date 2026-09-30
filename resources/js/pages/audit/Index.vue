@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { X } from 'lucide-vue-next';
+import DateRangeFilter from '@/components/DateRangeFilter.vue';
 import Pagination from '@/components/Pagination.vue';
-import { Button } from '@/components/ui/button';
+import TableToolbar from '@/components/TableToolbar.vue';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDateTime } from '@/lib/format';
 import auditLogRoutes from '@/routes/audit-logs';
 import patientRoutes from '@/routes/patients';
 import type { BreadcrumbItem } from '@/types';
-import type { Option, Paginated } from '@/types/models';
+import type { Option, Paginated, TableFilters } from '@/types/models';
 
 type AuditLogEntry = {
     id: number;
@@ -22,7 +26,7 @@ type AuditLogEntry = {
 
 const props = defineProps<{
     logs: Paginated<AuditLogEntry>;
-    filters: { action: string; patient_id: number | null };
+    filters: TableFilters;
     patient: { id: number; full_name: string } | null;
     actions: Option[];
 }>();
@@ -31,18 +35,19 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Auditoría', href: auditLogRoutes.index() },
 ];
 
-function applyFilters(changes: Partial<typeof props.filters>) {
-    const query = Object.fromEntries(
-        Object.entries({ ...props.filters, ...changes }).filter(
-            ([, value]) => value !== '' && value !== null,
-        ),
-    );
+const { filters, activeFilters, hasActiveFilters, reset } = useTableFilters(
+    () => auditLogRoutes.index().url,
+    {
+        search: props.filters.search,
+        action: props.filters.action,
+        patient_id: props.filters.patient_id,
+        from: props.filters.from,
+        to: props.filters.to,
+    },
+);
 
-    router.get(auditLogRoutes.index().url, query, {
-        preserveState: true,
-        replace: true,
-    });
-}
+const exportUrl = (format: 'xlsx' | 'pdf') =>
+    auditLogRoutes.export({ query: { ...activeFilters.value, format } }).url;
 </script>
 
 <template>
@@ -59,34 +64,51 @@ function applyFilters(changes: Partial<typeof props.filters>) {
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-                <Button
-                    size="sm"
-                    :variant="filters.action === '' ? 'default' : 'outline'"
-                    @click="applyFilters({ action: '' })"
-                >
-                    Todas
-                </Button>
-                <Button
-                    v-for="action in actions"
-                    :key="action.value"
-                    size="sm"
-                    :variant="
-                        filters.action === action.value ? 'default' : 'outline'
-                    "
-                    @click="applyFilters({ action: action.value })"
-                >
-                    {{ action.label }}
-                </Button>
+            <TableToolbar
+                v-model:search="filters.search"
+                placeholder="Buscar por usuario, paciente, descripción o IP"
+                :export-url="exportUrl"
+                :can-reset="hasActiveFilters"
+                @reset="reset"
+            >
+                <template #filters>
+                    <div class="grid gap-1">
+                        <Label
+                            for="filter-action"
+                            class="text-xs text-muted-foreground"
+                            >Acción</Label
+                        >
+                        <NativeSelect
+                            id="filter-action"
+                            v-model="filters.action"
+                            class="w-36"
+                        >
+                            <option value="">Todas</option>
+                            <option
+                                v-for="action in actions"
+                                :key="action.value"
+                                :value="action.value"
+                            >
+                                {{ action.label }}
+                            </option>
+                        </NativeSelect>
+                    </div>
+                    <DateRangeFilter
+                        v-model:from="filters.from"
+                        v-model:to="filters.to"
+                    />
+                </template>
+            </TableToolbar>
+
+            <div v-if="patient && filters.patient_id">
                 <span
-                    v-if="patient"
                     class="inline-flex items-center gap-1 rounded-full border bg-muted px-3 py-1 text-sm"
                 >
                     Paciente: {{ patient.full_name }}
                     <button
                         type="button"
                         aria-label="Quitar filtro de paciente"
-                        @click="applyFilters({ patient_id: null })"
+                        @click="filters.patient_id = null"
                     >
                         <X class="size-3.5" />
                     </button>
@@ -142,9 +164,7 @@ function applyFilters(changes: Partial<typeof props.filters>) {
                                         type="button"
                                         class="ml-2 text-xs text-muted-foreground hover:underline"
                                         @click="
-                                            applyFilters({
-                                                patient_id: log.patient.id,
-                                            })
+                                            filters.patient_id = log.patient.id
                                         "
                                     >
                                         filtrar

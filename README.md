@@ -30,6 +30,7 @@ El sistema tiene tres partes:
    - Pagos: registro manual (efectivo, tarjeta, transferencia u otro), en estado pendiente o pagado.
    - Médicos, especialidades y horarios de atención.
    - Auditoría de accesos y cambios sobre la información clínica.
+   - **Todas las tablas** tienen paginación, buscador y filtros en el servidor, y exportación a **Excel y PDF** de lo que se está viendo.
 3. **Portal del paciente**: su historial médico, sus citas (puede solicitarlas y cancelarlas), sus pagos, la descarga de sus adjuntos y la actualización de sus datos de contacto.
 
 Además incluye:
@@ -69,6 +70,7 @@ Quien se registra desde la web queda como **paciente**. Si recepción ya había 
 | Backend | PHP **8.2**, Laravel 12, Laravel Fortify |
 | Frontend | Vue 3 + TypeScript, Inertia.js 2, Tailwind CSS 4, componentes shadcn-vue (reka-ui), iconos lucide |
 | Rutas tipadas | Laravel Wayfinder (genera `resources/js/routes` y `resources/js/actions`) |
+| Exportación | PhpSpreadsheet (Excel) y barryvdh/laravel-dompdf (PDF) |
 | Base de datos | MySQL 8 |
 | Colas y correo | Cola `database`; en desarrollo el correo se escribe en el log |
 | Pruebas | Pest 3 |
@@ -120,7 +122,7 @@ php artisan migrate --seed
 npm run build
 ```
 
-Con Herd, el sitio queda disponible en `http://medicos_integrados.test`.
+Con Herd, el sitio queda disponible en `https://medicos_integrados.test` (con el sitio asegurado mediante `herd secure`). Mantén `APP_URL` con la misma URL, porque los enlaces de los correos se generan a partir de ella.
 
 ### Variables de entorno relevantes
 
@@ -186,7 +188,8 @@ routes/web.php ──► Controlador ──► Form Request (validación + autor
 app/
 ├── Actions/Fortify/        Registro (crea o vincula la ficha del paciente) y reseteo de contraseña
 ├── Concerns/               Traits de validación y opciones de enums
-├── Enums/                  UserRole, AppointmentStatus, PaymentMethod, PaymentStatus, Gender, AuditAction
+├── Enums/                  UserRole, AppointmentStatus, PaymentMethod, PaymentStatus, Gender, AuditAction, ExportFormat
+├── Exports/                TableExporter (genera Excel y PDF) y una clase *Export por tabla con sus columnas
 ├── Http/
 │   ├── Controllers/        Un controlador por módulo (Patient, Appointment, Consultation, Payment…)
 │   ├── Middleware/         HandleInertiaRequests (props compartidos), HandleAppearance (tema)
@@ -261,6 +264,31 @@ Estados:
 
 - **Cita:** `requested` (solicitada) → `confirmed` (confirmada) → `completed` (completada), o `cancelled` (cancelada). Pasa a completada automáticamente al registrar la consulta asociada.
 - **Pago:** `pending` (pendiente) o `paid` (pagado). Existe también `voided` (anulado), aún sin interfaz.
+
+## Tablas: búsqueda, filtros y exportación
+
+Todas las tablas funcionan del lado del servidor:
+
+1. El controlador de cada listado tiene un método `filteredQuery(TableQueryRequest)` que aplica los permisos del rol, la búsqueda y los filtros.
+2. `index()` pagina esa consulta (15 filas; 25 en auditoría) y `export()` la reutiliza. Así, **lo que se exporta es exactamente lo que se ve**.
+3. En el frontend, `useTableFilters` sincroniza los filtros con la URL (la búsqueda espera 300 ms mientras escribes), y `TableToolbar` muestra el buscador, los filtros extra y los botones **Excel** / **PDF**.
+
+| Tabla | Búsqueda | Filtros |
+|---|---|---|
+| Pacientes | Nombre, documento, correo | — |
+| Citas | Paciente, documento, médico, motivo | Estado, rango de fechas |
+| Pagos | Paciente, concepto, referencia | Estado, rango de fechas (los totales se recalculan) |
+| Médicos | Nombre, correo, especialidad, colegiatura | — |
+| Especialidades | Nombre, descripción | — |
+| Auditoría | Usuario, paciente, descripción, IP | Acción, paciente, rango de fechas |
+
+Sobre la exportación (`GET /{tabla}/export?format=xlsx|pdf&…filtros`):
+
+- **Excel:** encabezados con formato, autofiltro, primera fila congelada y montos numéricos. Los textos se guardan como texto literal, para que un valor como `=HYPERLINK(...)` nunca se ejecute como fórmula.
+- **PDF:** hoja A4 horizontal con los filtros aplicados, la fecha y el usuario que lo generó. Muestra como máximo 1.000 filas; para más, usa Excel.
+- **Datos excluidos:** el listado de pacientes **no incluye datos clínicos**.
+- **Auditoría:** cada exportación queda registrada (acción "Exportó").
+- **Agregar una tabla nueva:** crear una clase en `app/Exports` que extienda `TableExport` (título, encabezados y filas), agregar la acción `export()` y la ruta `…/export` **antes** del `Route::resource`.
 
 ## Seguridad y privacidad
 
