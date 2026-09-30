@@ -20,6 +20,12 @@ const props = defineProps<{
         document_number: string | null;
     }[];
     selectedPatientId: number | null;
+    prefill: {
+        appointment_id: number | null;
+        concept: string;
+        amount: string;
+        method: string | null;
+    } | null;
     appointments: { id: number; label: string }[];
     methods: Option[];
     statuses: Option[];
@@ -90,7 +96,7 @@ function loadPatientAppointments(event: Event) {
                     <NativeSelect
                         id="appointment_id"
                         name="appointment_id"
-                        default-value=""
+                        :default-value="props.prefill?.appointment_id ?? ''"
                     >
                         <option value="">Ninguna</option>
                         <option
@@ -109,6 +115,7 @@ function loadPatientAppointments(event: Event) {
                     <Input
                         id="concept"
                         name="concept"
+                        :default-value="props.prefill?.concept ?? ''"
                         placeholder="Consulta médica"
                         required
                     />
@@ -122,6 +129,7 @@ function loadPatientAppointments(event: Event) {
                             id="amount"
                             type="number"
                             name="amount"
+                            :default-value="props.prefill?.amount ?? ''"
                             step="0.01"
                             min="0.01"
                             required
@@ -133,7 +141,7 @@ function loadPatientAppointments(event: Event) {
                         <NativeSelect
                             id="method"
                             name="method"
-                            default-value="cash"
+                            :default-value="props.prefill?.method ?? 'cash'"
                             required
                         >
                             <option

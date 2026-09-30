@@ -2,7 +2,9 @@
 
 namespace App\Policies;
 
+use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
+use App\Models\Payment;
 use App\Models\User;
 
 class PaymentPolicy
@@ -21,5 +23,13 @@ class PaymentPolicy
     public function create(User $user): bool
     {
         return $user->hasRole(UserRole::Admin, UserRole::Receptionist);
+    }
+
+    /**
+     * Determine whether the user can mark a pending payment as paid.
+     */
+    public function markPaid(User $user, Payment $payment): bool
+    {
+        return $this->create($user) && $payment->status === PaymentStatus::Pending;
     }
 }

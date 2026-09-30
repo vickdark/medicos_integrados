@@ -27,6 +27,9 @@ El sistema tiene tres partes:
    - Pacientes: alta, búsqueda, edición y ficha con datos personales, antecedentes, citas, consultas y pagos.
    - Historia clínica: consultas con signos vitales, diagnóstico, tratamiento, notas internas, recetas y archivos adjuntos (PDF o imágenes).
    - Citas: agenda, confirmación y cancelación. Se valida el horario de atención del médico y que no haya otra cita en el mismo horario.
+   - **Calendario de citas** (médico, recepción y paciente, sobre `/appointments`): en pantallas grandes vistas Día (por defecto), Semana y Mes; en móvil, mini calendario mensual con vista Día y Agenda como segunda opción. Alterna con la vista Lista (filtros y exportación). Los datos vienen de `GET /appointments/calendar?from&to` (máx. 62 días) y respetan la visibilidad por rol.
+   - **Pago rápido:** el botón de pago en la fila de una cita abre el formulario con paciente, cita, concepto y monto (tarifa del médico) precargados; en Pagos, los pendientes se marcan como pagados desde un diálogo (`PATCH /payments/{id}/paid`).
+   - Las acciones de las tablas usan botones de icono con tooltip (`IconButton`).
    - Pagos: registro manual (efectivo, tarjeta, transferencia u otro), en estado pendiente o pagado.
    - Médicos, especialidades y horarios de atención.
    - Auditoría de accesos y cambios sobre la información clínica.

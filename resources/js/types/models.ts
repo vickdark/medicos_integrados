@@ -68,12 +68,19 @@ export type Appointment = {
     id: number;
     scheduled_at: string;
     status: Option & { value: AppointmentStatusValue };
+    payment_status: Option | null;
+    pending_payment_id: number | null;
     reason: string;
     notes: string | null;
     patient?: PersonReference;
     doctor?: DoctorReference;
     consultation_id?: number | null;
-    can: { update_status: boolean };
+    can: {
+        view_consultation: boolean;
+        update_status: boolean;
+        register_payment: boolean;
+        settle_payment: boolean;
+    };
 };
 
 export type Prescription = {
@@ -123,6 +130,14 @@ export type Payment = {
     paid_at: string | null;
     notes: string | null;
     patient?: PersonReference;
+    appointment?: {
+        id: number;
+        scheduled_at: string;
+        reason: string;
+        status: Option;
+        doctor: string;
+    } | null;
+    can: { mark_paid: boolean };
     created_at: string;
 };
 

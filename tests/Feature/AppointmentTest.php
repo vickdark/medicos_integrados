@@ -4,6 +4,7 @@ use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
+use App\Models\Payment;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -138,4 +139,82 @@ it('filters appointments by status', function () {
     $this->actingAs(User::factory()->admin()->create())
         ->get(route('appointments.index', ['status' => 'cancelled']))
         ->assertInertia(fn (Assert $page) => $page->has('appointments.data', 1));
+});
+
+it('returns only the visible appointments inside the calendar window', function () {
+    $doctor = Doctor::factory()->create();
+    $inside = Appointment::factory()->confirmed()->create(['doctor_id' => $doctor->id, 'scheduled_at' => '2026-10-10 09:00:00']);
+    Appointment::factory()->confirmed()->create(['doctor_id' => $doctor->id, 'scheduled_at' => '2026-12-10 09:00:00']);
+    Appointment::factory()->confirmed()->create(['scheduled_at' => '2026-10-10 10:00:00']);
+
+    $this->actingAs($doctor->user)
+        ->getJson(route('appointments.calendar', ['from' => '2026-09-28', 'to' => '2026-11-08']))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $inside->id);
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->getJson(route('appointments.calendar', ['from' => '2026-09-28', 'to' => '2026-11-08']))
+        ->assertJsonCount(2, 'data');
+});
+
+it('validates the calendar window', function () {
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->getJson(route('appointments.calendar', ['from' => '2026-10-10', 'to' => '2026-10-01']))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('to');
+
+    $this->getJson(route('appointments.calendar'))->assertUnprocessable();
+});
+
+it('requires authentication for the calendar feed', function () {
+    auth()->logout();
+
+    $this->getJson(route('appointments.calendar', ['from' => '2026-10-01', 'to' => '2026-10-31']))->assertUnauthorized();
+});
+
+it('offers the payment action only to staff on unpaid confirmed or completed appointments', function () {
+    $appointment = Appointment::factory()->confirmed()->create();
+    $calendar = fn () => route('appointments.calendar', [
+        'from' => $appointment->scheduled_at->copy()->subDay()->toDateString(),
+        'to' => $appointment->scheduled_at->copy()->addDay()->toDateString(),
+    ]);
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->getJson($calendar())
+        ->assertJsonPath('data.0.can.register_payment', true);
+
+    Payment::factory()->create(['appointment_id' => $appointment->id, 'patient_id' => $appointment->patient_id]);
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->getJson($calendar())
+        ->assertJsonPath('data.0.can.register_payment', false);
+
+    $this->actingAs($appointment->doctor->user)
+        ->getJson($calendar())
+        ->assertJsonPath('data.0.can.register_payment', false);
+});
+
+it('shows the payment indicator of the appointment and updates it when the payment is settled', function () {
+    $appointment = Appointment::factory()->confirmed()->create();
+    $receptionist = User::factory()->receptionist()->create();
+    $feed = route('appointments.calendar', [
+        'from' => $appointment->scheduled_at->copy()->subDay()->toDateString(),
+        'to' => $appointment->scheduled_at->copy()->addDay()->toDateString(),
+    ]);
+
+    $this->actingAs($receptionist)->getJson($feed)->assertJsonPath('data.0.payment_status', null);
+
+    $payment = Payment::factory()->pending()->create(['appointment_id' => $appointment->id, 'patient_id' => $appointment->patient_id]);
+
+    $this->actingAs($receptionist)->getJson($feed)
+        ->assertJsonPath('data.0.payment_status.value', 'pending')
+        ->assertJsonPath('data.0.can.register_payment', false);
+
+    $this->actingAs($receptionist)
+        ->patch(route('payments.paid', $payment), ['method' => 'cash', 'paid_at' => now()->toDateString()]);
+
+    $this->actingAs($receptionist)->getJson($feed)
+        ->assertJsonPath('data.0.payment_status.value', 'paid')
+        ->assertJsonPath('data.0.payment_status.label', 'Pagada');
 });

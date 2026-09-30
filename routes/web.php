@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('patients/export', [PatientController::class, 'export'])->name('patients.export');
+    Route::get('appointments/calendar', [AppointmentController::class, 'calendar'])->name('appointments.calendar');
     Route::get('appointments/export', [AppointmentController::class, 'export'])->name('appointments.export');
     Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
     Route::get('doctors/export', [DoctorController::class, 'export'])->name('doctors.export');
@@ -37,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
 
     Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store']);
+    Route::patch('payments/{payment}/paid', [PaymentController::class, 'markPaid'])->name('payments.paid');
 
     Route::post('consultations/{consultation}/attachments', [ConsultationAttachmentController::class, 'store'])->name('attachments.store');
     Route::get('attachments/{attachment}', [ConsultationAttachmentController::class, 'show'])->name('attachments.show');

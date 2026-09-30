@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Payments\OpenAppointmentCharge;
 use App\Enums\AppointmentStatus;
 use App\Enums\UserRole;
 use App\Exports\AppointmentsExport;
 use App\Exports\TableExporter;
+use App\Http\Requests\CalendarRangeRequest;
 use App\Http\Requests\ExportTableRequest;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\TableQueryRequest;
@@ -20,6 +22,7 @@ use App\Notifications\AppointmentCancelled;
 use App\Notifications\AppointmentConfirmed;
 use App\Notifications\AppointmentRequested;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -39,6 +42,7 @@ class AppointmentController extends Controller
 
         $appointments = $this->filteredQuery($request)
             ->with(['patient', 'doctor.user', 'doctor.specialty', 'consultation'])
+            ->withPaymentFlags()
             ->paginate(self::TABLE_PAGE_SIZE)
             ->withQueryString()
             ->through(fn (Appointment $appointment): array => (new AppointmentResource($appointment))->resolve($request));
@@ -49,6 +53,26 @@ class AppointmentController extends Controller
             'statuses' => AppointmentStatus::options(),
             'can' => ['create' => $request->user()->can('create', Appointment::class)],
         ]);
+    }
+
+    /**
+     * Appointments inside a date window, for the calendar views. It is not
+     * paginated because the window is capped by the request.
+     */
+    public function calendar(CalendarRangeRequest $request): JsonResponse
+    {
+        Gate::authorize('viewAny', Appointment::class);
+
+        $appointments = Appointment::query()
+            ->visibleTo($request->user())
+            ->whereBetween('scheduled_at', [$request->rangeStart(), $request->rangeEnd()])
+            ->with(['patient', 'doctor.user', 'doctor.specialty', 'consultation'])
+            ->withPaymentFlags()
+            ->orderBy('scheduled_at')
+            ->get()
+            ->map(fn (Appointment $appointment): array => (new AppointmentResource($appointment))->resolve($request));
+
+        return response()->json(['data' => $appointments]);
     }
 
     /**
@@ -128,7 +152,7 @@ class AppointmentController extends Controller
     /**
      * Store the new appointment.
      */
-    public function store(StoreAppointmentRequest $request): RedirectResponse
+    public function store(StoreAppointmentRequest $request, OpenAppointmentCharge $charge): RedirectResponse
     {
         $user = $request->user();
 
@@ -140,6 +164,7 @@ class AppointmentController extends Controller
         ]);
 
         if ($user->isStaff()) {
+            $charge->open($appointment);
             $appointment->patient->user?->notify(new AppointmentConfirmed($appointment));
         } else {
             Notification::send(
@@ -156,9 +181,15 @@ class AppointmentController extends Controller
     /**
      * Change the status of the appointment and notify the other party.
      */
-    public function updateStatus(UpdateAppointmentStatusRequest $request, Appointment $appointment): RedirectResponse
+    public function updateStatus(UpdateAppointmentStatusRequest $request, Appointment $appointment, OpenAppointmentCharge $charge): RedirectResponse
     {
         $appointment->update(['status' => $request->enum('status', AppointmentStatus::class)]);
+
+        match ($appointment->status) {
+            AppointmentStatus::Confirmed => $charge->open($appointment),
+            AppointmentStatus::Cancelled => $charge->void($appointment),
+            default => null,
+        };
 
         match ($appointment->status) {
             AppointmentStatus::Confirmed => $appointment->patient->user?->notify(new AppointmentConfirmed($appointment)),

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import IconButton from '@/components/IconButton.vue';
 import Pagination from '@/components/Pagination.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
 import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { confirmAction } from '@/lib/confirm';
 import specialtyRoutes from '@/routes/specialties';
 import type { BreadcrumbItem } from '@/types';
 import type { Paginated, TableFilters } from '@/types/models';
@@ -33,12 +35,20 @@ const { filters, activeFilters, hasActiveFilters, reset } = useTableFilters(
 const exportUrl = (format: 'xlsx' | 'pdf') =>
     specialtyRoutes.export({ query: { ...activeFilters.value, format } }).url;
 
-function destroy(id: number, name: string) {
-    if (!confirm(`¿Eliminar la especialidad «${name}»?`)) {
-        return;
-    }
+async function destroy(id: number, name: string) {
+    const accepted = await confirmAction({
+        title: 'Eliminar especialidad',
+        text: `Se eliminará «${name}». Esta acción no se puede deshacer.`,
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Volver',
+        tone: 'danger',
+    });
 
-    router.delete(specialtyRoutes.destroy(id).url, { preserveScroll: true });
+    if (accepted) {
+        router.delete(specialtyRoutes.destroy(id).url, {
+            preserveScroll: true,
+        });
+    }
 }
 </script>
 
@@ -100,10 +110,10 @@ function destroy(id: number, name: string) {
                                 {{ specialty.doctors_count }}
                             </td>
                             <td class="px-4 py-3">
-                                <div class="flex justify-end gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
+                                <div class="flex justify-end gap-1.5">
+                                    <IconButton
+                                        label="Editar"
+                                        tone="info"
                                         as-child
                                     >
                                         <Link
@@ -113,14 +123,13 @@ function destroy(id: number, name: string) {
                                                 )
                                             "
                                         >
-                                            <Pencil /> Editar
+                                            <Pencil />
                                         </Link>
-                                    </Button>
-                                    <Button
+                                    </IconButton>
+                                    <IconButton
                                         v-if="specialty.can_delete"
-                                        size="sm"
-                                        variant="ghost"
-                                        class="text-destructive"
+                                        label="Eliminar"
+                                        tone="danger"
                                         @click="
                                             destroy(
                                                 specialty.id,
@@ -128,8 +137,8 @@ function destroy(id: number, name: string) {
                                             )
                                         "
                                     >
-                                        <Trash2 /> Eliminar
-                                    </Button>
+                                        <Trash2 />
+                                    </IconButton>
                                 </div>
                             </td>
                         </tr>

@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { Plus } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { Form, Head, Link, usePage } from '@inertiajs/vue3';
+import { CircleCheck, Plus, ReceiptText } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import DateRangeFilter from '@/components/DateRangeFilter.vue';
+import IconButton from '@/components/IconButton.vue';
+import InputError from '@/components/InputError.vue';
 import Pagination from '@/components/Pagination.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
@@ -13,11 +16,19 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
 import patientRoutes from '@/routes/patients';
 import paymentRoutes from '@/routes/payments';
 import type { BreadcrumbItem } from '@/types';
@@ -28,6 +39,8 @@ const props = defineProps<{
     totals: { paid: number; pending: number };
     filters: TableFilters;
     statuses: Option[];
+    settling: Payment | null;
+    methods: Option[];
     can: { create: boolean };
 }>();
 
@@ -47,6 +60,17 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
 const page = usePage();
 const isPatient = computed(() => page.props.auth.role?.value === 'patient');
 const title = computed(() => (isPatient.value ? 'Mis pagos' : 'Pagos'));
+
+const today = new Date().toISOString().slice(0, 10);
+const payingPayment = ref<Payment | null>(props.settling);
+const payDialogOpen = computed({
+    get: () => payingPayment.value !== null,
+    set: (open) => {
+        if (!open) {
+            payingPayment.value = null;
+        }
+    },
+});
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Pagos', href: paymentRoutes.index() },
@@ -144,12 +168,15 @@ const breadcrumbs: BreadcrumbItem[] = [
                                 Monto
                             </th>
                             <th class="px-4 py-3 font-medium">Estado</th>
+                            <th v-if="can.create" class="px-4 py-3 font-medium">
+                                <span class="sr-only">Acciones</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
                         <tr v-if="props.payments.data.length === 0">
                             <td
-                                colspan="6"
+                                :colspan="can.create ? 7 : 6"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 No hay pagos registrados.
@@ -175,6 +202,18 @@ const breadcrumbs: BreadcrumbItem[] = [
                             <td class="px-4 py-3">
                                 {{ payment.concept }}
                                 <p
+                                    v-if="payment.appointment"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    Cita
+                                    {{
+                                        formatDateTime(
+                                            payment.appointment.scheduled_at,
+                                        )
+                                    }}
+                                    · {{ payment.appointment.doctor }}
+                                </p>
+                                <p
                                     v-if="payment.reference"
                                     class="text-xs text-muted-foreground"
                                 >
@@ -192,12 +231,140 @@ const breadcrumbs: BreadcrumbItem[] = [
                             <td class="px-4 py-3">
                                 <StatusBadge :status="payment.status" />
                             </td>
+                            <td v-if="can.create" class="px-4 py-3">
+                                <div class="flex justify-end gap-1.5">
+                                    <IconButton
+                                        v-if="payment.can.mark_paid"
+                                        label="Marcar como pagado"
+                                        tone="success"
+                                        @click="payingPayment = payment"
+                                    >
+                                        <CircleCheck />
+                                    </IconButton>
+                                    <IconButton
+                                        v-if="payment.patient"
+                                        label="Registrar otro pago igual"
+                                        tone="warning"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                paymentRoutes.create({
+                                                    query: {
+                                                        payment_id: payment.id,
+                                                    },
+                                                })
+                                            "
+                                        >
+                                            <ReceiptText />
+                                        </Link>
+                                    </IconButton>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
             <Pagination :paginator="props.payments" />
+
+            <Dialog v-model:open="payDialogOpen">
+                <DialogContent v-if="payingPayment" class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Marcar como pagado</DialogTitle>
+                        <DialogDescription>
+                            {{ payingPayment.patient?.full_name }} ·
+                            {{ payingPayment.concept }} ·
+                            {{ formatMoney(payingPayment.amount) }}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div
+                        v-if="payingPayment.appointment"
+                        class="rounded-md border bg-muted/40 p-3 text-sm"
+                    >
+                        <p
+                            class="text-xs font-medium text-muted-foreground uppercase"
+                        >
+                            Cita a pagar
+                        </p>
+                        <p class="mt-1 font-medium">
+                            {{
+                                formatDateTime(
+                                    payingPayment.appointment.scheduled_at,
+                                )
+                            }}
+                        </p>
+                        <p>
+                            {{ payingPayment.appointment.doctor }} ·
+                            {{ payingPayment.appointment.reason }}
+                        </p>
+                        <StatusBadge
+                            class="mt-2"
+                            :status="payingPayment.appointment.status"
+                        />
+                    </div>
+                    <p
+                        v-else
+                        class="rounded-md border border-dashed p-3 text-sm text-muted-foreground"
+                    >
+                        Este pago no está asociado a una cita.
+                    </p>
+
+                    <Form
+                        v-bind="
+                            PaymentController.markPaid.form(payingPayment.id)
+                        "
+                        class="grid gap-4"
+                        :options="{ preserveScroll: true }"
+                        v-slot="{ errors, processing }"
+                        @success="payingPayment = null"
+                    >
+                        <div class="grid gap-2">
+                            <Label for="quick-method">Método de pago *</Label>
+                            <NativeSelect
+                                id="quick-method"
+                                name="method"
+                                :default-value="payingPayment.method.value"
+                                required
+                            >
+                                <option
+                                    v-for="method in methods"
+                                    :key="method.value"
+                                    :value="method.value"
+                                >
+                                    {{ method.label }}
+                                </option>
+                            </NativeSelect>
+                            <InputError :message="errors.method" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="quick-paid-at">Fecha de pago *</Label>
+                            <Input
+                                id="quick-paid-at"
+                                type="date"
+                                name="paid_at"
+                                :default-value="today"
+                                :max="today"
+                                required
+                            />
+                            <InputError :message="errors.paid_at" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="quick-reference">
+                                Referencia / N.º de comprobante
+                            </Label>
+                            <Input
+                                id="quick-reference"
+                                name="reference"
+                                :default-value="payingPayment.reference ?? ''"
+                            />
+                            <InputError :message="errors.reference" />
+                        </div>
+                        <Button :disabled="processing">Confirmar pago</Button>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     </AppLayout>
 </template>

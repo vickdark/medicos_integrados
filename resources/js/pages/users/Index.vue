@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Ban, CircleCheck, Pencil, UserPlus } from 'lucide-vue-next';
+import IconButton from '@/components/IconButton.vue';
 import Pagination from '@/components/Pagination.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useTableFilters } from '@/composables/useTableFilters';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { confirmAction } from '@/lib/confirm';
 import { formatDate } from '@/lib/format';
 import userRoutes from '@/routes/users';
 import type { BreadcrumbItem } from '@/types';
@@ -52,14 +54,26 @@ const { filters, activeFilters, hasActiveFilters, reset } = useTableFilters(
     },
 );
 
-function toggleStatus(user: UserRow) {
-    const action = user.is_active ? 'inactivar' : 'activar';
+async function toggleStatus(user: UserRow) {
+    const deactivating = user.is_active;
 
-    if (!window.confirm(`¿Deseas ${action} el acceso de ${user.name}?`)) {
-        return;
+    const accepted = await confirmAction({
+        title: deactivating ? 'Inactivar acceso' : 'Activar acceso',
+        text: deactivating
+            ? `${user.name} no podrá iniciar sesión y se cerrará su sesión activa.`
+            : `${user.name} podrá volver a iniciar sesión.`,
+        confirmText: deactivating ? 'Sí, inactivar' : 'Sí, activar',
+        cancelText: 'Volver',
+        tone: deactivating ? 'danger' : 'success',
+    });
+
+    if (accepted) {
+        router.patch(
+            userRoutes.status(user.id).url,
+            {},
+            { preserveScroll: true },
+        );
     }
-
-    router.patch(userRoutes.status(user.id).url, {}, { preserveScroll: true });
 }
 
 const exportUrl = (format: 'xlsx' | 'pdf') =>
@@ -192,29 +206,33 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                 {{ formatDate(user.created_at) }}
                             </td>
                             <td class="px-4 py-3">
-                                <div class="flex justify-end gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
+                                <div class="flex justify-end gap-1.5">
+                                    <IconButton
+                                        label="Editar"
+                                        tone="info"
                                         as-child
                                     >
                                         <Link :href="userRoutes.edit(user.id)">
-                                            <Pencil /> Editar
+                                            <Pencil />
                                         </Link>
-                                    </Button>
-                                    <Button
+                                    </IconButton>
+                                    <IconButton
                                         v-if="!user.is_self"
-                                        size="sm"
-                                        variant="outline"
+                                        :tone="
+                                            user.is_active
+                                                ? 'danger'
+                                                : 'success'
+                                        "
+                                        :label="
+                                            user.is_active
+                                                ? 'Inactivar acceso'
+                                                : 'Activar acceso'
+                                        "
                                         @click="toggleStatus(user)"
                                     >
-                                        <template v-if="user.is_active">
-                                            <Ban /> Inactivar
-                                        </template>
-                                        <template v-else>
-                                            <CircleCheck /> Activar
-                                        </template>
-                                    </Button>
+                                        <Ban v-if="user.is_active" />
+                                        <CircleCheck v-else />
+                                    </IconButton>
                                 </div>
                             </td>
                         </tr>

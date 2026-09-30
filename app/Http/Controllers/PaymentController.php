@@ -7,9 +7,11 @@ use App\Enums\PaymentStatus;
 use App\Exports\PaymentsExport;
 use App\Exports\TableExporter;
 use App\Http\Requests\ExportTableRequest;
+use App\Http\Requests\MarkPaymentPaidRequest;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\TableQueryRequest;
 use App\Http\Resources\PaymentResource;
+use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
@@ -32,19 +34,26 @@ class PaymentController extends Controller
         $filteredPayments = $this->filteredQuery($request);
 
         $payments = (clone $filteredPayments)
-            ->with('patient')
+            ->with(['patient', 'appointment.doctor.user'])
             ->paginate(self::TABLE_PAGE_SIZE)
             ->withQueryString()
             ->through(fn (Payment $payment): array => (new PaymentResource($payment))->resolve($request));
 
+        $settling = Payment::query()
+            ->visibleTo($request->user())
+            ->with(['patient', 'appointment.doctor.user'])
+            ->find($request->integer('pay'));
+
         return Inertia::render('payments/Index', [
             'payments' => $payments,
+            'settling' => $settling ? (new PaymentResource($settling))->resolve($request) : null,
             'totals' => [
                 'paid' => (float) (clone $filteredPayments)->reorder()->where('status', PaymentStatus::Paid)->sum('amount'),
                 'pending' => (float) (clone $filteredPayments)->reorder()->where('status', PaymentStatus::Pending)->sum('amount'),
             ],
             'filters' => $request->filters(),
             'statuses' => PaymentStatus::options(),
+            'methods' => PaymentMethod::options(),
             'can' => ['create' => $request->user()->can('create', Payment::class)],
         ]);
     }
@@ -82,6 +91,7 @@ class PaymentController extends Controller
             ->when($status, fn (Builder $query) => $query->where('status', $status))
             ->when($request->filled('from'), fn (Builder $query) => $query->whereDate('paid_at', '>=', $request->date('from')))
             ->when($request->filled('to'), fn (Builder $query) => $query->whereDate('paid_at', '<=', $request->date('to')))
+            ->orderByRaw('status = ? desc', [PaymentStatus::Pending->value])
             ->latest('paid_at')
             ->latest('id');
     }
@@ -93,7 +103,33 @@ class PaymentController extends Controller
     {
         Gate::authorize('create', Payment::class);
 
-        $selectedPatient = Patient::query()->find($request->integer('patient_id'));
+        $prefillAppointment = Appointment::query()
+            ->with(['patient', 'doctor.user'])
+            ->find($request->integer('appointment_id'));
+
+        $sourcePayment = $prefillAppointment
+            ? null
+            : Payment::query()->find($request->integer('payment_id'));
+
+        $selectedPatient = $prefillAppointment?->patient
+            ?? $sourcePayment?->patient
+            ?? Patient::query()->find($request->integer('patient_id'));
+
+        $prefill = match (true) {
+            $prefillAppointment !== null => [
+                'appointment_id' => $prefillAppointment->id,
+                'concept' => 'Consulta médica · '.$prefillAppointment->doctor->user->name,
+                'amount' => $prefillAppointment->doctor->consultation_fee,
+                'method' => null,
+            ],
+            $sourcePayment !== null => [
+                'appointment_id' => null,
+                'concept' => $sourcePayment->concept,
+                'amount' => $sourcePayment->amount,
+                'method' => $sourcePayment->method->value,
+            ],
+            default => null,
+        };
 
         return Inertia::render('payments/Create', [
             'patients' => Patient::query()
@@ -106,6 +142,7 @@ class PaymentController extends Controller
                     'document_number' => $patient->document_number,
                 ]),
             'selectedPatientId' => $selectedPatient?->id,
+            'prefill' => $prefill,
             'appointments' => $selectedPatient
                 ? $selectedPatient->appointments()
                     ->with('doctor.user')
@@ -139,5 +176,19 @@ class PaymentController extends Controller
         ]);
 
         return to_route('patients.show', $payment->patient_id)->with('success', 'Pago registrado correctamente.');
+    }
+
+    /**
+     * Mark a pending payment as paid.
+     */
+    public function markPaid(MarkPaymentPaidRequest $request, Payment $payment): RedirectResponse
+    {
+        $payment->update([
+            ...$request->validated(),
+            'status' => PaymentStatus::Paid,
+            'recorded_by' => $request->user()->id,
+        ]);
+
+        return back()->with('success', 'Pago marcado como pagado.');
     }
 }

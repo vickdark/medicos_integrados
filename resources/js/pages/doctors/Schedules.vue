@@ -16,6 +16,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { confirmAction } from '@/lib/confirm';
 import { formatTime } from '@/lib/format';
 import doctorRoutes from '@/routes/doctors';
 import scheduleRoutes from '@/routes/schedules';
@@ -61,18 +62,20 @@ const schedulesByDay = computed(() =>
         .filter((day) => day.blocks.length > 0),
 );
 
-function destroy(schedule: Schedule) {
-    if (
-        !confirm(
-            `¿Eliminar el bloque ${schedule.day_name} ${formatTime(schedule.starts_at)} – ${formatTime(schedule.ends_at)}?`,
-        )
-    ) {
-        return;
-    }
-
-    router.delete(scheduleRoutes.destroy(schedule.id).url, {
-        preserveScroll: true,
+async function destroy(schedule: Schedule) {
+    const accepted = await confirmAction({
+        title: 'Eliminar bloque de horario',
+        text: `${schedule.day_name} ${formatTime(schedule.starts_at)} – ${formatTime(schedule.ends_at)}.`,
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Volver',
+        tone: 'danger',
     });
+
+    if (accepted) {
+        router.delete(scheduleRoutes.destroy(schedule.id).url, {
+            preserveScroll: true,
+        });
+    }
 }
 </script>
 
@@ -173,7 +176,7 @@ function destroy(schedule: Schedule) {
                             {{ formatTime(block.ends_at) }}
                             <button
                                 type="button"
-                                class="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+                                class="rounded-full p-1 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-500/20"
                                 :aria-label="`Eliminar bloque ${block.day_name} ${formatTime(block.starts_at)}`"
                                 @click="destroy(block)"
                             >

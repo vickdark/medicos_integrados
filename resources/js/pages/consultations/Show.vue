@@ -3,6 +3,7 @@ import { Form, Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Download, FileImage, FileText, Trash2, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ConsultationAttachmentController from '@/actions/App/Http/Controllers/ConsultationAttachmentController';
+import IconButton from '@/components/IconButton.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { confirmAction } from '@/lib/confirm';
 import { formatDateTime, formatFileSize } from '@/lib/format';
 import attachmentRoutes from '@/routes/attachments';
 import consultationRoutes from '@/routes/consultations';
@@ -27,14 +29,20 @@ const props = defineProps<{
     can: { manage_attachments: boolean };
 }>();
 
-function destroyAttachment(attachment: Attachment) {
-    if (!confirm(`¿Eliminar el archivo «${attachment.original_name}»?`)) {
-        return;
-    }
-
-    router.delete(attachmentRoutes.destroy(attachment.id).url, {
-        preserveScroll: true,
+async function destroyAttachment(attachment: Attachment) {
+    const accepted = await confirmAction({
+        title: 'Eliminar archivo',
+        text: `Se eliminará «${attachment.original_name}». Esta acción no se puede deshacer.`,
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Volver',
+        tone: 'danger',
     });
+
+    if (accepted) {
+        router.delete(attachmentRoutes.destroy(attachment.id).url, {
+            preserveScroll: true,
+        });
+    }
 }
 
 const page = usePage();
@@ -231,25 +239,22 @@ const sections = computed(() =>
                                     </template>
                                 </p>
                             </div>
-                            <Button
-                                size="icon"
-                                variant="ghost"
+                            <IconButton
+                                label="Descargar"
+                                tone="info"
                                 as="a"
                                 :href="attachmentRoutes.show(attachment.id).url"
-                                aria-label="Descargar"
                             >
                                 <Download />
-                            </Button>
-                            <Button
+                            </IconButton>
+                            <IconButton
                                 v-if="can.manage_attachments"
-                                size="icon"
-                                variant="ghost"
-                                class="text-destructive"
-                                aria-label="Eliminar archivo"
+                                label="Eliminar archivo"
+                                tone="danger"
                                 @click="destroyAttachment(attachment)"
                             >
                                 <Trash2 />
-                            </Button>
+                            </IconButton>
                         </li>
                     </ul>
 

@@ -2,6 +2,7 @@
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import {
     CalendarPlus,
+    ClipboardList,
     FilePlus2,
     Pencil,
     ShieldCheck,
@@ -9,6 +10,7 @@ import {
     Wallet,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import IconButton from '@/components/IconButton.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -325,7 +327,7 @@ const details: { label: string; value: string | null }[] = [
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <Button
+                                    <IconButton
                                         v-if="
                                             can.create_consultation &&
                                             ['requested', 'confirmed'].includes(
@@ -333,8 +335,8 @@ const details: { label: string; value: string | null }[] = [
                                             ) &&
                                             !appointment.consultation_id
                                         "
-                                        size="sm"
-                                        variant="outline"
+                                        label="Atender"
+                                        tone="success"
                                         as-child
                                     >
                                         <Link
@@ -350,9 +352,13 @@ const details: { label: string; value: string | null }[] = [
                                                 )
                                             "
                                         >
-                                            Atender
+                                            <ClipboardList />
                                         </Link>
-                                    </Button>
+                                    </IconButton>
+                                    <StatusBadge
+                                        v-if="appointment.payment_status"
+                                        :status="appointment.payment_status"
+                                    />
                                     <StatusBadge :status="appointment.status" />
                                 </div>
                             </li>

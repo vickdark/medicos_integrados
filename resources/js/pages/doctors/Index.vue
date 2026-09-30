@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Clock, UserPlus } from 'lucide-vue-next';
+import IconButton from '@/components/IconButton.vue';
 import Pagination from '@/components/Pagination.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
@@ -98,13 +99,17 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                                 {{ formatMoney(doctor.consultation_fee) }}
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <Button size="sm" variant="outline" as-child>
+                                <IconButton
+                                    label="Horario"
+                                    tone="violet"
+                                    as-child
+                                >
                                     <Link
                                         :href="scheduleRoutes.index(doctor.id)"
                                     >
-                                        <Clock /> Horario
+                                        <Clock />
                                     </Link>
-                                </Button>
+                                </IconButton>
                             </td>
                         </tr>
                     </tbody>

@@ -32,6 +32,7 @@ class TableQueryRequest extends FormRequest
             'action' => ['nullable', 'string', 'max:30'],
             'role' => ['nullable', 'string', 'max:30'],
             'patient_id' => ['nullable', 'integer'],
+            'pay' => ['nullable', 'integer'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ];

@@ -122,6 +122,7 @@ class PatientController extends Controller
             'appointments' => AppointmentResource::collection(
                 $patient->appointments()
                     ->with(['patient', 'doctor.user', 'doctor.specialty', 'consultation'])
+                    ->withPaymentFlags()
                     ->latest('scheduled_at')
                     ->limit(20)
                     ->get()

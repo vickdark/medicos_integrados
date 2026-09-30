@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Payments\OpenAppointmentCharge;
 use App\Enums\AppointmentStatus;
 use App\Enums\AuditAction;
 use App\Http\Requests\StoreConsultationRequest;
@@ -51,9 +52,9 @@ class ConsultationController extends Controller
     /**
      * Store the consultation and its prescriptions.
      */
-    public function store(StoreConsultationRequest $request, Patient $patient): RedirectResponse
+    public function store(StoreConsultationRequest $request, Patient $patient, OpenAppointmentCharge $charge): RedirectResponse
     {
-        $consultation = DB::transaction(function () use ($request, $patient): Consultation {
+        $consultation = DB::transaction(function () use ($request, $patient, $charge): Consultation {
             $consultation = $patient->consultations()->create([
                 ...$request->safe()->except('prescriptions'),
                 'doctor_id' => $request->user()->doctor->id,
@@ -62,7 +63,10 @@ class ConsultationController extends Controller
 
             $consultation->prescriptions()->createMany($request->validated('prescriptions', []));
 
-            $consultation->appointment?->update(['status' => AppointmentStatus::Completed]);
+            if ($consultation->appointment) {
+                $consultation->appointment->update(['status' => AppointmentStatus::Completed]);
+                $charge->open($consultation->appointment);
+            }
 
             AuditLog::record(AuditAction::Created, $consultation, 'Registró una consulta en la historia clínica', $patient);
 

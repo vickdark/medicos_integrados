@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Enums\AppointmentStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use Database\Factories\AppointmentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Appointment extends Model
@@ -74,6 +76,28 @@ class Appointment extends Model
     public function consultation(): HasOne
     {
         return $this->hasOne(Consultation::class);
+    }
+
+    /**
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Load whether the appointment has paid or pending payments, which drives
+     * its payment indicator.
+     *
+     * @param  Builder<Appointment>  $query
+     */
+    public function scopeWithPaymentFlags(Builder $query): void
+    {
+        $query->withExists([
+            'payments as has_paid_payment' => fn (Builder $query) => $query->where('status', PaymentStatus::Paid),
+            'payments as has_pending_payment' => fn (Builder $query) => $query->where('status', PaymentStatus::Pending),
+        ])->withMin(['payments as pending_payment_id' => fn (Builder $query) => $query->where('status', PaymentStatus::Pending)], 'id');
     }
 
     /**

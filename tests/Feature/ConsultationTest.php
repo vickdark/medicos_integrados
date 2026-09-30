@@ -5,6 +5,7 @@ use App\Models\Appointment;
 use App\Models\Consultation;
 use App\Models\Doctor;
 use App\Models\Patient;
+use App\Models\Payment;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -96,4 +97,41 @@ it('forbids reading consultations of other patients or from reception', function
     $this->actingAs(User::factory()->receptionist()->create())
         ->get(route('consultations.show', $consultation))
         ->assertForbidden();
+});
+
+it('opens the pending charge of the appointment when the consultation completes it', function () {
+    $appointment = Appointment::factory()->confirmed()->create();
+
+    $this->actingAs($appointment->doctor->user)
+        ->post(route('consultations.store', $appointment->patient), [
+            'appointment_id' => $appointment->id,
+            'reason' => 'Control',
+            'diagnosis' => 'Sano',
+        ]);
+
+    expect(Payment::query()->where('appointment_id', $appointment->id)->sole()->status->value)->toBe('pending');
+});
+
+it('shows a friendly error page instead of a bare 403 when reception opens a consultation', function () {
+    $appointment = Appointment::factory()->completed()->create();
+    $consultation = Consultation::factory()->create(['patient_id' => $appointment->patient_id, 'doctor_id' => $appointment->doctor_id, 'appointment_id' => $appointment->id]);
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->get(route('consultations.show', $consultation))
+        ->assertForbidden()
+        ->assertInertia(fn ($page) => $page->component('Error')->where('status', 403));
+});
+
+it('only offers the consultation link to roles that can read it', function () {
+    $appointment = Appointment::factory()->completed()->create();
+    Consultation::factory()->create(['patient_id' => $appointment->patient_id, 'doctor_id' => $appointment->doctor_id, 'appointment_id' => $appointment->id]);
+    $feed = route('appointments.calendar', [
+        'from' => $appointment->scheduled_at->copy()->subDay()->toDateString(),
+        'to' => $appointment->scheduled_at->copy()->addDay()->toDateString(),
+    ]);
+
+    $this->actingAs(User::factory()->receptionist()->create())->getJson($feed)
+        ->assertJsonPath('data.0.can.view_consultation', false);
+    $this->actingAs($appointment->doctor->user)->getJson($feed)
+        ->assertJsonPath('data.0.can.view_consultation', true);
 });
