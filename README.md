@@ -363,9 +363,22 @@ npm run types:check                   # vue-tsc
 
 ## Próximos pasos
 
-- API con Laravel Sanctum para una futura app móvil.
-- Pasarela de pagos en línea (hoy los pagos se registran a mano).
-- Interfaz para anular pagos y para reprogramar citas.
-- Recordatorios automáticos de citas.
-- Reportes (ingresos, citas por médico o especialidad).
-- Reemplazar los datos de contacto de ejemplo de la landing por los reales.
+**Pendientes**
+
+- **Sistema de turnos:** pensado para dos casos: el paciente que nunca apartó cita y se registra en sitio (recepción le genera un turno), y el paciente que ya tiene una cita y quiere ver su orden de atención. Incluye una **pantalla de turnos** (visible en la sala de espera) que muestre qué turno se está atendiendo y cuáles siguen, además de la consulta del turno propio desde el portal del paciente.
+- **Política de tratamiento de datos personales:** redactar y publicar la política (enlace en la landing, el registro y el pie de página) y registrar la aceptación del paciente al crear su cuenta, con fecha y versión.
+- **Catálogo de medicamentos (CRUD):** módulo para administrar los medicamentos (nombre, presentación, concentración, etc.), disponible solo para admin y médicos, de modo que el médico los elija al recetar en vez de escribirlos a mano. Desde la atención el médico también podrá crear un medicamento nuevo al momento.
+- **Recordatorios automáticos de citas** (correo o mensaje) un día antes de la cita.
+- **Anular pagos desde la interfaz:** hoy el estado *anulado* existe (se aplica al cancelar una cita con cobro pendiente) pero no hay una acción para anular un pago manualmente.
+- **Reportes:** los dashboards ya muestran ingresos, citas por día, consultas por mes y médicos con más citas; faltan reportes filtrables y exportables por rango, médico y especialidad.
+- **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
+- **Fotos de los médicos:** redimensionarlas al subirlas para que pesen menos.
+- **API con Laravel Sanctum** para una futura app móvil.
+- **Pasarela de pagos en línea** (hoy los pagos se registran a mano).
+- **Color global también en los correos** automáticos (hoy solo cambian la interfaz y los documentos).
+
+**Ya resuelto**
+
+- Reprogramación de citas con calendario de horarios libres; admin y recepción pueden cambiar el médico y el paciente puede editar su cita mientras no esté confirmada.
+- Facturas, historia clínica y receta en PDF (con envío de la receta por correo).
+- Color de la aplicación configurable y médicos visibles en la landing (opcional).
