@@ -218,3 +218,24 @@ it('shows the payment indicator of the appointment and updates it when the payme
         ->assertJsonPath('data.0.payment_status.value', 'paid')
         ->assertJsonPath('data.0.payment_status.label', 'Pagada');
 });
+
+it('lets staff book a slot later today in the clinic time zone but not one that already passed', function () {
+    $this->travelTo(now()->setTimezone('America/Bogota')->setDate(2026, 10, 7)->setTime(10, 0));
+
+    $doctor = Doctor::factory()->create();
+    $receptionist = User::factory()->receptionist()->create();
+    $patient = Patient::factory()->create();
+    $book = fn (string $time) => $this->actingAs($receptionist)->post(route('appointments.store'), [
+        'patient_id' => $patient->id,
+        'doctor_id' => $doctor->id,
+        'scheduled_at' => "2026-10-07T{$time}",
+        'reason' => 'Control',
+    ]);
+
+    $book('09:00')->assertSessionHasErrors('scheduled_at');
+    $book('10:00')->assertSessionHasErrors('scheduled_at');
+    $book('14:00')->assertSessionHasNoErrors();
+
+    expect(config('app.timezone'))->toBe('America/Bogota')
+        ->and(Appointment::query()->sole()->scheduled_at->format('H:i'))->toBe('14:00');
+});

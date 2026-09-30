@@ -193,6 +193,8 @@ php artisan schedule:work # tareas programadas (recordatorios de citas, cada hor
 
 Con `MAIL_MAILER=log`, los correos enviados aparecen en `storage/logs/laravel.log`.
 
+**Zona horaria:** el sistema usa la hora de la clínica (`APP_TIMEZONE`, por defecto `America/Bogota`). Las citas se guardan con la hora local de la clínica, por eso el servidor debe usar la misma zona que ven los usuarios; con otra zona (p. ej. UTC) se rechazan como "pasados" los horarios libres del día actual.
+
 Wayfinder regenera las rutas TypeScript automáticamente al ejecutar Vite. Para hacerlo a mano: `php artisan wayfinder:generate --with-form`.
 
 ## Usuarios de prueba
