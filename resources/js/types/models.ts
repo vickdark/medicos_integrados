@@ -137,6 +137,7 @@ export type Payment = {
         status: Option;
         doctor: string;
     } | null;
+    recorded_by?: string | null;
     can: { mark_paid: boolean };
     created_at: string;
 };

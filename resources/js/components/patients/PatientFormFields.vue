@@ -13,19 +13,24 @@ defineProps<{
     patient?: Patient;
     showClinicalFields?: boolean;
     contactOnly?: boolean;
+    preliminary?: boolean;
     hideEmail?: boolean;
 }>();
 </script>
 
 <template>
-    <section v-if="!contactOnly" class="space-y-4">
+    <section v-if="!contactOnly || preliminary" class="space-y-4">
         <h2
             class="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
         >
-            Datos personales
+            {{ contactOnly ? 'Datos básicos' : 'Datos personales' }}
         </h2>
+        <p v-if="contactOnly" class="text-sm text-muted-foreground">
+            Completa estos datos antes de tu primera consulta. Cuando el médico
+            te atienda por primera vez ya no podrás modificarlos.
+        </p>
         <div class="grid gap-4 sm:grid-cols-2">
-            <div class="grid gap-2">
+            <div v-if="!contactOnly" class="grid gap-2">
                 <Label for="first_name">Nombres *</Label>
                 <Input
                     id="first_name"
@@ -35,7 +40,7 @@ defineProps<{
                 />
                 <InputError :message="errors.first_name" />
             </div>
-            <div class="grid gap-2">
+            <div v-if="!contactOnly" class="grid gap-2">
                 <Label for="last_name">Apellidos *</Label>
                 <Input
                     id="last_name"
@@ -46,30 +51,37 @@ defineProps<{
                 <InputError :message="errors.last_name" />
             </div>
             <div class="grid gap-2">
-                <Label for="document_number">Documento de identidad</Label>
+                <Label for="document_number"
+                    >Documento de identidad{{ contactOnly ? ' *' : '' }}</Label
+                >
                 <Input
                     id="document_number"
                     name="document_number"
                     :default-value="patient?.document_number ?? ''"
+                    :required="contactOnly"
                 />
                 <InputError :message="errors.document_number" />
             </div>
             <div class="grid gap-2">
-                <Label for="birth_date">Fecha de nacimiento</Label>
+                <Label for="birth_date"
+                    >Fecha de nacimiento{{ contactOnly ? ' *' : '' }}</Label
+                >
                 <Input
                     id="birth_date"
                     type="date"
                     name="birth_date"
                     :default-value="patient?.birth_date ?? ''"
+                    :required="contactOnly"
                 />
                 <InputError :message="errors.birth_date" />
             </div>
             <div class="grid gap-2">
-                <Label for="gender">Sexo</Label>
+                <Label for="gender">Sexo{{ contactOnly ? ' *' : '' }}</Label>
                 <NativeSelect
                     id="gender"
                     name="gender"
                     :default-value="patient?.gender?.value ?? ''"
+                    :required="contactOnly"
                 >
                     <option value="">Sin especificar</option>
                     <option
@@ -125,11 +137,14 @@ defineProps<{
                 <InputError :message="errors.email" />
             </div>
             <div class="grid gap-2">
-                <Label for="phone">Teléfono</Label>
+                <Label for="phone"
+                    >Teléfono{{ contactOnly && preliminary ? ' *' : '' }}</Label
+                >
                 <Input
                     id="phone"
                     name="phone"
                     :default-value="patient?.phone ?? ''"
+                    :required="contactOnly && preliminary"
                 />
                 <InputError :message="errors.phone" />
             </div>

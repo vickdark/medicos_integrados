@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import {
     CalendarPlus,
     ClipboardList,
+    Eye,
     FilePlus2,
     Pencil,
     ShieldCheck,
@@ -42,6 +43,8 @@ const props = defineProps<{
     payments: Payment[] | null;
     can: {
         update: boolean;
+        fill_preliminary: boolean;
+        preliminary_locked: boolean;
         view_medical_history: boolean;
         create_consultation: boolean;
         create_appointment: boolean;
@@ -162,6 +165,31 @@ const details: { label: string; value: string | null }[] = [
                     </Button>
                 </div>
             </div>
+
+            <div
+                v-if="can.fill_preliminary"
+                class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-300 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200"
+            >
+                <p>
+                    Completa tus datos básicos (documento, fecha de nacimiento,
+                    sexo, teléfono y contacto de emergencia) antes de tu primera
+                    consulta. Después de que el médico te atienda ya no podrás
+                    editar los datos básicos.
+                </p>
+                <Button size="sm" as-child>
+                    <Link :href="patientRoutes.edit(patient.id)">
+                        <Pencil /> Completar ahora
+                    </Link>
+                </Button>
+            </div>
+            <p
+                v-else-if="can.preliminary_locked"
+                class="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground"
+            >
+                Tus datos básicos quedaron registrados en tu primera consulta.
+                Si necesitan cambiar, coméntalo con tu médico. Tus datos de
+                contacto los puedes actualizar siempre.
+            </p>
 
             <div class="grid gap-4 lg:grid-cols-3">
                 <Card>
@@ -397,6 +425,19 @@ const details: { label: string; value: string | null }[] = [
                                         formatMoney(payment.amount)
                                     }}</span>
                                     <StatusBadge :status="payment.status" />
+                                    <IconButton
+                                        label="Ver detalle"
+                                        tone="info"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                paymentRoutes.show(payment.id)
+                                            "
+                                        >
+                                            <Eye />
+                                        </Link>
+                                    </IconButton>
                                 </div>
                             </li>
                         </ul>

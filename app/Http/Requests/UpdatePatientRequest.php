@@ -25,6 +25,31 @@ class UpdatePatientRequest extends FormRequest
     ];
 
     /**
+     * Basic data a patient provides until the first consultation. Clinical
+     * history is only registered by the medical staff.
+     *
+     * @var list<string>
+     */
+    public const PRELIMINARY_FIELDS = [
+        'document_number',
+        'birth_date',
+        'gender',
+        'blood_type',
+    ];
+
+    /**
+     * Basic data that must be filled in while the patient can still provide it.
+     *
+     * @var list<string>
+     */
+    public const REQUIRED_PRELIMINARY_FIELDS = [
+        'document_number',
+        'birth_date',
+        'gender',
+        'phone',
+    ];
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -42,7 +67,17 @@ class UpdatePatientRequest extends FormRequest
         $rules = $this->patientRules($this->route('patient')->id);
 
         if ($this->user()->hasRole(UserRole::Patient)) {
-            return Arr::only($rules, self::SELF_SERVICE_FIELDS);
+            $isPreliminary = $this->user()->can('fillPreliminaryData', $this->route('patient'));
+
+            $rules = Arr::only($rules, $isPreliminary
+                ? [...self::SELF_SERVICE_FIELDS, ...self::PRELIMINARY_FIELDS]
+                : self::SELF_SERVICE_FIELDS);
+
+            foreach ($isPreliminary ? self::REQUIRED_PRELIMINARY_FIELDS : [] as $field) {
+                $rules[$field] = ['required', ...array_values(array_filter($rules[$field], fn ($rule) => $rule !== 'nullable'))];
+            }
+
+            return $rules;
         }
 
         return $rules;

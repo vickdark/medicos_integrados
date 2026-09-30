@@ -37,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('appointments', AppointmentController::class)->only(['index', 'create', 'store']);
     Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
 
-    Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store']);
+    Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store', 'show']);
     Route::patch('payments/{payment}/paid', [PaymentController::class, 'markPaid'])->name('payments.paid');
 
     Route::post('consultations/{consultation}/attachments', [ConsultationAttachmentController::class, 'store'])->name('attachments.store');

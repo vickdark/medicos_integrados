@@ -39,6 +39,7 @@ class PaymentResource extends JsonResource
                 'status' => $this->appointment->status->toOption(),
                 'doctor' => $this->appointment->doctor->user->name,
             ] : null),
+            'recorded_by' => $this->whenLoaded('recorder', fn (): ?string => $this->recorder?->name),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

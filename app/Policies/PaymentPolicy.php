@@ -18,6 +18,18 @@ class PaymentPolicy
     }
 
     /**
+     * Determine whether the user can see the details of the payment.
+     */
+    public function view(User $user, Payment $payment): bool
+    {
+        return match ($user->role) {
+            UserRole::Admin, UserRole::Receptionist => true,
+            UserRole::Patient => $payment->patient?->user_id === $user->id,
+            UserRole::Doctor => false,
+        };
+    }
+
+    /**
      * Determine whether the user can record payments.
      */
     public function create(User $user): bool

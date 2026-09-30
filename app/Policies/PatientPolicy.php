@@ -63,6 +63,17 @@ class PatientPolicy
     }
 
     /**
+     * Determine whether the patient can still fill in their preliminary medical
+     * data. It is open until a doctor attends them for the first time.
+     */
+    public function fillPreliminaryData(User $user, Patient $patient): bool
+    {
+        return $user->hasRole(UserRole::Patient)
+            && $patient->user_id === $user->id
+            && ! $patient->hasBeenAttended();
+    }
+
+    /**
      * Determine whether the user can review who accessed the patient's record.
      */
     public function viewAuditTrail(User $user, Patient $patient): bool

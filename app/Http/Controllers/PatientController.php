@@ -140,6 +140,8 @@ class PatientController extends Controller
                 : null,
             'can' => [
                 'update' => $user->can('update', $patient),
+                'fill_preliminary' => $user->can('fillPreliminaryData', $patient),
+                'preliminary_locked' => $user->hasRole(UserRole::Patient) && $patient->user_id === $user->id && $patient->hasBeenAttended(),
                 'view_medical_history' => $canViewMedicalHistory,
                 'create_consultation' => $user->can('create', [Consultation::class, $patient]),
                 'create_appointment' => $user->isStaff() && $user->can('create', Appointment::class),
@@ -159,6 +161,7 @@ class PatientController extends Controller
         return Inertia::render('patients/Edit', [
             'patient' => new PatientResource($patient),
             'contactOnly' => $request->user()->hasRole(UserRole::Patient),
+            'preliminaryEditable' => $request->user()->can('fillPreliminaryData', $patient),
             ...$this->formOptions(),
         ]);
     }

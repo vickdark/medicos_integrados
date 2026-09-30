@@ -241,3 +241,25 @@ it('lists pending payments first and preloads the payment to settle from an appo
         ->assertJsonPath('data.0.pending_payment_id', $pending->id)
         ->assertJsonPath('data.0.can.settle_payment', true);
 });
+
+it('shows the details of a payment to reception and to its own patient only', function () {
+    $appointment = Appointment::factory()->confirmed()->create();
+    $payment = Payment::factory()->create(['appointment_id' => $appointment->id, 'patient_id' => $appointment->patient_id, 'reference' => 'REF-9']);
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->get(route('payments.show', $payment))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('payments/Show')
+            ->where('payment.reference', 'REF-9')
+            ->where('payment.appointment.id', $appointment->id)
+            ->where('can.view_patient', true)
+        );
+
+    $owner = Patient::factory()->withAccount()->create();
+    $own = Payment::factory()->create(['patient_id' => $owner->id]);
+
+    $this->actingAs($owner->user)->get(route('payments.show', $own))->assertOk();
+    $this->actingAs($owner->user)->get(route('payments.show', $payment))->assertForbidden();
+    $this->actingAs($appointment->doctor->user)->get(route('payments.show', $payment))->assertForbidden();
+});

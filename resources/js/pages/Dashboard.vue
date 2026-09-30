@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarPlus, UserPlus } from 'lucide-vue-next';
+import { CalendarPlus, ClipboardEdit, UserPlus } from 'lucide-vue-next';
 import { computed } from 'vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -20,15 +20,37 @@ import patientRoutes from '@/routes/patients';
 import type { BreadcrumbItem } from '@/types';
 import type { Appointment, Consultation, RoleValue } from '@/types/models';
 
-defineProps<{
+const props = defineProps<{
     stats: { label: string; value: number | string }[];
     upcomingAppointments: Appointment[];
     recentConsultations: Consultation[];
+    profileReminder: {
+        patient_id: number;
+        incomplete: boolean;
+        locked: boolean;
+    } | null;
 }>();
 
 const page = usePage();
 const role = computed(() => page.props.auth.role?.value as RoleValue);
 const firstName = computed(() => page.props.auth.user.name.split(' ')[0]);
+
+const reminderNeedsAction = computed(
+    () =>
+        props.profileReminder !== null &&
+        props.profileReminder.incomplete &&
+        !props.profileReminder.locked,
+);
+
+const reminderButtonLabel = computed(() => {
+    if (props.profileReminder?.locked) {
+        return 'Actualizar mis datos';
+    }
+
+    return props.profileReminder?.incomplete
+        ? 'Completar mis datos'
+        : 'Revisar mis datos';
+});
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
 </script>
@@ -38,6 +60,52 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inicio', href: dashboard() }];
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-1 flex-col gap-6 p-4">
+            <div
+                v-if="profileReminder"
+                class="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm"
+                :class="
+                    reminderNeedsAction
+                        ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200'
+                        : 'border-sky-300 bg-sky-50 text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200'
+                "
+            >
+                <p class="max-w-3xl">
+                    <template v-if="profileReminder.locked">
+                        <strong>Ya puedes actualizar tus datos.</strong>
+                        Tus datos básicos quedaron registrados en tu primera
+                        consulta. Puedes seguir editando tus datos personales y
+                        de contacto (teléfono, dirección y contacto de
+                        emergencia) cada vez que cambien.
+                    </template>
+                    <template v-else-if="profileReminder.incomplete">
+                        <strong>Completa tus datos.</strong>
+                        Nos faltan datos básicos de tu ficha (documento, fecha
+                        de nacimiento, sexo, teléfono y grupo sanguíneo) para
+                        atenderte mejor. Puedes completarlos hasta tu primera
+                        consulta.
+                    </template>
+                    <template v-else>
+                        <strong>Tienes tus datos al día.</strong>
+                        Aún puedes revisarlos y editarlos, pero después de tu
+                        primera consulta tus datos básicos ya no se podrán
+                        modificar. Tus datos de contacto sí podrás actualizarlos
+                        siempre.
+                    </template>
+                </p>
+                <div class="flex items-center gap-2">
+                    <Button size="sm" as-child>
+                        <Link
+                            :href="
+                                patientRoutes.edit(profileReminder.patient_id)
+                            "
+                        >
+                            <ClipboardEdit />
+                            {{ reminderButtonLabel }}
+                        </Link>
+                    </Button>
+                </div>
+            </div>
+
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">

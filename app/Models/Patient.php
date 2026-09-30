@@ -73,6 +73,25 @@ class Patient extends Model
     }
 
     /**
+     * Whether a doctor has already attended the patient at least once.
+     */
+    public function hasBeenAttended(): bool
+    {
+        return $this->consultations()->exists();
+    }
+
+    /**
+     * Whether the basic data a patient provides on first access is complete.
+     */
+    public function hasCompleteBasicProfile(): bool
+    {
+        return filled($this->document_number)
+            && filled($this->phone)
+            && $this->birth_date !== null
+            && $this->gender !== null;
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo

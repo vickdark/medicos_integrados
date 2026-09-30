@@ -11,6 +11,7 @@ import type { Option, Patient } from '@/types/models';
 const props = defineProps<{
     patient: Patient;
     contactOnly: boolean;
+    preliminaryEditable: boolean;
     genders: Option[];
     bloodTypes: string[];
 }>();
@@ -42,8 +43,11 @@ const breadcrumbs: BreadcrumbItem[] = props.contactOnly
                     {{ title }}
                 </h1>
                 <p v-if="contactOnly" class="text-sm text-muted-foreground">
-                    Para corregir tu nombre, documento o datos médicos,
-                    comunícate con la clínica.
+                    {{
+                        preliminaryEditable
+                            ? 'Necesitamos algunos datos básicos para tu ficha. Tus antecedentes médicos los registra tu médico en consulta.'
+                            : 'Para corregir tu nombre, documento o datos médicos, comunícate con la clínica.'
+                    }}
                 </p>
             </div>
 
@@ -59,6 +63,7 @@ const breadcrumbs: BreadcrumbItem[] = props.contactOnly
                     :patient="patient"
                     :show-clinical-fields="patient.allergies !== undefined"
                     :contact-only="contactOnly"
+                    :preliminary="contactOnly && preliminaryEditable"
                 />
 
                 <div class="flex gap-2">

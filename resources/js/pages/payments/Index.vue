@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
-import { CircleCheck, Plus, ReceiptText } from 'lucide-vue-next';
+import { CircleCheck, Eye, Plus, ReceiptText } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import DateRangeFilter from '@/components/DateRangeFilter.vue';
@@ -168,7 +168,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                                 Monto
                             </th>
                             <th class="px-4 py-3 font-medium">Estado</th>
-                            <th v-if="can.create" class="px-4 py-3 font-medium">
+                            <th class="px-4 py-3 font-medium">
                                 <span class="sr-only">Acciones</span>
                             </th>
                         </tr>
@@ -176,7 +176,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     <tbody class="divide-y">
                         <tr v-if="props.payments.data.length === 0">
                             <td
-                                :colspan="can.create ? 7 : 6"
+                                colspan="7"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 No hay pagos registrados.
@@ -231,10 +231,25 @@ const breadcrumbs: BreadcrumbItem[] = [
                             <td class="px-4 py-3">
                                 <StatusBadge :status="payment.status" />
                             </td>
-                            <td v-if="can.create" class="px-4 py-3">
+                            <td class="px-4 py-3">
                                 <div class="flex justify-end gap-1.5">
                                     <IconButton
-                                        v-if="payment.can.mark_paid"
+                                        label="Ver detalle"
+                                        tone="info"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                paymentRoutes.show(payment.id)
+                                            "
+                                        >
+                                            <Eye />
+                                        </Link>
+                                    </IconButton>
+                                    <IconButton
+                                        v-if="
+                                            can.create && payment.can.mark_paid
+                                        "
                                         label="Marcar como pagado"
                                         tone="success"
                                         @click="payingPayment = payment"
@@ -242,7 +257,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         <CircleCheck />
                                     </IconButton>
                                     <IconButton
-                                        v-if="payment.patient"
+                                        v-if="can.create && payment.patient"
                                         label="Registrar otro pago igual"
                                         tone="warning"
                                         as-child

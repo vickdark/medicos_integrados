@@ -179,6 +179,24 @@ class PaymentController extends Controller
     }
 
     /**
+     * Show the details of a payment.
+     */
+    public function show(Request $request, Payment $payment): Response
+    {
+        Gate::authorize('view', $payment);
+
+        $payment->load(['patient', 'appointment.doctor.user', 'recorder']);
+
+        return Inertia::render('payments/Show', [
+            'payment' => (new PaymentResource($payment))->resolve($request),
+            'methods' => PaymentMethod::options(),
+            'can' => [
+                'view_patient' => $request->user()->can('view', $payment->patient),
+            ],
+        ]);
+    }
+
+    /**
      * Mark a pending payment as paid.
      */
     public function markPaid(MarkPaymentPaidRequest $request, Payment $payment): RedirectResponse

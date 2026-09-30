@@ -35,6 +35,7 @@ El sistema tiene tres partes:
    - Auditoría de accesos y cambios sobre la información clínica.
    - **Todas las tablas** tienen paginación, buscador y filtros en el servidor, y exportación a **Excel y PDF** de lo que se está viendo.
 3. **Portal del paciente**: su historial médico, sus citas (puede solicitarlas y cancelarlas), sus pagos, la descarga de sus adjuntos y la actualización de sus datos de contacto.
+   - **Datos del paciente:** el paciente completa sus datos básicos (documento, fecha de nacimiento, sexo, grupo sanguíneo, teléfono) hasta que un médico lo atiende por primera vez; después esos datos se bloquean para él, pero teléfono, dirección y contacto de emergencia siempre son editables. Los antecedentes clínicos (alergias, enfermedades, antecedentes) solo los registra el personal médico. Desde el segundo inicio de sesión el panel muestra un recordatorio para completar o actualizar los datos (sin redirigir).
 
 Además incluye:
 

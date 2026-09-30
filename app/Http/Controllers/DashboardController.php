@@ -36,6 +36,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'stats' => $this->statsFor($user),
             'upcomingAppointments' => AppointmentResource::collection($upcomingAppointments),
+            'profileReminder' => $this->profileReminderFor($user),
             'recentConsultations' => $user->role === UserRole::Patient && $user->patient
                 ? ConsultationResource::collection(
                     $user->patient->consultations()
@@ -46,6 +47,27 @@ class DashboardController extends Controller
                 )
                 : [],
         ]);
+    }
+
+    /**
+     * Reminder asking the patient to fill in or update their data. It is always
+     * shown on the dashboard, like the notice on their record.
+     *
+     * @return array{patient_id: int, incomplete: bool, locked: bool}|null
+     */
+    private function profileReminderFor(User $user): ?array
+    {
+        $patient = $user->patient;
+
+        if ($user->role !== UserRole::Patient || ! $patient) {
+            return null;
+        }
+
+        return [
+            'patient_id' => $patient->id,
+            'incomplete' => ! $patient->hasCompleteBasicProfile(),
+            'locked' => $patient->hasBeenAttended(),
+        ];
     }
 
     /**
