@@ -5,14 +5,19 @@ namespace App\Http\Controllers;
 use App\Actions\Payments\OpenAppointmentCharge;
 use App\Enums\AppointmentStatus;
 use App\Enums\AuditAction;
+use App\Enums\CarePriority;
+use App\Enums\ClinicalDocumentType;
 use App\Enums\ConsultationSection;
 use App\Enums\DiagnosisType;
+use App\Enums\SickLeaveOrigin;
+use App\Http\Requests\StoreClinicalDocumentRequest;
 use App\Http\Requests\StoreConsultationRequest;
 use App\Http\Resources\ConsultationResource;
 use App\Models\AuditLog;
 use App\Models\Consultation;
 use App\Models\Medication;
 use App\Models\Patient;
+use App\Models\Specialty;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,7 +111,7 @@ class ConsultationController extends Controller
     {
         Gate::authorize('view', $consultation);
 
-        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments', 'primaryDiagnosis', 'relatedDiagnoses', 'addenda']);
+        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments', 'primaryDiagnosis', 'relatedDiagnoses', 'addenda', 'documents']);
 
         if ($request->user()->isStaff()) {
             AuditLog::record(AuditAction::Viewed, $consultation, 'Consultó el detalle de una consulta', $consultation->patient);
@@ -115,9 +120,18 @@ class ConsultationController extends Controller
         return Inertia::render('consultations/Show', [
             'consultation' => new ConsultationResource($consultation),
             'addendumSections' => ConsultationSection::options(),
+            'documentOptions' => [
+                'types' => ClinicalDocumentType::options(),
+                'sickLeaveOrigins' => SickLeaveOrigin::options(),
+                'priorities' => CarePriority::options(),
+                'specialties' => Specialty::query()->orderBy('name')->pluck('name'),
+                'maxSickLeaveDays' => StoreClinicalDocumentRequest::MAX_SICK_LEAVE_DAYS,
+            ],
+            'issuedDocumentId' => $request->session()->get('issued_document_id'),
             'can' => [
                 'manage_attachments' => $request->user()->can('manageAttachments', $consultation),
                 'add_addendum' => $request->user()->can('addAddendum', $consultation),
+                'issue_documents' => $request->user()->can('issueDocuments', $consultation),
                 'download_prescription' => $consultation->prescriptions->isNotEmpty()
                     && $request->user()->can('downloadPrescription', $consultation),
                 'email_prescription' => $consultation->prescriptions->isNotEmpty()

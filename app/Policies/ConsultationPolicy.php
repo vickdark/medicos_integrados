@@ -53,6 +53,16 @@ class ConsultationPolicy
     }
 
     /**
+     * Determine whether the user can issue consents, sick leaves, referrals and
+     * exam orders from the consultation. Like the prescription, only the doctor
+     * who recorded it issues them.
+     */
+    public function issueDocuments(User $user, Consultation $consultation): bool
+    {
+        return $this->issuePrescription($user, $consultation);
+    }
+
+    /**
      * Determine whether the user can email the prescription to the patient.
      */
     public function emailPrescription(User $user, Consultation $consultation): bool

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ClinicalDocument;
 use App\Models\Consultation;
 use App\Models\ConsultationAddendum;
 use App\Models\Diagnosis;
@@ -68,6 +69,15 @@ class ConsultationResource extends JsonResource
                 ])
                 ->all()),
             'addenda_count' => $this->whenCounted('addenda'),
+            'documents' => $this->whenLoaded('documents', fn (): array => $this->documents
+                ->map(fn (ClinicalDocument $document): array => [
+                    'id' => $document->id,
+                    'number' => $document->number,
+                    'type' => $document->type->toOption(),
+                    'summary' => $document->summary(),
+                    'created_at' => $document->created_at?->toIso8601String(),
+                ])
+                ->all()),
         ];
     }
 }

@@ -159,6 +159,16 @@ class Consultation extends Model
     }
 
     /**
+     * Consents, sick leaves, referrals and exam orders issued from the consultation.
+     *
+     * @return HasMany<ClinicalDocument, $this>
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ClinicalDocument::class)->oldest('id');
+    }
+
+    /**
      * @return HasMany<Prescription, $this>
      */
     public function prescriptions(): HasMany

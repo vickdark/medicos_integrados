@@ -14,6 +14,8 @@ import { computed, ref } from 'vue';
 import ConsultationAddendumController from '@/actions/App/Http/Controllers/ConsultationAddendumController';
 import ConsultationAttachmentController from '@/actions/App/Http/Controllers/ConsultationAttachmentController';
 import SendConsultationPrescriptionController from '@/actions/App/Http/Controllers/SendConsultationPrescriptionController';
+import ClinicalDocumentsCard from '@/components/consultations/ClinicalDocumentsCard.vue';
+import type { DocumentOptions } from '@/components/consultations/ClinicalDocumentsCard.vue';
 import IconButton from '@/components/IconButton.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -49,11 +51,14 @@ const props = defineProps<{
     can: {
         manage_attachments: boolean;
         add_addendum: boolean;
+        issue_documents: boolean;
         download_prescription: boolean;
         email_prescription: boolean;
     };
     patientEmail: string | null;
     addendumSections: { value: string; label: string }[];
+    documentOptions: DocumentOptions;
+    issuedDocumentId: number | null;
 }>();
 
 const addenda = computed(() => props.consultation.addenda ?? []);
@@ -248,9 +253,19 @@ const sections = computed(() =>
                 </CardContent>
             </Card>
 
+            <ClinicalDocumentsCard
+                :consultation-id="consultation.id"
+                :documents="consultation.documents ?? []"
+                :can-issue="can.issue_documents"
+                :options="documentOptions"
+                :issued-document-id="issuedDocumentId"
+            />
+
             <Card id="notas-aclaratorias" class="scroll-mt-20">
                 <CardHeader>
-                    <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div
+                        class="flex flex-wrap items-start justify-between gap-3"
+                    >
                         <div class="grid gap-1.5">
                             <CardTitle>Notas aclaratorias</CardTitle>
                             <CardDescription>
@@ -291,7 +306,9 @@ const sections = computed(() =>
                                 >
                                     {{ addendum.section.label }}
                                 </span>
-                                <span>{{ formatDateTime(addendum.created_at) }}</span>
+                                <span>{{
+                                    formatDateTime(addendum.created_at)
+                                }}</span>
                                 <span>· {{ addendum.author }}</span>
                             </p>
                             <p class="mt-2">
@@ -322,7 +339,9 @@ const sections = computed(() =>
                             actual, y no se podrá modificar ni eliminar.
                         </p>
                         <div class="grid gap-2">
-                            <Label for="addendum-section">¿Qué aclaras? *</Label>
+                            <Label for="addendum-section"
+                                >¿Qué aclaras? *</Label
+                            >
                             <NativeSelect
                                 id="addendum-section"
                                 name="section"
