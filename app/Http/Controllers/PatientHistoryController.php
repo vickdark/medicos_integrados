@@ -22,7 +22,7 @@ class PatientHistoryController extends Controller
         $to = $request->periodEnd();
 
         $consultations = $patient->consultations()
-            ->with(['doctor.user', 'doctor.specialty', 'prescriptions', 'primaryDiagnosis', 'relatedDiagnoses'])
+            ->with(['doctor.user', 'doctor.specialty', 'prescriptions', 'primaryDiagnosis', 'relatedDiagnoses', 'addenda'])
             ->when($from, fn ($query) => $query->where('consulted_at', '>=', $from))
             ->when($to, fn ($query) => $query->where('consulted_at', '<=', $to))
             ->orderBy('consulted_at')

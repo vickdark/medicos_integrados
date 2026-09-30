@@ -9,9 +9,34 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use LogicException;
 
 class Consultation extends Model
 {
+    /**
+     * Fields of the clinical record. Once saved they cannot change: corrections
+     * are made with clarifying notes that keep the original visible.
+     *
+     * @var list<string>
+     */
+    public const CLINICAL_FIELDS = [
+        'patient_id',
+        'doctor_id',
+        'consulted_at',
+        'reason',
+        'symptoms',
+        'diagnosis',
+        'primary_diagnosis_id',
+        'diagnosis_type',
+        'treatment',
+        'notes',
+        'weight_kg',
+        'height_cm',
+        'blood_pressure',
+        'temperature_c',
+        'heart_rate',
+    ];
+
     /** @use HasFactory<ConsultationFactory> */
     use HasFactory;
 
@@ -105,6 +130,32 @@ class Consultation extends Model
         return $this->belongsToMany(Diagnosis::class)
             ->withPivot('position')
             ->orderByPivot('position');
+    }
+
+    /**
+     * Refuse changes to the clinical record and its removal once saved.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (Consultation $consultation): void {
+            if ($consultation->isDirty(self::CLINICAL_FIELDS)) {
+                throw new LogicException('Una consulta registrada no se puede modificar; agrega una nota aclaratoria.');
+            }
+        });
+
+        static::deleting(function (): void {
+            throw new LogicException('Una consulta registrada no se puede eliminar.');
+        });
+    }
+
+    /**
+     * Clarifying notes, oldest first.
+     *
+     * @return HasMany<ConsultationAddendum, $this>
+     */
+    public function addenda(): HasMany
+    {
+        return $this->hasMany(ConsultationAddendum::class)->oldest('id');
     }
 
     /**

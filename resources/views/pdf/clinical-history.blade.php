@@ -19,6 +19,8 @@
         .date { font-weight: bold; font-size: 11px; }
         .doctor { color: #6b7280; }
         .field { margin: 0 0 5px; }
+        .addendum { border-left: 3px solid #d97706; background: #fffbeb; padding: 4px 8px; margin: 6px 0; }
+        .addendum-meta { color: #92400e; font-size: 8px; }
         .field strong { display: block; color: #374151; font-size: 9px; text-transform: uppercase; }
         .vitals { background: {{ $brandTint }}; border-radius: 3px; padding: 4px 6px; margin-bottom: 6px; color: {{ $brandDark }}; }
         table.meds { width: 100%; border-collapse: collapse; margin-top: 3px; }
@@ -105,6 +107,16 @@
             @if ($includeNotes && $consultation->notes)
                 <p class="field"><strong>Notas</strong>{{ $consultation->notes }}</p>
             @endif
+
+            @foreach ($consultation->addenda as $addendum)
+                <div class="addendum">
+                    <div class="addendum-meta">
+                        NOTA ACLARATORIA · {{ $addendum->section->label() }} · {{ $addendum->created_at->format('d/m/Y g:i A') }} · {{ $addendum->author_name }}
+                    </div>
+                    <div><strong>Motivo:</strong> {{ $addendum->reason }}</div>
+                    <div>{{ $addendum->content }}</div>
+                </div>
+            @endforeach
 
             @if ($consultation->prescriptions->isNotEmpty())
                 <strong style="font-size: 9px; color: #374151; text-transform: uppercase;">Receta</strong>

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Consultation;
+use App\Models\ConsultationAddendum;
 use App\Models\Diagnosis;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -56,6 +57,17 @@ class ConsultationResource extends JsonResource
             ]),
             'prescriptions' => PrescriptionResource::collection($this->whenLoaded('prescriptions')),
             'attachments' => ConsultationAttachmentResource::collection($this->whenLoaded('attachments')),
+            'addenda' => $this->whenLoaded('addenda', fn (): array => $this->addenda
+                ->map(fn (ConsultationAddendum $addendum): array => [
+                    'id' => $addendum->id,
+                    'section' => $addendum->section->toOption(),
+                    'reason' => $addendum->reason,
+                    'content' => $addendum->content,
+                    'author' => $addendum->author_name,
+                    'created_at' => $addendum->created_at?->toIso8601String(),
+                ])
+                ->all()),
+            'addenda_count' => $this->whenCounted('addenda'),
         ];
     }
 }

@@ -103,6 +103,15 @@ export type CodedDiagnosis = {
     description: string;
 };
 
+export type ConsultationAddendum = {
+    id: number;
+    section: Option;
+    reason: string;
+    content: string;
+    author: string;
+    created_at: string;
+};
+
 export type Consultation = {
     id: number;
     consulted_at: string;
@@ -112,6 +121,8 @@ export type Consultation = {
     primary_diagnosis?: CodedDiagnosis | null;
     diagnosis_type?: Option | null;
     related_diagnoses?: CodedDiagnosis[];
+    addenda?: ConsultationAddendum[];
+    addenda_count?: number;
     treatment: string | null;
     notes?: string | null;
     weight_kg: string | null;

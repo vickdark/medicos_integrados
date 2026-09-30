@@ -134,6 +134,7 @@ class PatientController extends Controller
                 ? ConsultationResource::collection(
                     $patient->consultations()
                         ->with(['doctor.user', 'doctor.specialty', 'prescriptions', 'primaryDiagnosis', 'relatedDiagnoses'])
+                        ->withCount('addenda')
                         ->latest('consulted_at')
                         ->get()
                 )

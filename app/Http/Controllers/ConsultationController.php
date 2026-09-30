@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Payments\OpenAppointmentCharge;
 use App\Enums\AppointmentStatus;
 use App\Enums\AuditAction;
+use App\Enums\ConsultationSection;
 use App\Enums\DiagnosisType;
 use App\Http\Requests\StoreConsultationRequest;
 use App\Http\Resources\ConsultationResource;
@@ -105,7 +106,7 @@ class ConsultationController extends Controller
     {
         Gate::authorize('view', $consultation);
 
-        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments', 'primaryDiagnosis', 'relatedDiagnoses']);
+        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments', 'primaryDiagnosis', 'relatedDiagnoses', 'addenda']);
 
         if ($request->user()->isStaff()) {
             AuditLog::record(AuditAction::Viewed, $consultation, 'Consultó el detalle de una consulta', $consultation->patient);
@@ -113,8 +114,10 @@ class ConsultationController extends Controller
 
         return Inertia::render('consultations/Show', [
             'consultation' => new ConsultationResource($consultation),
+            'addendumSections' => ConsultationSection::options(),
             'can' => [
                 'manage_attachments' => $request->user()->can('manageAttachments', $consultation),
+                'add_addendum' => $request->user()->can('addAddendum', $consultation),
                 'download_prescription' => $consultation->prescriptions->isNotEmpty()
                     && $request->user()->can('downloadPrescription', $consultation),
                 'email_prescription' => $consultation->prescriptions->isNotEmpty()

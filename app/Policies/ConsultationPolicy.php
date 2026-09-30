@@ -61,6 +61,16 @@ class ConsultationPolicy
     }
 
     /**
+     * Determine whether the user can add a clarifying note. Only the doctor who
+     * recorded the consultation corrects it, as the author of the record.
+     */
+    public function addAddendum(User $user, Consultation $consultation): bool
+    {
+        return $user->hasRole(UserRole::Doctor)
+            && $consultation->doctor_id === $user->doctor?->id;
+    }
+
+    /**
      * Determine whether the user can upload or remove attachments of the consultation.
      */
     public function manageAttachments(User $user, Consultation $consultation): bool

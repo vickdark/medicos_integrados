@@ -355,6 +355,17 @@ const details: { label: string; value: string | null }[] = [
                                             }}</span
                                         >
                                         {{ consultation.diagnosis }}
+                                        <span
+                                            v-if="consultation.addenda_count"
+                                            class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+                                        >
+                                            {{ consultation.addenda_count }}
+                                            {{
+                                                consultation.addenda_count === 1
+                                                    ? 'nota aclaratoria'
+                                                    : 'notas aclaratorias'
+                                            }}
+                                        </span>
                                     </p>
                                     <p class="text-xs text-muted-foreground">
                                         {{

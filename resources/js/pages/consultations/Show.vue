@@ -3,6 +3,7 @@ import { Form, Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Download,
     FileImage,
+    FilePenLine,
     FileText,
     Mail,
     Trash2,
@@ -10,6 +11,7 @@ import {
     Upload,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import ConsultationAddendumController from '@/actions/App/Http/Controllers/ConsultationAddendumController';
 import ConsultationAttachmentController from '@/actions/App/Http/Controllers/ConsultationAttachmentController';
 import SendConsultationPrescriptionController from '@/actions/App/Http/Controllers/SendConsultationPrescriptionController';
 import IconButton from '@/components/IconButton.vue';
@@ -31,6 +33,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { confirmAction } from '@/lib/confirm';
 import { formatDateTime, formatFileSize } from '@/lib/format';
@@ -44,11 +48,16 @@ const props = defineProps<{
     consultation: Consultation;
     can: {
         manage_attachments: boolean;
+        add_addendum: boolean;
         download_prescription: boolean;
         email_prescription: boolean;
     };
     patientEmail: string | null;
+    addendumSections: { value: string; label: string }[];
 }>();
+
+const addenda = computed(() => props.consultation.addenda ?? []);
+const addendumFormOpen = ref(false);
 
 const emailDialogOpen = ref(false);
 
@@ -145,6 +154,25 @@ const sections = computed(() =>
                 </p>
             </div>
 
+            <a
+                v-if="addenda.length"
+                href="#notas-aclaratorias"
+                class="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/15"
+            >
+                <FilePenLine class="mt-0.5 size-4 shrink-0" />
+                <span>
+                    Esta consulta tiene
+                    <strong>
+                        {{ addenda.length }}
+                        {{
+                            addenda.length === 1
+                                ? 'nota aclaratoria'
+                                : 'notas aclaratorias'
+                        }}</strong
+                    >. El registro original se muestra tal como se escribió.
+                </span>
+            </a>
+
             <div
                 v-if="vitals.length"
                 class="grid grid-cols-2 gap-3 sm:grid-cols-5"
@@ -217,6 +245,136 @@ const sections = computed(() =>
                             {{ section.body }}
                         </p>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card id="notas-aclaratorias" class="scroll-mt-20">
+                <CardHeader>
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="grid gap-1.5">
+                            <CardTitle>Notas aclaratorias</CardTitle>
+                            <CardDescription>
+                                La consulta no se edita ni se borra: las
+                                correcciones se agregan aquí con su fecha, autor
+                                y motivo.
+                            </CardDescription>
+                        </div>
+                        <Button
+                            v-if="can.add_addendum && !addendumFormOpen"
+                            size="sm"
+                            variant="outline"
+                            @click="addendumFormOpen = true"
+                        >
+                            <FilePenLine /> Agregar nota aclaratoria
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent class="grid gap-4">
+                    <p
+                        v-if="addenda.length === 0 && !addendumFormOpen"
+                        class="text-sm text-muted-foreground"
+                    >
+                        Sin notas aclaratorias.
+                    </p>
+
+                    <ol v-if="addenda.length" class="grid gap-3">
+                        <li
+                            v-for="addendum in addenda"
+                            :key="addendum.id"
+                            class="rounded-lg border-l-4 border-amber-400 bg-amber-50/60 p-3 text-sm dark:border-amber-500/60 dark:bg-amber-500/5"
+                        >
+                            <p
+                                class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+                            >
+                                <span
+                                    class="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+                                >
+                                    {{ addendum.section.label }}
+                                </span>
+                                <span>{{ formatDateTime(addendum.created_at) }}</span>
+                                <span>· {{ addendum.author }}</span>
+                            </p>
+                            <p class="mt-2">
+                                <span class="font-medium">Motivo:</span>
+                                {{ addendum.reason }}
+                            </p>
+                            <p class="mt-1 whitespace-pre-line">
+                                {{ addendum.content }}
+                            </p>
+                        </li>
+                    </ol>
+
+                    <Form
+                        v-if="can.add_addendum && addendumFormOpen"
+                        v-bind="
+                            ConsultationAddendumController.store.form(
+                                consultation.id,
+                            )
+                        "
+                        class="grid gap-4 rounded-lg border p-4"
+                        :options="{ preserveScroll: true }"
+                        reset-on-success
+                        v-slot="{ errors, processing }"
+                        @success="addendumFormOpen = false"
+                    >
+                        <p class="text-xs text-muted-foreground">
+                            La nota queda firmada con tu nombre y la fecha
+                            actual, y no se podrá modificar ni eliminar.
+                        </p>
+                        <div class="grid gap-2">
+                            <Label for="addendum-section">¿Qué aclaras? *</Label>
+                            <NativeSelect
+                                id="addendum-section"
+                                name="section"
+                                default-value=""
+                                required
+                            >
+                                <option value="" disabled>Selecciona</option>
+                                <option
+                                    v-for="section in addendumSections"
+                                    :key="section.value"
+                                    :value="section.value"
+                                >
+                                    {{ section.label }}
+                                </option>
+                            </NativeSelect>
+                            <InputError :message="errors.section" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="addendum-reason">Motivo *</Label>
+                            <Input
+                                id="addendum-reason"
+                                name="reason"
+                                maxlength="255"
+                                placeholder="Ej.: error de transcripción en la dosis"
+                                required
+                            />
+                            <InputError :message="errors.reason" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="addendum-content">Aclaración *</Label>
+                            <Textarea
+                                id="addendum-content"
+                                name="content"
+                                rows="4"
+                                placeholder="Escribe el dato correcto o la información que completa el registro"
+                                required
+                            />
+                            <InputError :message="errors.content" />
+                        </div>
+                        <div class="flex gap-2">
+                            <Button :disabled="processing">
+                                Guardar nota aclaratoria
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                @click="addendumFormOpen = false"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </Form>
                 </CardContent>
             </Card>
 

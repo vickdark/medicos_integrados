@@ -3,6 +3,7 @@
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Cie10CatalogController;
+use App\Http\Controllers\ConsultationAddendumController;
 use App\Http\Controllers\ConsultationAttachmentController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\ConsultationPrescriptionController;
@@ -59,6 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('consultations/{consultation}', [ConsultationController::class, 'show'])->name('consultations.show');
     Route::get('consultations/{consultation}/prescription', ConsultationPrescriptionController::class)->name('consultations.prescription');
     Route::post('consultations/{consultation}/prescription/email', SendConsultationPrescriptionController::class)->name('consultations.prescription.email');
+    Route::post('consultations/{consultation}/addenda', [ConsultationAddendumController::class, 'store'])->name('consultations.addenda.store');
 
     Route::resource('appointments', AppointmentController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
