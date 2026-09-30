@@ -40,7 +40,7 @@ class PatientController extends Controller
         Gate::authorize('viewAny', Patient::class);
 
         $patients = $this->filteredQuery($request)
-            ->paginate(15)
+            ->paginate(self::TABLE_PAGE_SIZE)
             ->withQueryString()
             ->through(fn (Patient $patient): array => (new PatientResource($patient))->resolve($request));
 

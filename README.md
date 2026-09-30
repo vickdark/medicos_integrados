@@ -270,7 +270,7 @@ Estados:
 Todas las tablas funcionan del lado del servidor:
 
 1. El controlador de cada listado tiene un método `filteredQuery(TableQueryRequest)` que aplica los permisos del rol, la búsqueda y los filtros.
-2. `index()` pagina esa consulta (15 filas; 25 en auditoría) y `export()` la reutiliza. Así, **lo que se exporta es exactamente lo que se ve**.
+2. `index()` pagina esa consulta de 10 en 10 (`Controller::TABLE_PAGE_SIZE`) y `export()` la reutiliza. Así, **lo que se exporta es exactamente lo que se ve**.
 3. En el frontend, `useTableFilters` sincroniza los filtros con la URL (la búsqueda espera 300 ms mientras escribes), y `TableToolbar` muestra el buscador, los filtros extra y los botones **Excel** / **PDF**.
 
 | Tabla | Búsqueda | Filtros |

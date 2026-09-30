@@ -31,7 +31,7 @@ class DoctorController extends Controller
 
         $doctors = $this->filteredQuery($request)
             ->with(['user', 'specialty'])
-            ->paginate(15)
+            ->paginate(self::TABLE_PAGE_SIZE)
             ->withQueryString()
             ->through(fn (Doctor $doctor): array => (new DoctorResource($doctor))->resolve($request));
 

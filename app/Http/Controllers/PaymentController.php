@@ -33,7 +33,7 @@ class PaymentController extends Controller
 
         $payments = (clone $filteredPayments)
             ->with('patient')
-            ->paginate(15)
+            ->paginate(self::TABLE_PAGE_SIZE)
             ->withQueryString()
             ->through(fn (Payment $payment): array => (new PaymentResource($payment))->resolve($request));
 

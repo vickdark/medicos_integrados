@@ -27,7 +27,7 @@ class SpecialtyController extends Controller
 
         return Inertia::render('specialties/Index', [
             'specialties' => $this->filteredQuery($request)
-                ->paginate(15)
+                ->paginate(self::TABLE_PAGE_SIZE)
                 ->withQueryString()
                 ->through(fn (Specialty $specialty): array => [
                     'id' => $specialty->id,

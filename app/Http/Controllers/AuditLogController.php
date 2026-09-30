@@ -27,7 +27,7 @@ class AuditLogController extends Controller
 
         $logs = $this->filteredQuery($request)
             ->with(['user', 'patient'])
-            ->paginate(25)
+            ->paginate(self::TABLE_PAGE_SIZE)
             ->withQueryString()
             ->through(fn (AuditLog $log): array => (new AuditLogResource($log))->resolve($request));
 

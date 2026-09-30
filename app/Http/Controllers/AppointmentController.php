@@ -39,7 +39,7 @@ class AppointmentController extends Controller
 
         $appointments = $this->filteredQuery($request)
             ->with(['patient', 'doctor.user', 'doctor.specialty', 'consultation'])
-            ->paginate(15)
+            ->paginate(self::TABLE_PAGE_SIZE)
             ->withQueryString()
             ->through(fn (Appointment $appointment): array => (new AppointmentResource($appointment))->resolve($request));
 

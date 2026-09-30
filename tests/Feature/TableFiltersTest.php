@@ -86,7 +86,7 @@ it('paginates and searches specialties', function () {
     $this->actingAs($admin)
         ->get(route('specialties.index'))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('specialties.data', 15)
+            ->has('specialties.data', 10)
             ->where('specialties.total', 21)
         );
 
