@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Users\CreateUserWithProfile;
 use App\Enums\UserRole;
 use App\Exports\DoctorsExport;
 use App\Exports\TableExporter;
@@ -10,11 +11,9 @@ use App\Http\Requests\StoreDoctorRequest;
 use App\Http\Requests\TableQueryRequest;
 use App\Http\Resources\DoctorResource;
 use App\Models\Doctor;
-use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -75,38 +74,21 @@ class DoctorController extends Controller
     }
 
     /**
-     * Show the form to register a doctor.
+     * Doctors are registered from the users module, which shows the doctor fields.
      */
-    public function create(): Response
+    public function create(): RedirectResponse
     {
         Gate::authorize('create', Doctor::class);
 
-        return Inertia::render('doctors/Create', [
-            'specialties' => Specialty::query()->orderBy('name')->get(['id', 'name']),
-        ]);
+        return to_route('users.create', ['role' => UserRole::Doctor->value]);
     }
 
     /**
      * Store the doctor and their user account.
      */
-    public function store(StoreDoctorRequest $request): RedirectResponse
+    public function store(StoreDoctorRequest $request, CreateUserWithProfile $createUser): RedirectResponse
     {
-        DB::transaction(function () use ($request): void {
-            $user = User::create([
-                ...$request->safe()->only(['name', 'email', 'password']),
-                'role' => UserRole::Doctor,
-            ]);
-
-            $user->forceFill(['email_verified_at' => now()])->save();
-
-            $user->doctor()->create($request->safe()->only([
-                'specialty_id',
-                'license_number',
-                'phone',
-                'consultation_fee',
-                'bio',
-            ]));
-        });
+        $createUser->handle([...$request->validated(), 'role' => UserRole::Doctor->value]);
 
         return to_route('doctors.index')->with('success', 'Médico registrado correctamente.');
     }

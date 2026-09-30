@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, usePage } from '@inertiajs/vue3';
 import { ShieldCheck } from 'lucide-vue-next';
-import { onUnmounted, ref } from 'vue';
+import { computed, onUnmounted, ref } from 'vue';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -36,6 +36,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+const page = usePage();
+const mustChangePassword = computed(
+    () => page.props.auth.user.must_change_password === true,
+);
+
 const { hasSetupData, clearTwoFactorAuthData } = useTwoFactorAuth();
 const showSetupModal = ref<boolean>(false);
 
@@ -50,6 +55,14 @@ onUnmounted(() => clearTwoFactorAuthData());
 
         <SettingsLayout>
             <div class="space-y-6">
+                <div
+                    v-if="mustChangePassword"
+                    class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+                >
+                    Ingresaste con una contraseña temporal. Debes cambiarla por
+                    una propia para continuar; usa la temporal como contraseña
+                    actual.
+                </div>
                 <Heading
                     variant="small"
                     title="Cambiar contraseña"

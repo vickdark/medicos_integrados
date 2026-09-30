@@ -9,6 +9,28 @@ use Illuminate\Validation\Rule;
 trait PatientValidationRules
 {
     /**
+     * Fields that belong to the patient record when it is filled from a user form.
+     * The email is taken from the user account instead.
+     *
+     * @var list<string>
+     */
+    public const PATIENT_FIELDS = [
+        'first_name',
+        'last_name',
+        'document_number',
+        'phone',
+        'birth_date',
+        'gender',
+        'address',
+        'blood_type',
+        'allergies',
+        'chronic_conditions',
+        'medical_background',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+    ];
+
+    /**
      * Get the validation rules used to validate patient records.
      *
      * @return array<string, array<int, \Illuminate\Contracts\Validation\Rule|array<mixed>|string>>

@@ -13,6 +13,7 @@ defineProps<{
     patient?: Patient;
     showClinicalFields?: boolean;
     contactOnly?: boolean;
+    hideEmail?: boolean;
 }>();
 </script>
 
@@ -109,7 +110,7 @@ defineProps<{
             Contacto
         </h2>
         <div class="grid gap-4 sm:grid-cols-2">
-            <div v-if="!contactOnly" class="grid gap-2">
+            <div v-if="!contactOnly && !hideEmail" class="grid gap-2">
                 <Label for="email">Correo electrónico</Label>
                 <Input
                     id="email"

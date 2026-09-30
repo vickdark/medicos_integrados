@@ -12,6 +12,7 @@ export type TableFilters = {
     search: string;
     status: string;
     action: string;
+    role: string;
     patient_id: number | null;
     from: string;
     to: string;

@@ -11,6 +11,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SpecialtyController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -24,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('doctors/export', [DoctorController::class, 'export'])->name('doctors.export');
     Route::get('specialties/export', [SpecialtyController::class, 'export'])->name('specialties.export');
     Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
+    Route::get('users/export', [UserController::class, 'export'])->name('users.export');
 
     Route::resource('patients', PatientController::class)->except(['destroy']);
 
@@ -47,6 +49,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('schedules/{schedule}', [DoctorScheduleController::class, 'destroy'])->name('schedules.destroy');
 
     Route::resource('specialties', SpecialtyController::class)->except(['show']);
+
+    Route::patch('users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
+    Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 });

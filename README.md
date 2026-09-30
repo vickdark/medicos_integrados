@@ -55,11 +55,32 @@ Los roles están en el enum `App\Enums\UserRole`. Cada permiso se aplica mediant
 | Confirmar o cancelar citas | ✅ | ✅ | Su agenda | Solo cancelar las suyas |
 | Registrar pagos | ✅ | ✅ | ❌ | ❌ |
 | Ver pagos | Todos | Todos | ❌ | Los suyos |
+| Usuarios (crear cuentas y asignar rol) | ✅ | ❌ | ❌ | ❌ |
 | Médicos y especialidades | ✅ | ❌ | ❌ | ❌ |
 | Horarios de atención | Todos | ❌ | El suyo | ❌ |
 | Auditoría | ✅ | ❌ | ❌ | ❌ |
 
 Un médico "atiende" a un paciente cuando tiene al menos una cita o una consulta con él.
+
+### Gestión de usuarios (solo administrador)
+
+El módulo **Usuarios** crea las cuentas y asigna el rol. Al elegir el rol, el formulario muestra los campos que corresponden, para completar todo en un solo paso:
+
+| Rol | Campos que se piden |
+|---|---|
+| Administrador / Recepción | Nombre, correo y contraseña |
+| Médico | Cuenta + especialidad, colegiatura, teléfono, tarifa y reseña |
+| Paciente | Cuenta + datos personales, contacto y antecedentes médicos |
+
+- Las cuentas creadas por el administrador quedan con el correo verificado y una contraseña **temporal**: al iniciar sesión, el usuario es llevado a Configuración → Seguridad y no puede usar el sistema hasta cambiarla (campo `users.must_change_password`, middleware `EnsurePasswordIsChanged`). Lo mismo ocurre si el admin asigna una nueva contraseña al editar.
+- **Inactivar acceso:** desde la tabla, el botón *Inactivar/Activar* (con confirmación) bloquea el inicio de sesión y cierra la sesión activa del usuario en su siguiente petición, sin borrar datos. El admin no puede inactivarse a sí mismo; la tabla se filtra por acceso y se exporta con esa columna. Queda en la auditoría.
+- Con la casilla **"Enviar los datos de acceso por correo"** (marcada por defecto), el usuario recibe su correo, la contraseña temporal y el enlace de inicio de sesión. Al editar, la casilla envía la nueva contraseña, pero solo si el admin escribió una.
+- Este correo **no va por la cola** a propósito: una notificación en cola guardaría la contraseña en texto plano en la tabla `jobs`. Si el envío falla, la cuenta igual se guarda y el admin recibe un aviso.
+- Con `MAIL_MAILER=log`, el correo aparece en `storage/logs/laravel.log`, con la contraseña en claro. Úsalo solo en desarrollo.
+- Si ya existía una ficha de paciente con el mismo correo y sin cuenta, se vincula en lugar de duplicarla.
+- **El rol no se puede cambiar** en cuentas de médico o paciente (tienen historial asociado). Administrador y Recepción sí se pueden intercambiar, salvo en la propia cuenta.
+- Cada alta y cada cambio queda en la auditoría.
+- La creación y la actualización viven en `app/Actions/Users`, y `Médicos → Nuevo médico` lleva al mismo formulario.
 
 Quien se registra desde la web queda como **paciente**. Si recepción ya había creado su ficha con el mismo correo, la cuenta se vincula automáticamente a esa ficha.
 
@@ -187,6 +208,7 @@ routes/web.php ──► Controlador ──► Form Request (validación + autor
 ```
 app/
 ├── Actions/Fortify/        Registro (crea o vincula la ficha del paciente) y reseteo de contraseña
+├── Actions/Users/          Crear y actualizar una cuenta junto con el perfil de su rol
 ├── Concerns/               Traits de validación y opciones de enums
 ├── Enums/                  UserRole, AppointmentStatus, PaymentMethod, PaymentStatus, Gender, AuditAction, ExportFormat
 ├── Exports/                TableExporter (genera Excel y PDF) y una clase *Export por tabla con sus columnas
@@ -237,6 +259,7 @@ El menú lateral (`AppSidebar.vue`) se arma según `auth.role`.
 | `GET` y `DELETE /attachments/{attachment}` | Descargar o eliminar adjunto |
 | `/appointments` y `PATCH /appointments/{id}/status` | Citas y cambio de estado |
 | `/payments` | Pagos |
+| `/users` | Usuarios: cuentas, roles y perfil (solo admin) |
 | `/doctors` y `/doctors/{doctor}/schedules` | Médicos y horarios |
 | `/specialties` | Especialidades |
 | `GET /audit-logs` | Auditoría |
@@ -278,6 +301,7 @@ Todas las tablas funcionan del lado del servidor:
 | Pacientes | Nombre, documento, correo | — |
 | Citas | Paciente, documento, médico, motivo | Estado, rango de fechas |
 | Pagos | Paciente, concepto, referencia | Estado, rango de fechas (los totales se recalculan) |
+| Usuarios | Nombre, correo | Rol |
 | Médicos | Nombre, correo, especialidad, colegiatura | — |
 | Especialidades | Nombre, descripción | — |
 | Auditoría | Usuario, paciente, descripción, IP | Acción, paciente, rango de fechas |

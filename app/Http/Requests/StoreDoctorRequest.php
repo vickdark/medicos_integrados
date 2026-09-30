@@ -2,17 +2,16 @@
 
 namespace App\Http\Requests;
 
+use App\Concerns\DoctorValidationRules;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\Doctor;
-use App\Models\Specialty;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreDoctorRequest extends FormRequest
 {
-    use PasswordValidationRules, ProfileValidationRules;
+    use DoctorValidationRules, PasswordValidationRules, ProfileValidationRules;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -32,11 +31,7 @@ class StoreDoctorRequest extends FormRequest
         return [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
-            'specialty_id' => ['required', Rule::exists(Specialty::class, 'id')],
-            'license_number' => ['required', 'string', 'max:50', Rule::unique(Doctor::class)],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'consultation_fee' => ['required', 'numeric', 'min:0', 'max:99999999'],
-            'bio' => ['nullable', 'string', 'max:2000'],
+            ...$this->doctorRules(),
         ];
     }
 }

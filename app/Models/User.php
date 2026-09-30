@@ -50,6 +50,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
+            'is_active' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
         ];
@@ -77,6 +79,21 @@ class User extends Authenticatable
     public function hasRole(UserRole ...$roles): bool
     {
         return in_array($this->role, $roles, true);
+    }
+
+    /**
+     * Roles this account may be switched to. Doctor and patient accounts own
+     * clinical history, so their role is fixed; administration roles can swap.
+     *
+     * @return list<UserRole>
+     */
+    public function assignableRoles(?User $editor = null): array
+    {
+        if ($editor?->is($this) || ! in_array($this->role, [UserRole::Admin, UserRole::Receptionist], true)) {
+            return [$this->role];
+        }
+
+        return [UserRole::Admin, UserRole::Receptionist];
     }
 
     /**

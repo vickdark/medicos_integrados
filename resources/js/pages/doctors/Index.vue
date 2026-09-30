@@ -9,6 +9,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { formatMoney } from '@/lib/format';
 import doctorRoutes from '@/routes/doctors';
 import scheduleRoutes from '@/routes/schedules';
+import userRoutes from '@/routes/users';
 import type { BreadcrumbItem } from '@/types';
 import type { Doctor, Paginated, TableFilters } from '@/types/models';
 
@@ -38,7 +39,8 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <h1 class="text-2xl font-semibold tracking-tight">Médicos</h1>
                 <Button as-child>
-                    <Link :href="doctorRoutes.create()"
+                    <Link
+                        :href="userRoutes.create({ query: { role: 'doctor' } })"
                         ><UserPlus /> Nuevo médico</Link
                     >
                 </Button>

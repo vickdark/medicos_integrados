@@ -49,10 +49,13 @@ class SecurityController extends Controller implements HasMiddleware
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
-            'password' => $request->password,
-        ]);
+        $wasTemporary = $request->user()->must_change_password;
 
-        return back();
+        $request->user()->forceFill([
+            'password' => $request->password,
+            'must_change_password' => false,
+        ])->save();
+
+        return $wasTemporary ? to_route('dashboard')->with('success', 'Contraseña actualizada. ¡Bienvenido!') : back();
     }
 }

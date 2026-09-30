@@ -8,6 +8,7 @@ import {
     ShieldCheck,
     Stethoscope,
     Tags,
+    UserCog,
     Users,
     Wallet,
 } from 'lucide-vue-next';
@@ -32,6 +33,7 @@ import patientRoutes from '@/routes/patients';
 import paymentRoutes from '@/routes/payments';
 import scheduleRoutes from '@/routes/schedules';
 import specialtyRoutes from '@/routes/specialties';
+import userRoutes from '@/routes/users';
 import type { NavItem } from '@/types';
 import type { RoleValue } from '@/types/models';
 
@@ -100,6 +102,11 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     if (role === 'admin') {
         items.push(
+            {
+                title: 'Usuarios',
+                href: userRoutes.index(),
+                icon: UserCog,
+            },
             {
                 title: 'Médicos',
                 href: doctorRoutes.index(),
