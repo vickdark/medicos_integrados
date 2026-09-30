@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { Check, ClipboardList, FileText, HandCoins, X } from 'lucide-vue-next';
+import {
+    CalendarClock,
+    Check,
+    ClipboardList,
+    FileText,
+    HandCoins,
+    X,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import IconButton from '@/components/IconButton.vue';
 import { confirmAction } from '@/lib/confirm';
@@ -107,6 +114,16 @@ async function changeStatus(status: AppointmentStatusValue) {
         >
             <HandCoins class="size-3.5" /> Gestionar pagos
         </Link>
+        <IconButton
+            v-if="appointment.can.reschedule"
+            label="Reprogramar cita"
+            tone="warning"
+            as-child
+        >
+            <Link :href="appointmentRoutes.edit(appointment.id)">
+                <CalendarClock />
+            </Link>
+        </IconButton>
         <IconButton
             v-if="appointment.can.update_status"
             label="Cancelar cita"

@@ -51,4 +51,13 @@ class AppointmentPolicy
             UserRole::Patient => $appointment->patient_id === $user->patient?->id,
         };
     }
+
+    /**
+     * Determine whether the user can move the appointment to another date. It has
+     * the same reach as changing its status.
+     */
+    public function reschedule(User $user, Appointment $appointment): bool
+    {
+        return $this->updateStatus($user, $appointment);
+    }
 }

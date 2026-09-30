@@ -35,7 +35,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('patients/{patient}/consultations', [ConsultationController::class, 'store'])->name('consultations.store');
     Route::get('consultations/{consultation}', [ConsultationController::class, 'show'])->name('consultations.show');
 
-    Route::resource('appointments', AppointmentController::class)->only(['index', 'create', 'store']);
+    Route::resource('appointments', AppointmentController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
 
     Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store', 'show']);

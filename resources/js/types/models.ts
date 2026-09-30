@@ -77,6 +77,7 @@ export type Appointment = {
     consultation_id?: number | null;
     can: {
         view_consultation: boolean;
+        reschedule: boolean;
         update_status: boolean;
         register_payment: boolean;
         settle_payment: boolean;

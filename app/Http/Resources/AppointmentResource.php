@@ -46,6 +46,7 @@ class AppointmentResource extends JsonResource
                 'view_consultation' => $this->resource->relationLoaded('consultation')
                     && $this->consultation !== null
                     && ($request->user()?->can('view', $this->consultation) ?? false),
+                'reschedule' => $request->user()?->can('reschedule', $this->resource) ?? false,
                 'update_status' => $request->user()?->can('updateStatus', $this->resource) ?? false,
                 'settle_payment' => ($this->pending_payment_id ?? null) !== null
                     && ($request->user()?->can('create', Payment::class) ?? false),

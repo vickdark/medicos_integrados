@@ -9,6 +9,7 @@ use App\Exports\AppointmentsExport;
 use App\Exports\TableExporter;
 use App\Http\Requests\CalendarRangeRequest;
 use App\Http\Requests\ExportTableRequest;
+use App\Http\Requests\RescheduleAppointmentRequest;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\TableQueryRequest;
 use App\Http\Requests\UpdateAppointmentStatusRequest;
@@ -21,6 +22,7 @@ use App\Models\User;
 use App\Notifications\AppointmentCancelled;
 use App\Notifications\AppointmentConfirmed;
 use App\Notifications\AppointmentRequested;
+use App\Notifications\AppointmentRescheduled;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -176,6 +178,56 @@ class AppointmentController extends Controller
         return to_route('appointments.index')->with('success', $user->isStaff()
             ? 'Cita agendada correctamente.'
             : 'Solicitud enviada. Te avisaremos cuando la clínica confirme tu cita.');
+    }
+
+    /**
+     * Show the form to move the appointment to another date and time.
+     */
+    public function edit(Request $request, Appointment $appointment): Response
+    {
+        Gate::authorize('reschedule', $appointment);
+
+        $appointment->load(['patient', 'doctor.user', 'doctor.specialty', 'doctor.schedules']);
+
+        return Inertia::render('appointments/Reschedule', [
+            'appointment' => (new AppointmentResource($appointment))->resolve($request),
+            'schedules' => $appointment->doctor->schedules
+                ->sortBy(['day_of_week', 'starts_at'])
+                ->map(fn (DoctorSchedule $schedule): string => $schedule->summary())
+                ->values(),
+            'isStaff' => $request->user()->isStaff(),
+        ]);
+    }
+
+    /**
+     * Move the appointment to another date and time. A patient's change goes back
+     * to the clinic for confirmation; the rest of the roles keep the status.
+     */
+    public function update(RescheduleAppointmentRequest $request, Appointment $appointment): RedirectResponse
+    {
+        $user = $request->user();
+        $previousDate = $appointment->scheduled_at->copy();
+        $needsConfirmation = $user->role === UserRole::Patient;
+
+        $appointment->update([
+            'scheduled_at' => $request->date('scheduled_at'),
+            'status' => $needsConfirmation ? AppointmentStatus::Requested : $appointment->status,
+        ]);
+
+        $notification = new AppointmentRescheduled($appointment, $previousDate, $needsConfirmation);
+
+        if ($needsConfirmation) {
+            Notification::send(
+                User::query()->whereIn('role', [UserRole::Admin, UserRole::Receptionist])->get()->push($appointment->doctor->user),
+                $notification,
+            );
+        } else {
+            $appointment->patient->user?->notify($notification);
+        }
+
+        return to_route('appointments.index')->with('success', $needsConfirmation
+            ? 'Solicitaste el cambio de fecha. La clínica lo confirmará pronto.'
+            : 'Cita reprogramada correctamente.');
     }
 
     /**
