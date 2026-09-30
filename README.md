@@ -183,7 +183,12 @@ Si usas Herd para servir el sitio, basta con:
 ```bash
 npm run dev               # Vite con recarga en caliente
 php artisan queue:work    # procesa las notificaciones en cola
+php artisan schedule:work # tareas programadas (recordatorios de citas, cada hora)
 ```
+
+**Recordatorios de citas:** cada hora el comando `appointments:send-reminders` envía por correo un recordatorio al paciente de las citas confirmadas que ocurren en las próximas 24 horas (no se envía a menos de 2 horas de la cita ni dos veces; si la cita se reprograma, se vuelve a enviar). Usa la cuenta del paciente o, si no tiene, el correo de su ficha. En producción agrega al cron: `* * * * * php artisan schedule:run`.
+
+**Notificaciones push (navegador):** el paciente las activa en Configuración → Notificaciones (por dispositivo) y recibe el mismo recordatorio como aviso del navegador, además del correo. Usa Web Push con claves VAPID: generarlas una vez con `php artisan webpush:vapid` (quedan en `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` del `.env`) y definir `VAPID_SUBJECT`. Requiere HTTPS (o `localhost`) y el worker de colas. En Windows, si PHP falla con *Unable to create the key*, define `OPENSSL_CONF` apuntando a un `openssl.cnf` (p. ej. el de Herd: `~/.config/herd/bin/php82/extras/ssl/openssl.cnf`). En iPhone/iPad solo funciona si la página se agrega a la pantalla de inicio. Las suscripciones vencidas se eliminan solas.
 
 Con `MAIL_MAILER=log`, los correos enviados aparecen en `storage/logs/laravel.log`.
 
@@ -372,7 +377,6 @@ npm run types:check                   # vue-tsc
 
 - **Sistema de turnos:** pensado para dos casos: el paciente que nunca apartó cita y se registra en sitio (recepción le genera un turno), y el paciente que ya tiene una cita y quiere ver su orden de atención. Incluye una **pantalla de turnos** (visible en la sala de espera) que muestre qué turno se está atendiendo y cuáles siguen, además de la consulta del turno propio desde el portal del paciente.
 - **Completar y revisar la política de datos personales (Colombia):** `/privacidad` está redactada con base en la Ley 1581 de 2012 y normas relacionadas, pero debe revisarla un abogado. Configurar en `.env` los datos del responsable (`PRIVACY_COMPANY`, `PRIVACY_NIT`, `PRIVACY_ADDRESS`, `PRIVACY_PHONE`, `PRIVACY_CONTACT_EMAIL`) y verificar si la clínica debe inscribir sus bases de datos en el Registro Nacional de Bases de Datos (RNBD) de la SIC. Al cambiar el texto de fondo, subir `version` en `config/privacy.php`.
-- **Recordatorios automáticos de citas** (correo o mensaje) un día antes de la cita.
 - **Reportes:** los dashboards ya muestran ingresos, citas por día, consultas por mes y médicos con más citas; faltan reportes filtrables y exportables por rango, médico y especialidad.
 - **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
 - **API con Laravel Sanctum** para una futura app móvil.

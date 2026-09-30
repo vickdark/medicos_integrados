@@ -16,6 +16,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PrivacyPolicyController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SendConsultationPrescriptionController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\TourController;
@@ -72,6 +73,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('specialties', SpecialtyController::class)->except(['show']);
 
     Route::resource('medications', MedicationController::class)->except(['show']);
+
+    Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 
     Route::post('tour', [TourController::class, 'store'])->name('tour.store');
 

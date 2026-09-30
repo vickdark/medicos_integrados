@@ -233,6 +233,7 @@ class AppointmentController extends Controller
             'reason' => $request->validated('reason', $appointment->reason),
             'notes' => $request->has('notes') ? $request->validated('notes') : $appointment->notes,
             'scheduled_at' => $request->date('scheduled_at'),
+            'reminder_sent_at' => null,
             'status' => $needsConfirmation ? AppointmentStatus::Requested : $appointment->status,
         ]);
         $appointment->unsetRelation('doctor');

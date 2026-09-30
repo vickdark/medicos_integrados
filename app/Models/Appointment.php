@@ -30,6 +30,7 @@ class Appointment extends Model
         'status',
         'reason',
         'notes',
+        'reminder_sent_at',
         'created_by',
     ];
 
@@ -42,6 +43,7 @@ class Appointment extends Model
     {
         return [
             'scheduled_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
             'status' => AppointmentStatus::class,
         ];
     }
