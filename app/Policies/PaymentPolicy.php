@@ -30,6 +30,15 @@ class PaymentPolicy
     }
 
     /**
+     * Determine whether the user can download the invoice of the payment. Only
+     * paid payments are invoiced.
+     */
+    public function downloadInvoice(User $user, Payment $payment): bool
+    {
+        return $this->view($user, $payment) && $payment->status === PaymentStatus::Paid;
+    }
+
+    /**
      * Determine whether the user can record payments.
      */
     public function create(User $user): bool

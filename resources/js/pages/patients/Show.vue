@@ -4,13 +4,14 @@ import {
     CalendarPlus,
     ClipboardList,
     Eye,
+    FileText,
     FilePlus2,
     Pencil,
     ShieldCheck,
     TriangleAlert,
     Wallet,
 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import IconButton from '@/components/IconButton.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
 import appointmentRoutes from '@/routes/appointments';
@@ -52,6 +62,27 @@ const props = defineProps<{
         view_audit_trail: boolean;
     };
 }>();
+
+const historyDialogOpen = ref(false);
+const historyFrom = ref('');
+const historyTo = ref('');
+
+const historyRangeIsValid = computed(
+    () =>
+        !historyFrom.value ||
+        !historyTo.value ||
+        historyTo.value >= historyFrom.value,
+);
+
+const historyUrl = computed(
+    () =>
+        patientRoutes.history(props.patient.id, {
+            query: {
+                ...(historyFrom.value ? { from: historyFrom.value } : {}),
+                ...(historyTo.value ? { to: historyTo.value } : {}),
+            },
+        }).url,
+);
 
 const page = usePage();
 const isOwnRecord = computed(
@@ -119,6 +150,13 @@ const details: { label: string; value: string | null }[] = [
                         >
                             <ShieldCheck /> Auditoría
                         </Link>
+                    </Button>
+                    <Button
+                        v-if="can.view_medical_history"
+                        variant="outline"
+                        @click="historyDialogOpen = true"
+                    >
+                        <FileText /> Historia clínica (PDF)
                     </Button>
                     <Button v-if="can.update" variant="outline" as-child>
                         <Link :href="patientRoutes.edit(patient.id)">
@@ -426,6 +464,24 @@ const details: { label: string; value: string | null }[] = [
                                     }}</span>
                                     <StatusBadge :status="payment.status" />
                                     <IconButton
+                                        v-if="payment.can.download_invoice"
+                                        label="Ver factura (PDF)"
+                                        tone="danger"
+                                        as-child
+                                    >
+                                        <a
+                                            :href="
+                                                paymentRoutes.invoice(
+                                                    payment.id,
+                                                ).url
+                                            "
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
+                                            <FileText />
+                                        </a>
+                                    </IconButton>
+                                    <IconButton
                                         label="Ver detalle"
                                         tone="info"
                                         as-child
@@ -445,5 +501,75 @@ const details: { label: string; value: string | null }[] = [
                 </Card>
             </div>
         </div>
+        <Dialog v-model:open="historyDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Historia clínica en PDF</DialogTitle>
+                    <DialogDescription>
+                        Elige un rango de fechas para incluir solo las consultas
+                        de ese período. Si dejas las fechas vacías, se genera
+                        todo el historial.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid gap-2">
+                        <Label for="history-from">Desde</Label>
+                        <Input
+                            id="history-from"
+                            v-model="historyFrom"
+                            type="date"
+                        />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="history-to">Hasta</Label>
+                        <Input
+                            id="history-to"
+                            v-model="historyTo"
+                            type="date"
+                            :min="historyFrom || undefined"
+                        />
+                    </div>
+                </div>
+                <p v-if="!historyRangeIsValid" class="text-sm text-destructive">
+                    La fecha final debe ser igual o posterior a la inicial.
+                </p>
+
+                <div class="flex flex-wrap justify-end gap-2">
+                    <Button
+                        v-if="historyFrom || historyTo"
+                        variant="ghost"
+                        @click="
+                            historyFrom = '';
+                            historyTo = '';
+                        "
+                    >
+                        Limpiar fechas
+                    </Button>
+                    <Button
+                        as-child
+                        :class="
+                            historyRangeIsValid
+                                ? ''
+                                : 'pointer-events-none opacity-50'
+                        "
+                    >
+                        <a
+                            :href="historyUrl"
+                            target="_blank"
+                            rel="noopener"
+                            @click="historyDialogOpen = false"
+                        >
+                            <FileText />
+                            {{
+                                historyFrom || historyTo
+                                    ? 'Abrir período'
+                                    : 'Abrir todo el historial'
+                            }}
+                        </a>
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>

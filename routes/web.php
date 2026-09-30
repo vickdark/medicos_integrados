@@ -10,6 +10,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorScheduleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\TourController;
@@ -30,6 +31,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
     Route::get('users/export', [UserController::class, 'export'])->name('users.export');
 
+    Route::get('patients/{patient}/clinical-history', PatientHistoryController::class)->name('patients.history');
+
     Route::resource('patients', PatientController::class)->except(['destroy']);
 
     Route::get('patients/{patient}/consultations/create', [ConsultationController::class, 'create'])->name('consultations.create');
@@ -40,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
 
     Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store', 'show']);
+    Route::get('payments/{payment}/invoice', [PaymentController::class, 'invoice'])->name('payments.invoice');
     Route::patch('payments/{payment}/paid', [PaymentController::class, 'markPaid'])->name('payments.paid');
 
     Route::post('consultations/{consultation}/attachments', [ConsultationAttachmentController::class, 'store'])->name('attachments.store');

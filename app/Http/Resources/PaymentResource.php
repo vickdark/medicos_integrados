@@ -24,7 +24,10 @@ class PaymentResource extends JsonResource
             'method' => $this->method->toOption(),
             'status' => $this->status->toOption(),
             'concept' => $this->concept,
-            'can' => ['mark_paid' => $request->user()?->can('markPaid', $this->resource) ?? false],
+            'can' => [
+                'mark_paid' => $request->user()?->can('markPaid', $this->resource) ?? false,
+                'download_invoice' => $request->user()?->can('downloadInvoice', $this->resource) ?? false,
+            ],
             'reference' => $this->reference,
             'paid_at' => $this->paid_at?->format('Y-m-d'),
             'notes' => $this->notes,

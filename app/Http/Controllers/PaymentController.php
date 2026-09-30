@@ -14,6 +14,7 @@ use App\Http\Resources\PaymentResource;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Payment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -194,6 +195,26 @@ class PaymentController extends Controller
                 'view_patient' => $request->user()->can('view', $payment->patient),
             ],
         ]);
+    }
+
+    /**
+     * Open the invoice of a paid payment as a PDF in the browser.
+     */
+    public function invoice(Payment $payment): SymfonyResponse
+    {
+        Gate::authorize('downloadInvoice', $payment);
+
+        $payment->load(['patient', 'appointment.doctor.user', 'appointment.doctor.specialty']);
+        $number = 'F-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT);
+
+        return Pdf::loadView('pdf.invoice', [
+            'payment' => $payment,
+            'number' => $number,
+            'generatedAt' => now(),
+        ])
+            ->setOption('isFontSubsettingEnabled', true)
+            ->setPaper('a4')
+            ->stream("factura-{$number}.pdf");
     }
 
     /**

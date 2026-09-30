@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from 'lucide-vue-next';
+import { ArrowLeft, FileText } from 'lucide-vue-next';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,11 +57,22 @@ const details = [
                         <StatusBadge :status="payment.status" />
                     </div>
                 </div>
-                <Button variant="outline" as-child>
-                    <Link :href="paymentRoutes.index()">
-                        <ArrowLeft /> Volver a pagos
-                    </Link>
-                </Button>
+                <div class="flex flex-wrap gap-2">
+                    <Button v-if="payment.can.download_invoice" as-child>
+                        <a
+                            :href="paymentRoutes.invoice(payment.id).url"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <FileText /> Ver factura (PDF)
+                        </a>
+                    </Button>
+                    <Button variant="outline" as-child>
+                        <Link :href="paymentRoutes.index()">
+                            <ArrowLeft /> Volver a pagos
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2">

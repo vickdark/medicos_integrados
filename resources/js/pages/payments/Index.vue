@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
-import { CircleCheck, Eye, Plus, ReceiptText } from 'lucide-vue-next';
+import { CircleCheck, Eye, FileText, Plus, ReceiptText } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PaymentController from '@/actions/App/Http/Controllers/PaymentController';
 import DateRangeFilter from '@/components/DateRangeFilter.vue';
@@ -245,6 +245,24 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         >
                                             <Eye />
                                         </Link>
+                                    </IconButton>
+                                    <IconButton
+                                        v-if="payment.can.download_invoice"
+                                        label="Ver factura (PDF)"
+                                        tone="danger"
+                                        as-child
+                                    >
+                                        <a
+                                            :href="
+                                                paymentRoutes.invoice(
+                                                    payment.id,
+                                                ).url
+                                            "
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
+                                            <FileText />
+                                        </a>
                                     </IconButton>
                                     <IconButton
                                         v-if="
