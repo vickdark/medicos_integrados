@@ -19,7 +19,7 @@ const props = defineProps<{
         id: number;
         name: string;
         specialty: string;
-        consultation_fee: string;
+        consultation_fee: string | null;
         slot_minutes: number;
         schedule_summary: { days: string; ranges: string[] }[];
     }[];
@@ -53,7 +53,9 @@ const patientOptions = computed(() =>
 const doctorOptions = computed(() =>
     props.doctors.map((doctor) => ({
         value: doctor.id,
-        label: `${doctor.name} · ${doctor.specialty} (${formatMoney(doctor.consultation_fee)})`,
+        label: props.isStaff
+            ? `${doctor.name} · ${doctor.specialty} (${formatMoney(doctor.consultation_fee)})`
+            : `${doctor.name} · ${doctor.specialty}`,
     })),
 );
 
@@ -126,10 +128,15 @@ const selectedDoctorNumericId = computed(() =>
                                 Horario de atención
                             </p>
                             <p class="text-xs text-muted-foreground">
-                                Citas de {{ selectedDoctor.slot_minutes }} min ·
-                                {{
-                                    formatMoney(selectedDoctor.consultation_fee)
-                                }}
+                                Citas de {{ selectedDoctor.slot_minutes }} min
+                                <template v-if="isStaff">
+                                    ·
+                                    {{
+                                        formatMoney(
+                                            selectedDoctor.consultation_fee,
+                                        )
+                                    }}
+                                </template>
                             </p>
                         </div>
                         <ul

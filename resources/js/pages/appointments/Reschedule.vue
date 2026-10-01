@@ -25,14 +25,16 @@ const props = defineProps<{
         id: number;
         name: string;
         specialty: string;
-        consultation_fee: string;
+        consultation_fee: string | null;
     }[];
 }>();
 
 const doctorOptions = computed(() =>
     props.doctors.map((doctor) => ({
         value: doctor.id,
-        label: `${doctor.name} · ${doctor.specialty} (${formatMoney(doctor.consultation_fee)})`,
+        label: props.isStaff
+            ? `${doctor.name} · ${doctor.specialty} (${formatMoney(doctor.consultation_fee)})`
+            : `${doctor.name} · ${doctor.specialty}`,
     })),
 );
 

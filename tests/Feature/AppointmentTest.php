@@ -239,3 +239,23 @@ it('lets staff book a slot later today in the clinic time zone but not one that 
     expect(config('app.timezone'))->toBe('America/Bogota')
         ->and(Appointment::query()->sole()->scheduled_at->format('H:i'))->toBe('14:00');
 });
+
+it('does not send the doctor fee to the patient when booking or rescheduling', function () {
+    $doctor = Doctor::factory()->create(['consultation_fee' => 85000]);
+    $patient = Patient::factory()->withAccount()->create();
+    $appointment = Appointment::factory()->for($patient)->for($doctor)->create(['status' => AppointmentStatus::Requested]);
+
+    $this->actingAs($patient->user)
+        ->get(route('appointments.create'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('appointments/Create')
+            ->where('doctors.0.consultation_fee', null));
+
+    $this->actingAs($patient->user)
+        ->get(route('appointments.edit', $appointment))
+        ->assertInertia(fn (Assert $page) => $page->where('doctors.0.consultation_fee', null));
+
+    $this->actingAs(User::factory()->receptionist()->create())
+        ->get(route('appointments.create'))
+        ->assertInertia(fn (Assert $page) => $page->where('doctors.0.consultation_fee', '85000.00'));
+});

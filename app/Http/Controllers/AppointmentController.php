@@ -132,7 +132,7 @@ class AppointmentController extends Controller
                     'id' => $doctor->id,
                     'name' => $doctor->user->name,
                     'specialty' => $doctor->specialty->name,
-                    'consultation_fee' => $doctor->consultation_fee,
+                    'consultation_fee' => $isStaff ? $doctor->consultation_fee : null,
                     'slot_minutes' => $doctor->slotLength(),
                     'schedule_summary' => $doctor->weeklyScheduleSummary(),
                 ]),
@@ -208,7 +208,7 @@ class AppointmentController extends Controller
                         'id' => $doctor->id,
                         'name' => $doctor->user->name,
                         'specialty' => $doctor->specialty->name,
-                        'consultation_fee' => $doctor->consultation_fee,
+                        'consultation_fee' => $request->user()->isStaff() ? $doctor->consultation_fee : null,
                     ])
                 : [],
         ]);
