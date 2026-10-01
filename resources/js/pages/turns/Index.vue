@@ -82,6 +82,7 @@ useIntervalFn(
     () =>
         router.reload({
             only: ['turns', 'summary', 'pendingAppointments'],
+            headers: { 'X-Background': '1' },
         }),
     15_000,
 );

@@ -114,4 +114,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Inactivity timeout of the clinic staff
+    |--------------------------------------------------------------------------
+    |
+    | Minutes without activity after which the session of an admin, doctor or
+    | receptionist is closed, so a screen left open does not expose clinical
+    | data. Patients are not affected. Use 0 to disable it.
+    |
+    */
+
+    'staff_idle_minutes' => (int) env('STAFF_IDLE_MINUTES', 15),
+
 ];

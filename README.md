@@ -182,6 +182,7 @@ Con Herd, el sitio queda disponible en `https://medicos_integrados.test` (con el
 |---|---|---|
 | `APP_LOCALE` | `es` | Mensajes de validación y fechas en español (`lang/es`) |
 | `QUEUE_CONNECTION` | `database` | Las notificaciones se envían en cola |
+| `STAFF_IDLE_MINUTES` | `15` | Minutos de inactividad antes de cerrar la sesión del personal (`0` lo desactiva) |
 | `MAIL_MAILER` | `log` en desarrollo, `smtp` en producción | |
 | `MAIL_FROM_ADDRESS` | Correo real de la clínica | |
 | `FILESYSTEM_DISK` | `local` | Los adjuntos clínicos se guardan en `storage/app/private` |
@@ -402,6 +403,7 @@ Sobre la exportación (`GET /{tabla}/export?format=xlsx|pdf&…filtros`):
 - **Nueva aceptación de la política:** al publicar una nueva versión de la política, el middleware `EnsurePrivacyPolicyIsAccepted` lleva a cada paciente a `/privacidad/aceptar` antes de usar el sistema, y guarda la nueva versión y fecha. Lo mismo ocurre con las cuentas de paciente que nunca la aceptaron (p. ej. las creadas por el personal).
 - **Adjuntos privados y cifrados:** se guardan en un disco que no es público, **cifrados en disco** con el `APP_KEY` (extensión `.enc`), y solo se descargan a través de un controlador que verifica permisos y los descifra al vuelo. Los adjuntos subidos antes de esta función se cifran con `php artisan attachments:encrypt` (ejecutarlo una vez tras migrar). Al estar cifrados, si se pierde el `APP_KEY` los archivos tampoco se pueden recuperar.
 - **Auditoría:** se registra quién consulta historias clínicas o consultas, las altas y modificaciones de pacientes, las consultas creadas y las subidas, descargas y eliminaciones de adjuntos, con usuario, IP y fecha.
+- **Cierre de sesión por inactividad (personal):** la sesión de administradores, médicos y recepción se cierra tras `STAFF_IDLE_MINUTES` minutos sin actividad (15 por defecto; `0` lo desactiva), para que una pantalla abierta no deje expuesta la información clínica. El navegador avisa 60 segundos antes con un diálogo y la opción *Seguir conectado*; el servidor aplica el mismo límite (más un minuto de margen) mediante el middleware `LogoutInactiveStaff`, y el login muestra «Tu sesión se cerró por inactividad». La actividad se comparte entre pestañas. Las consultas automáticas de fondo (p. ej. el refresco de Turnos) envían la cabecera `X-Background` para no contar como actividad. **Los pacientes no se ven afectados**, y las notificaciones push les siguen llegando porque las envía el servidor sin depender de la sesión.
 - **Autenticación:** incluye límite de intentos de login, verificación en dos pasos opcional y confirmación de contraseña para las acciones sensibles.
 
 ## Pruebas y calidad de código

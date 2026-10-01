@@ -1,12 +1,23 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, router } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import { dashboard } from '@/routes';
 import { store } from '@/routes/password/confirm';
+
+function goBack() {
+    if (window.history.length > 1) {
+        window.history.back();
+
+        return;
+    }
+
+    router.visit(dashboard());
+}
 </script>
 
 <template>
@@ -46,6 +57,16 @@ import { store } from '@/routes/password/confirm';
                         Confirmar contraseña
                     </Button>
                 </div>
+
+                <Button
+                    type="button"
+                    variant="ghost"
+                    class="w-full"
+                    data-test="confirm-password-back-button"
+                    @click="goBack"
+                >
+                    Volver
+                </Button>
             </div>
         </Form>
     </AuthLayout>

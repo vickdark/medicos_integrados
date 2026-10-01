@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -13,11 +14,18 @@ import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
-defineProps<{
+const props = defineProps<{
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
+    expired?: boolean;
 }>();
+
+const notice = computed(
+    () =>
+        props.status ??
+        (props.expired ? 'Tu sesión se cerró por inactividad.' : null),
+);
 </script>
 
 <template>
@@ -28,10 +36,10 @@ defineProps<{
         <Head title="Iniciar sesión" />
 
         <div
-            v-if="status"
+            v-if="notice"
             class="mb-4 text-center text-sm font-medium text-green-600"
         >
-            {{ status }}
+            {{ notice }}
         </div>
 
         <Form

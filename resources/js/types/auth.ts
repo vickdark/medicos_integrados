@@ -15,6 +15,7 @@ export type Auth = {
     role: { value: string; label: string } | null;
     patientId: number | null;
     doctorId: number | null;
+    idleTimeoutMinutes: number;
 };
 
 export type TwoFactorConfigContent = {

@@ -19,6 +19,7 @@ use App\Http\Controllers\DoctorSignatureController;
 use App\Http\Controllers\DocumentVerificationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InsurerController;
+use App\Http\Controllers\KeepSessionAliveController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientHistoryController;
@@ -47,6 +48,7 @@ Route::get('pantalla-de-turnos/datos', [TurnBoardController::class, 'data'])->na
 Route::get('doctors/{doctor}/photo', DoctorPhotoController::class)->name('doctors.photo');
 
 Route::middleware('auth')->group(function () {
+    Route::post('session/keep-alive', KeepSessionAliveController::class)->name('session.keep-alive');
     Route::get('privacidad/aceptar', [PrivacyAcceptanceController::class, 'show'])->name('privacy.accept');
     Route::post('privacidad/aceptar', [PrivacyAcceptanceController::class, 'store'])->name('privacy.accept.store');
 });

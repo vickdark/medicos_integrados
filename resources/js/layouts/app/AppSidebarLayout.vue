@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
+import IdleLogoutDialog from '@/components/IdleLogoutDialog.vue';
 import PushPrompt from '@/components/PushPrompt.vue';
 import type { BreadcrumbItem } from '@/types';
 
@@ -29,5 +30,6 @@ withDefaults(defineProps<Props>(), {
             </div>
             <slot />
         </AppContent>
+        <IdleLogoutDialog />
     </AppShell>
 </template>

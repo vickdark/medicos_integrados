@@ -46,6 +46,7 @@ class HandleInertiaRequests extends Middleware
                 'role' => $user?->role->toOption(),
                 'patientId' => $user?->patient?->id,
                 'doctorId' => $user?->doctor?->id,
+                'idleTimeoutMinutes' => $user?->isStaff() ? (int) config('auth.staff_idle_minutes') : 0,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

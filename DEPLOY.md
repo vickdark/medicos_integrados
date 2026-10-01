@@ -97,6 +97,7 @@ DB_PASSWORD=...
 SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SESSION_ENCRYPT=true
+STAFF_IDLE_MINUTES=15           # cierre de sesión del personal por inactividad (0 = desactivado)
 QUEUE_CONNECTION=database
 CACHE_STORE=database
 FILESYSTEM_DISK=local           # adjuntos clínicos en storage/app/private
