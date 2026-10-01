@@ -82,7 +82,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('consultations/{consultation}/attachments', [ConsultationAttachmentController::class, 'store'])->name('attachments.store');
     Route::get('attachments/{attachment}', [ConsultationAttachmentController::class, 'show'])->name('attachments.show');
-    Route::delete('attachments/{attachment}', [ConsultationAttachmentController::class, 'destroy'])->name('attachments.destroy');
+    Route::post('attachments/{attachment}/status', [ConsultationAttachmentController::class, 'changeStatus'])->name('attachments.status');
 
     Route::resource('doctors', DoctorController::class)->only(['index', 'create', 'store', 'show']);
 

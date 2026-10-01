@@ -111,10 +111,12 @@ class ConsultationController extends Controller
     {
         Gate::authorize('view', $consultation);
 
-        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments', 'primaryDiagnosis', 'relatedDiagnoses', 'addenda', 'documents']);
+        $consultation->load(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'attachments.replacedBy', 'attachments.replaces', 'primaryDiagnosis', 'relatedDiagnoses', 'addenda', 'documents']);
 
         if ($request->user()->isStaff()) {
             AuditLog::record(AuditAction::Viewed, $consultation, 'Consultó el detalle de una consulta', $consultation->patient);
+        } else {
+            $consultation->setRelation('attachments', $consultation->attachments->filter->isActive()->values());
         }
 
         return Inertia::render('consultations/Show', [

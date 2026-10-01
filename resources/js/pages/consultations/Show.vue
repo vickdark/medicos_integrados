@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { Form, Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import {
+    Ban,
     Download,
     FileImage,
     FilePenLine,
     ShieldAlert,
     FileText,
     Mail,
-    Trash2,
     TriangleAlert,
     Upload,
 } from 'lucide-vue-next';
@@ -39,7 +39,6 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { confirmAction } from '@/lib/confirm';
 import { formatDateTime, formatFileSize } from '@/lib/format';
 import attachmentRoutes from '@/routes/attachments';
 import consultationRoutes from '@/routes/consultations';
@@ -68,21 +67,24 @@ const addendumFormOpen = ref(false);
 
 const emailDialogOpen = ref(false);
 
-async function destroyAttachment(attachment: Attachment) {
-    const accepted = await confirmAction({
-        title: 'Eliminar archivo',
-        text: `Se eliminará «${attachment.original_name}». Esta acción no se puede deshacer.`,
-        confirmText: 'Sí, eliminar',
-        cancelText: 'Volver',
-        tone: 'danger',
-    });
+const closingAttachment = ref<Attachment | null>(null);
+const closingAction = ref<'corrected' | 'voided'>('corrected');
+const closeDialogOpen = computed({
+    get: () => closingAttachment.value !== null,
+    set: (open) => {
+        if (!open) {
+            closingAttachment.value = null;
+        }
+    },
+});
 
-    if (accepted) {
-        router.delete(attachmentRoutes.destroy(attachment.id).url, {
-            preserveScroll: true,
-        });
-    }
+function openCloseDialog(attachment: Attachment) {
+    closingAction.value = 'corrected';
+    closingAttachment.value = attachment;
 }
+
+const isClosed = (attachment: Attachment) =>
+    attachment.status.value !== 'active';
 
 const page = usePage();
 const isPatient = computed(() => page.props.auth.role?.value === 'patient');
@@ -517,6 +519,7 @@ const sections = computed(() =>
                             v-for="attachment in consultation.attachments"
                             :key="attachment.id"
                             class="flex items-center gap-3 px-3 py-2"
+                            :class="{ 'bg-muted/40': isClosed(attachment) }"
                         >
                             <FileImage
                                 v-if="attachment.mime_type.startsWith('image/')"
@@ -532,9 +535,66 @@ const sections = computed(() =>
                                         attachmentRoutes.show(attachment.id).url
                                     "
                                     class="block truncate text-sm font-medium hover:underline"
+                                    :class="{
+                                        'text-muted-foreground line-through':
+                                            isClosed(attachment),
+                                    }"
                                 >
                                     {{ attachment.original_name }}
                                 </a>
+                                <p
+                                    v-if="
+                                        isClosed(attachment) &&
+                                        attachment.history
+                                    "
+                                    class="mt-0.5 text-xs"
+                                    :class="
+                                        attachment.status.value === 'voided'
+                                            ? 'text-red-700 dark:text-red-300'
+                                            : 'text-amber-800 dark:text-amber-300'
+                                    "
+                                >
+                                    <span
+                                        class="mr-1 rounded px-1.5 py-0.5 font-medium"
+                                        :class="
+                                            attachment.status.value === 'voided'
+                                                ? 'bg-red-100 dark:bg-red-500/15'
+                                                : 'bg-amber-100 dark:bg-amber-500/15'
+                                        "
+                                        >{{ attachment.status.label }}</span
+                                    >
+                                    <template
+                                        v-if="attachment.history.changed_at"
+                                    >
+                                        {{
+                                            formatDateTime(
+                                                attachment.history.changed_at,
+                                            )
+                                        }}
+                                    </template>
+                                    <template
+                                        v-if="attachment.history.changed_by"
+                                    >
+                                        · {{ attachment.history.changed_by }}
+                                    </template>
+                                    · Motivo (interno):
+                                    {{ attachment.history.reason }}
+                                    <template
+                                        v-if="attachment.history.replaced_by"
+                                    >
+                                        · Reemplazado por «{{
+                                            attachment.history.replaced_by.name
+                                        }}»
+                                    </template>
+                                </p>
+                                <p
+                                    v-else-if="attachment.history?.replaces"
+                                    class="mt-0.5 text-xs text-emerald-700 dark:text-emerald-300"
+                                >
+                                    Versión corregida de «{{
+                                        attachment.history.replaces.name
+                                    }}»
+                                </p>
                                 <p class="text-xs text-muted-foreground">
                                     {{ formatFileSize(attachment.size) }}
                                     <template v-if="attachment.description">
@@ -551,12 +611,15 @@ const sections = computed(() =>
                                 <Download />
                             </IconButton>
                             <IconButton
-                                v-if="can.manage_attachments"
-                                label="Eliminar archivo"
-                                tone="danger"
-                                @click="destroyAttachment(attachment)"
+                                v-if="
+                                    can.manage_attachments &&
+                                    !isClosed(attachment)
+                                "
+                                label="Corregir o anular archivo"
+                                tone="warning"
+                                @click="openCloseDialog(attachment)"
                             >
-                                <Trash2 />
+                                <FilePenLine />
                             </IconButton>
                         </li>
                     </ul>
@@ -660,6 +723,145 @@ const sections = computed(() =>
                         </Button>
                         <Button :disabled="processing">
                             <Mail /> Enviar receta
+                        </Button>
+                    </div>
+                </Form>
+            </DialogContent>
+        </Dialog>
+        <Dialog v-model:open="closeDialogOpen">
+            <DialogContent v-if="closingAttachment" class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Corregir o anular archivo</DialogTitle>
+                    <DialogDescription>
+                        «{{ closingAttachment.original_name }}» no se borra:
+                        queda en la historia clínica con tu nombre, la fecha y
+                        el motivo. El motivo es interno; el paciente no lo ve.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form
+                    v-bind="
+                        ConsultationAttachmentController.changeStatus.form(
+                            closingAttachment.id,
+                        )
+                    "
+                    class="grid gap-4"
+                    :options="{ preserveScroll: true }"
+                    v-slot="{ errors, processing, progress }"
+                    @success="closingAttachment = null"
+                >
+                    <fieldset class="grid gap-2">
+                        <legend class="mb-1 text-sm font-medium">
+                            ¿Qué quieres hacer? *
+                        </legend>
+                        <label
+                            class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50 dark:has-[:checked]:bg-amber-500/10"
+                        >
+                            <input
+                                v-model="closingAction"
+                                type="radio"
+                                name="status"
+                                value="corrected"
+                                class="mt-0.5 accent-amber-600"
+                            />
+                            <span>
+                                <strong>Corrección.</strong> Reemplazar por el
+                                archivo correcto. El paciente verá solo la nueva
+                                versión.
+                            </span>
+                        </label>
+                        <label
+                            class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm has-[:checked]:border-red-400 has-[:checked]:bg-red-50 dark:has-[:checked]:bg-red-500/10"
+                        >
+                            <input
+                                v-model="closingAction"
+                                type="radio"
+                                name="status"
+                                value="voided"
+                                class="mt-0.5 accent-red-600"
+                            />
+                            <span>
+                                <strong>Anulación.</strong> El archivo no debía
+                                estar en la consulta. El paciente dejará de
+                                verlo.
+                            </span>
+                        </label>
+                        <InputError :message="errors.status" />
+                    </fieldset>
+
+                    <template v-if="closingAction === 'corrected'">
+                        <div class="grid gap-2">
+                            <Label for="correction-file"
+                                >Archivo corregido (PDF o imagen, máx. 10 MB)
+                                *</Label
+                            >
+                            <Input
+                                id="correction-file"
+                                type="file"
+                                name="file"
+                                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                required
+                            />
+                            <InputError :message="errors.file" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="correction-description"
+                                >Descripción</Label
+                            >
+                            <Input
+                                id="correction-description"
+                                name="description"
+                                :default-value="
+                                    closingAttachment.description ?? ''
+                                "
+                            />
+                            <InputError :message="errors.description" />
+                        </div>
+                    </template>
+
+                    <div class="grid gap-2">
+                        <Label for="close-reason">Motivo (interno) *</Label>
+                        <Textarea
+                            id="close-reason"
+                            name="reason"
+                            rows="3"
+                            :placeholder="
+                                closingAction === 'corrected'
+                                    ? 'Ej.: se adjuntó el resultado sin la página de conclusiones'
+                                    : 'Ej.: archivo de otro paciente subido por error'
+                            "
+                            required
+                        />
+                        <InputError :message="errors.reason" />
+                    </div>
+                    <p
+                        v-if="processing && progress"
+                        class="text-xs text-muted-foreground"
+                    >
+                        Subiendo… {{ progress.percentage }} %
+                    </p>
+                    <div class="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            @click="closingAttachment = null"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            :variant="
+                                closingAction === 'voided'
+                                    ? 'destructive'
+                                    : 'default'
+                            "
+                            :disabled="processing"
+                        >
+                            <FilePenLine v-if="closingAction === 'corrected'" />
+                            <Ban v-else />
+                            {{
+                                closingAction === 'corrected'
+                                    ? 'Guardar corrección'
+                                    : 'Anular archivo'
+                            }}
                         </Button>
                     </div>
                 </Form>

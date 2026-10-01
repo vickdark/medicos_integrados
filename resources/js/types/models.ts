@@ -151,6 +151,14 @@ export type Attachment = {
     mime_type: string;
     size: number;
     description: string | null;
+    status: Option;
+    history?: {
+        changed_at: string | null;
+        changed_by: string | null;
+        reason: string | null;
+        replaced_by: { id: number; name: string | null } | null;
+        replaces: { id: number; name: string | null } | null;
+    };
     created_at: string;
 };
 
