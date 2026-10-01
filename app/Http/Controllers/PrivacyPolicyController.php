@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -12,15 +13,18 @@ class PrivacyPolicyController extends Controller
      */
     public function __invoke(): Response
     {
+        $policy = AppSetting::privacyPolicy();
+
         return Inertia::render('Privacy', [
-            'version' => config('privacy.version'),
-            'updatedAt' => config('privacy.updated_at'),
+            'version' => $policy['version'],
+            'updatedAt' => $policy['updated_at'],
             'controller' => [
-                'company' => config('privacy.company'),
-                'nit' => config('privacy.nit'),
-                'address' => config('privacy.address'),
-                'phone' => config('privacy.phone'),
-                'email' => config('privacy.contact_email'),
+                'company' => $policy['company'],
+                'nit' => $policy['nit'],
+                'address' => $policy['address'],
+                'phone' => $policy['phone'],
+                'email' => $policy['contact_email'],
+                'rnbd' => $policy['rnbd_registration'],
             ],
         ]);
     }

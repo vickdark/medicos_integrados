@@ -71,6 +71,10 @@ App\Models\User::factory()->admin()->create([
 
 El resto de usuarios (médicos, recepción) se crean desde la aplicación.
 
+Después de ingresar, completa en **Configuración → Política de datos** los datos del responsable (razón social, NIT, dirección, teléfono, correo de contacto y, si aplica, el registro RNBD). Sin esto, `/privacidad` publica solo la razón social y el correo por defecto. Haz revisar el texto de `/privacidad` por un abogado antes de abrir el registro de pacientes.
+
+Reemplaza también los datos de contacto y los textos de ejemplo de la página pública en **Configuración → Página de inicio** (teléfono, correo y dirección del pie, *Quiénes somos* y *Servicios médicos*).
+
 ## 3. Variables de entorno (`.env`)
 
 ```dotenv

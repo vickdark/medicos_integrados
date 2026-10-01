@@ -16,6 +16,7 @@ const props = defineProps<{
         address: string | null;
         phone: string | null;
         email: string;
+        rnbd: string | null;
     };
 }>();
 
@@ -29,6 +30,9 @@ const controllerDetails = computed(() =>
             : null,
         props.controller.phone ? `Teléfono: ${props.controller.phone}` : null,
         `Correo electrónico: ${props.controller.email}`,
+        props.controller.rnbd
+            ? `Registro Nacional de Bases de Datos (RNBD): ${props.controller.rnbd}`
+            : null,
     ].filter((detail): detail is string => detail !== null),
 );
 

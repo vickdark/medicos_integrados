@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AcceptPrivacyPolicyRequest;
+use App\Models\AppSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,8 +21,8 @@ class PrivacyAcceptanceController extends Controller
         }
 
         return Inertia::render('PrivacyAccept', [
-            'version' => config('privacy.version'),
-            'updatedAt' => config('privacy.updated_at'),
+            'version' => AppSetting::privacyVersion(),
+            'updatedAt' => AppSetting::privacyPolicy()['updated_at'],
             'previousVersion' => $request->user()->privacy_policy_version,
         ]);
     }
@@ -33,7 +34,7 @@ class PrivacyAcceptanceController extends Controller
     {
         $request->user()->forceFill([
             'privacy_accepted_at' => now(),
-            'privacy_policy_version' => config('privacy.version'),
+            'privacy_policy_version' => AppSetting::privacyVersion(),
         ])->save();
 
         return redirect()->intended(route('dashboard'))->with('success', 'Gracias. Registramos tu autorización.');

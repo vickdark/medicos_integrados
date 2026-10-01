@@ -300,6 +300,7 @@ El menú lateral (`AppSidebar.vue`) se arma según `auth.role`.
 | `/users` | Usuarios: cuentas, roles y perfil (solo admin) |
 | `GET /settings/personal-data`, `POST /settings/personal-data/requests` y `GET /settings/personal-data/download` | Derechos del titular (paciente): ver sus solicitudes, pedir acceso, corrección o supresión de sus datos, y descargar una copia en JSON (pide la contraseña) |
 | `GET /data-requests` y `PATCH /data-requests/{id}` | Bandeja de solicitudes de datos personales y su respuesta (solo admin) |
+| `GET/PUT /settings/privacy` y `POST /settings/privacy/publish` | Datos del responsable y nueva versión de la política (solo admin) |
 | `GET/POST /privacidad/aceptar` | Aceptar de nuevo la política cuando cambia su versión (pacientes) |
 | `/doctors` y `/doctors/{doctor}/schedules` | Médicos y horarios |
 | `/specialties` | Especialidades |
@@ -395,8 +396,10 @@ Sobre la exportación (`GET /{tabla}/export?format=xlsx|pdf&…filtros`):
 - **Cifrado en base de datos:** alergias, enfermedades crónicas, antecedentes, motivo, síntomas, diagnóstico, tratamiento y notas usan el cast `encrypted` de Laravel. Conserva el `APP_KEY`: si se pierde, estos datos no se pueden recuperar.
 - **Permisos en el servidor:** toda acción pasa por una Policy, y los listados se filtran con scopes (`visibleTo`, `treatedBy`). Ocultar un botón en el frontend no es la protección real.
 - **Datos que cada rol no ve:** recepción no ve antecedentes ni consultas, y los pacientes no ven las notas internas del médico.
+- **Página de inicio editable:** en Configuración → *Página de inicio* (solo admin) se editan el teléfono, correo y dirección del pie, y los textos de *Quiénes somos* (título, dos párrafos, misión y 3 valores) y *Servicios médicos* (título, introducción y 6 servicios). Los textos que trae por defecto son los de `config/landing.php`; al guardar, lo editado se guarda en `app_settings` y reemplaza a los originales, y el botón *Restablecer textos* vuelve a ellos. Un dato de contacto vacío no se muestra. Las listas mantienen su cantidad y el icono de cada tarjeta depende de su posición. Cada cambio queda en la auditoría.
+- **Política de datos configurable:** en Configuración → *Política de datos* (solo admin) se editan la razón social, NIT, dirección, teléfono, correo de contacto y el registro RNBD que muestra `/privacidad` (solo se publican los que se completan). Se guardan en `app_settings`; lo que no se complete usa los valores por defecto de `config/privacy.php` (`PRIVACY_COMPANY`, `PRIVACY_NIT`, etc. en `.env`). El botón **Publicar nueva versión** sube la versión de la política (1.0 → 2.0…) y la fecha, y obliga a todos los pacientes a aceptarla de nuevo; úsalo solo cuando cambie el texto de fondo y un abogado lo haya revisado. Cambiar los datos del responsable no exige nueva aceptación. Cada cambio queda en la auditoría.
 - **Derechos del titular (Ley 1581):** en Configuración → *Mis datos personales* el paciente puede descargar una copia de sus datos (JSON, sin las notas internas del personal; pide la contraseña y queda en la auditoría) y registrar solicitudes de **acceso**, **corrección** o **supresión/revocatoria** (`App\Enums\DataRequestType`). Cada solicitud guarda su plazo legal en días hábiles —10 para consultas y 15 para reclamos (arts. 14 y 15)— sin contar festivos, el detalle y la respuesta cifrados, y quién respondió y cuándo. El administrador las atiende desde *Solicitudes de datos*, marcándolas como atendidas o rechazadas con la respuesta, y el paciente recibe un correo. Una solicitud de supresión normalmente se rechaza para los datos de la historia clínica, que deben conservarse por ley (Res. 1995 de 1999).
-- **Nueva aceptación de la política:** al subir `version` en `config/privacy.php`, el middleware `EnsurePrivacyPolicyIsAccepted` lleva a cada paciente a `/privacidad/aceptar` antes de usar el sistema, y guarda la nueva versión y fecha. Lo mismo ocurre con las cuentas de paciente que nunca la aceptaron (p. ej. las creadas por el personal).
+- **Nueva aceptación de la política:** al publicar una nueva versión de la política, el middleware `EnsurePrivacyPolicyIsAccepted` lleva a cada paciente a `/privacidad/aceptar` antes de usar el sistema, y guarda la nueva versión y fecha. Lo mismo ocurre con las cuentas de paciente que nunca la aceptaron (p. ej. las creadas por el personal).
 - **Adjuntos privados y cifrados:** se guardan en un disco que no es público, **cifrados en disco** con el `APP_KEY` (extensión `.enc`), y solo se descargan a través de un controlador que verifica permisos y los descifra al vuelo. Los adjuntos subidos antes de esta función se cifran con `php artisan attachments:encrypt` (ejecutarlo una vez tras migrar). Al estar cifrados, si se pierde el `APP_KEY` los archivos tampoco se pueden recuperar.
 - **Auditoría:** se registra quién consulta historias clínicas o consultas, las altas y modificaciones de pacientes, las consultas creadas y las subidas, descargas y eliminaciones de adjuntos, con usuario, IP y fecha.
 - **Autenticación:** incluye límite de intentos de login, verificación en dos pasos opcional y confirmación de contraseña para las acciones sensibles.
@@ -430,11 +433,14 @@ npm run types:check                   # vue-tsc
 
 **Pendientes**
 
-- **Completar y revisar la política de datos personales (Colombia):** `/privacidad` está redactada con base en la Ley 1581 de 2012 y normas relacionadas, pero debe revisarla un abogado. Configurar en `.env` los datos del responsable (`PRIVACY_COMPANY`, `PRIVACY_NIT`, `PRIVACY_ADDRESS`, `PRIVACY_PHONE`, `PRIVACY_CONTACT_EMAIL`) y verificar si la clínica debe inscribir sus bases de datos en el Registro Nacional de Bases de Datos (RNBD) de la SIC. Al cambiar el texto de fondo, subir `version` en `config/privacy.php`.
-- **Contenido de la landing editable:** reemplazar los datos de contacto de ejemplo (teléfono, correo, dirección) y los textos de *Quiénes somos* y *Servicios médicos* por los reales, y permitir editarlos desde Configuración.
 - **API con Laravel Sanctum** para una futura app móvil.
+
 - **Pasarela de pagos en línea** (hoy los pagos se registran a mano).
+
+- **Revisión legal de la política de datos personales (Colombia):** `/privacidad` está redactada con base en la Ley 1581 de 2012 y normas relacionadas, pero debe revisarla un abogado. Con su visto bueno, el administrador completa los datos del responsable y, si la clínica debe inscribir sus bases de datos en el RNBD de la SIC, el número de registro, en Configuración → *Política de datos*.
+
 - **Generación del archivo RIPS (Resolución 2275 de 2023):** los diagnósticos ya se codifican con CIE-10 y el paciente ya tiene tipo de documento, EPS y tipo de afiliación. Para generar el JSON de RIPS falta: (1) la **factura electrónica**, porque cada RIPS se reporta asociado a una factura y se valida en el MUV del Ministerio de Salud, que devuelve el CUV; (2) el **código de habilitación del prestador** (REPS) y el NIT; (3) en la consulta, el **código CUPS** del servicio, la finalidad, la causa externa, la modalidad y el grupo de servicio, el número de autorización y el valor pagado por el usuario (copago o cuota moderadora); (4) en el paciente, el **país, municipio (DIVIPOLA) y zona de residencia**; y (5) cargar las tablas de referencia oficiales de SISPRO para esos campos. Validar el formato con quien radica las cuentas ante las EPS.
+
 - **Firma digital con certificado:** hoy la firma es una imagen. Si se requiere firma digital con valor probatorio pleno (Ley 527 de 1999), integrar un certificado digital de una entidad de certificación acreditada por la ONAC y firmar los PDF (PAdES).
 
 **Consideraciones futuras**
@@ -446,6 +452,5 @@ npm run types:check                   # vue-tsc
 - **Recordatorios por WhatsApp o SMS**, además del correo y el push.
 - **Cierre de caja diario:** lo cobrado por método de pago y por usuario, con arqueo.
 - **Copias de seguridad automáticas** de la base de datos y de los archivos clínicos, con restauración probada.
-- **Envío de correo por API HTTPS** (Amazon SES, Postmark, Mailgun o Resend) para no depender del puerto SMTP, que algunas redes bloquean.
 - **2FA obligatoria para el personal** y cierre de sesión por inactividad (hoy la 2FA es opcional).
 - **Monitoreo de errores** (por ejemplo Sentry) y un supervisor para el worker de colas y el cron del programador en producción.

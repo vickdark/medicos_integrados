@@ -125,7 +125,7 @@ class User extends Authenticatable
     public function mustAcceptPrivacyPolicy(): bool
     {
         return $this->role === UserRole::Patient
-            && $this->privacy_policy_version !== config('privacy.version');
+            && $this->privacy_policy_version !== AppSetting::privacyVersion();
     }
 
     /**

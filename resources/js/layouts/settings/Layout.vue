@@ -9,8 +9,10 @@ import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editBranding } from '@/routes/branding';
 import { show as showDoctorProfile } from '@/routes/doctor-profile';
+import { edit as editLandingContent } from '@/routes/landing-content';
 import { edit as editNotifications } from '@/routes/notifications';
 import { edit as editPersonalData } from '@/routes/personal-data';
+import { edit as editPrivacySettings } from '@/routes/privacy-settings';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
@@ -55,6 +57,14 @@ const sidebarNavItems = computed<NavItem[]>(() => [
               {
                   title: 'Personalización',
                   href: editBranding(),
+              },
+              {
+                  title: 'Página de inicio',
+                  href: editLandingContent(),
+              },
+              {
+                  title: 'Política de datos',
+                  href: editPrivacySettings(),
               },
           ]
         : []),

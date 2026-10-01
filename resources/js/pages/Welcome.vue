@@ -24,9 +24,26 @@ import {
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import { dashboard, login, privacy, register } from '@/routes';
 
+type LandingContent = {
+    contact: { phone: string; email: string; address: string };
+    about: {
+        title: string;
+        paragraph_one: string;
+        paragraph_two: string;
+        mission: string;
+    };
+    values: { title: string; description: string }[];
+    services: {
+        title: string;
+        intro: string;
+        items: { title: string; description: string }[];
+    };
+};
+
 withDefaults(
     defineProps<{
         canRegister: boolean;
+        content: LandingContent;
         doctors?:
             | {
                   id: number;
@@ -59,64 +76,15 @@ const highlights = [
     'Recetas y facturas en PDF',
 ];
 
-const values = [
-    {
-        icon: HeartHandshake,
-        title: 'Cercanía',
-        description:
-            'Te escuchamos y te acompañamos en cada etapa de tu atención, con un trato humano y respetuoso.',
-    },
-    {
-        icon: ShieldCheck,
-        title: 'Confianza',
-        description:
-            'Cuidamos tu información clínica con cifrado y acceso solo para el personal autorizado.',
-    },
-    {
-        icon: Laptop,
-        title: 'Tecnología útil',
-        description:
-            'Digitalizamos lo que te quita tiempo para que tu médico se concentre en ti.',
-    },
-];
+const valueIcons = [HeartHandshake, ShieldCheck, Laptop];
 
-const medicalServices = [
-    {
-        icon: Stethoscope,
-        title: 'Consulta médica general',
-        description:
-            'Evaluación integral, diagnóstico y orientación para resolver tus molestias del día a día.',
-    },
-    {
-        icon: Users,
-        title: 'Atención por especialidades',
-        description:
-            'Médicos especialistas para atender tu caso con el enfoque que necesita.',
-    },
-    {
-        icon: ClipboardCheck,
-        title: 'Chequeos y controles preventivos',
-        description:
-            'Revisiones periódicas para cuidar tu salud antes de que aparezcan los problemas.',
-    },
-    {
-        icon: Activity,
-        title: 'Seguimiento de tratamientos',
-        description:
-            'Control de tu evolución consulta a consulta, con tu historial siempre a la mano.',
-    },
-    {
-        icon: Pill,
-        title: 'Recetas médicas',
-        description:
-            'Indicaciones y medicamentos claros, en un documento que puedes recibir por correo.',
-    },
-    {
-        icon: FileText,
-        title: 'Historia clínica',
-        description:
-            'Tus consultas, antecedentes y recetas organizados, disponibles para ti y tu médico.',
-    },
+const serviceIcons = [
+    Stethoscope,
+    Users,
+    ClipboardCheck,
+    Activity,
+    Pill,
+    FileText,
 ];
 
 const features = [
@@ -425,19 +393,13 @@ const steps = [
                     <h2
                         class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl"
                     >
-                        Un centro médico que te conoce y te cuida
+                        {{ content.about.title }}
                     </h2>
                     <p class="text-muted-foreground">
-                        En Médicos Integrados reunimos médicos de distintas
-                        especialidades y un equipo administrativo comprometido
-                        para que recibas atención completa en un mismo lugar,
-                        sin vueltas ni papeleo.
+                        {{ content.about.paragraph_one }}
                     </p>
                     <p class="text-muted-foreground">
-                        Creemos que la buena medicina combina el criterio del
-                        médico con información ordenada y accesible. Por eso tu
-                        historial, tus citas y tus pagos están conectados y
-                        siempre a tu alcance.
+                        {{ content.about.paragraph_two }}
                     </p>
                     <div
                         class="grid gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-800 dark:bg-brand-950/40"
@@ -448,22 +410,21 @@ const steps = [
                             <HeartPulse class="size-4" /> Nuestra misión
                         </p>
                         <p class="text-sm text-brand-900 dark:text-brand-100">
-                            Acompañar a cada paciente y a su familia con
-                            atención médica integral, cercana y segura.
+                            {{ content.about.mission }}
                         </p>
                     </div>
                 </div>
 
                 <ul class="grid gap-4">
                     <li
-                        v-for="value in values"
-                        :key="value.title"
+                        v-for="(value, index) in content.values"
+                        :key="index"
                         class="flex gap-4 rounded-xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
                     >
                         <span
                             class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white"
                         >
-                            <component :is="value.icon" class="size-5" />
+                            <component :is="valueIcons[index]" class="size-5" />
                         </span>
                         <div>
                             <h3 class="font-semibold">{{ value.title }}</h3>
@@ -542,24 +503,22 @@ const steps = [
                         <h2
                             class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl"
                         >
-                            Atención para cada momento de tu salud
+                            {{ content.services.title }}
                         </h2>
                         <p class="mt-3 text-muted-foreground">
-                            Desde una consulta rutinaria hasta el seguimiento de
-                            un tratamiento, te acompañamos con un equipo médico
-                            multidisciplinario.
+                            {{ content.services.intro }}
                         </p>
                     </div>
                     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         <article
-                            v-for="service in medicalServices"
-                            :key="service.title"
+                            v-for="(service, index) in content.services.items"
+                            :key="index"
                             class="group rounded-xl border bg-card p-6 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md dark:hover:border-brand-700"
                         >
                             <span
                                 class="mb-4 flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white dark:bg-brand-950 dark:text-brand-300"
                             >
-                                <component :is="service.icon" class="size-5" />
+                                <component :is="serviceIcons[index]" class="size-5" />
                             </span>
                             <h3 class="font-semibold">{{ service.title }}</h3>
                             <p class="mt-2 text-sm text-muted-foreground">
@@ -661,14 +620,23 @@ const steps = [
                     </p>
                 </div>
                 <ul class="space-y-2 text-sm text-muted-foreground">
-                    <li class="flex items-center gap-2">
-                        <Phone class="size-4" /> (01) 000-0000
+                    <li
+                        v-if="content.contact.phone"
+                        class="flex items-center gap-2"
+                    >
+                        <Phone class="size-4" /> {{ content.contact.phone }}
                     </li>
-                    <li class="flex items-center gap-2">
-                        <Mail class="size-4" /> contacto@medicosintegrados.test
+                    <li
+                        v-if="content.contact.email"
+                        class="flex items-center gap-2"
+                    >
+                        <Mail class="size-4" /> {{ content.contact.email }}
                     </li>
-                    <li class="flex items-center gap-2">
-                        <MapPin class="size-4" /> Dirección de la clínica
+                    <li
+                        v-if="content.contact.address"
+                        class="flex items-center gap-2"
+                    >
+                        <MapPin class="size-4" /> {{ content.contact.address }}
                     </li>
                 </ul>
                 <div class="text-sm text-muted-foreground sm:text-right">

@@ -17,6 +17,7 @@ class HomeController extends Controller
     {
         return Inertia::render('Welcome', [
             'canRegister' => Features::enabled(Features::registration()),
+            'content' => AppSetting::landingContent(),
             'doctors' => AppSetting::showDoctorsOnLanding() ? $this->publicDoctors() : null,
         ]);
     }

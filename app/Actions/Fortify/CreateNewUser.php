@@ -5,6 +5,7 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\UserRole;
+use App\Models\AppSetting;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,7 @@ class CreateNewUser implements CreatesNewUsers
 
             $user->forceFill([
                 'privacy_accepted_at' => now(),
-                'privacy_policy_version' => config('privacy.version'),
+                'privacy_policy_version' => AppSetting::privacyVersion(),
             ])->save();
 
             $this->attachPatientRecord($user);
