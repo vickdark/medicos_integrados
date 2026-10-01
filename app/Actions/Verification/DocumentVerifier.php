@@ -6,6 +6,7 @@ use App\Enums\CarePriority;
 use App\Enums\ClinicalDocumentType;
 use App\Enums\SickLeaveOrigin;
 use App\Models\ClinicalDocument;
+use App\Models\ClinicalHistoryExport;
 use App\Models\Consultation;
 use App\Models\Doctor;
 use App\Models\Patient;
@@ -27,6 +28,8 @@ class DocumentVerifier
     public const DOCUMENT_PREFIX = 'D';
 
     public const PRESCRIPTION_PREFIX = 'R';
+
+    public const HISTORY_PREFIX = 'H';
 
     /**
      * Characters that cannot be confused when typed by hand (no 0/O, 1/I).
@@ -96,7 +99,7 @@ class DocumentVerifier
      * What the public page shows about the document with the given code, or null
      * when there is none.
      *
-     * @return array{type: string, number: string, issued_at: string, signed: bool, doctor: array{name: string, specialty: string, license_number: string}, patient: array{initials: string, document: string|null}, facts: list<array{label: string, value: string|list<string>}>}|null
+     * @return array{type: string, number: string, issued_at: string, signed: bool|null, doctor: array{name: string, specialty: string, license_number: string}|null, issued_by: string|null, patient: array{initials: string, document: string|null}, facts: list<array{label: string, value: string|list<string>}>}|null
      */
     public function find(string $code): ?array
     {
@@ -112,6 +115,11 @@ class DocumentVerifier
                 Consultation::query()
                     ->with(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions'])
                     ->firstWhere('prescription_verification_code', $code),
+            ),
+            self::HISTORY_PREFIX => $this->describeHistory(
+                ClinicalHistoryExport::query()
+                    ->with('patient')
+                    ->firstWhere('verification_code', $code),
             ),
             default => null,
         };
@@ -190,21 +198,68 @@ class DocumentVerifier
     }
 
     /**
+     * A clinical history extract lists the date and doctor of every consultation
+     * it included, so pages added or removed can be noticed; never their content.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function describeHistory(?ClinicalHistoryExport $export): ?array
+    {
+        if ($export === null) {
+            return null;
+        }
+
+        $consultations = Consultation::query()
+            ->whereKey($export->consultation_ids)
+            ->with(['doctor.user', 'doctor.specialty'])
+            ->withCount('addenda')
+            ->orderBy('consulted_at')
+            ->get();
+
+        return $this->describe(
+            'Historia clínica',
+            $export->number,
+            CarbonImmutable::instance($export->created_at),
+            null,
+            $export->patient,
+            [
+                ['label' => 'Período', 'value' => $export->period_label],
+                ['label' => 'Consultas incluidas', 'value' => (string) $consultations->count()],
+                ['label' => 'Tipo de copia', 'value' => $export->includes_notes
+                    ? 'Interna, para el personal de la clínica (incluye notas internas)'
+                    : 'Del paciente (sin notas internas)'],
+                [
+                    'label' => 'Detalle de las consultas',
+                    'value' => $consultations
+                        ->map(fn (Consultation $consultation): string => $consultation->consulted_at->format('d/m/Y g:i A')
+                            .' · '.$consultation->doctor->user->name
+                            .' ('.$consultation->doctor->specialty->name.')'
+                            .($consultation->addenda_count ? ' · '.$consultation->addenda_count.' nota(s) aclaratoria(s)' : ''))
+                        ->values()
+                        ->all(),
+                ],
+            ],
+            issuedBy: "{$export->issued_by_name} ({$export->issued_by_role})",
+        );
+    }
+
+    /**
      * @param  list<array{label: string, value: string|list<string>}>  $facts
      * @return array<string, mixed>
      */
-    private function describe(string $type, string $number, CarbonImmutable $issuedAt, Doctor $doctor, Patient $patient, array $facts): array
+    private function describe(string $type, string $number, CarbonImmutable $issuedAt, ?Doctor $doctor, Patient $patient, array $facts, ?string $issuedBy = null): array
     {
         return [
             'type' => $type,
             'number' => $number,
             'issued_at' => $issuedAt->toIso8601String(),
-            'signed' => $doctor->hasSignature(),
-            'doctor' => [
+            'signed' => $doctor?->hasSignature(),
+            'doctor' => $doctor ? [
                 'name' => $doctor->user->name,
                 'specialty' => $doctor->specialty->name,
                 'license_number' => $doctor->license_number,
-            ],
+            ] : null,
+            'issued_by' => $issuedBy,
             'patient' => [
                 'initials' => collect(preg_split('/\s+/', trim($patient->full_name)) ?: [])
                     ->filter()

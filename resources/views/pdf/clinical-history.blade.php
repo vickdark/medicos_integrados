@@ -28,6 +28,12 @@
         table.meds td { padding: 3px 5px; border-bottom: 1px solid #f3f4f6; }
         .empty { text-align: center; color: #6b7280; padding: 18px; border: 1px dashed #d1d5db; border-radius: 4px; }
         .alert { color: #b91c1c; }
+        .verify { width: 100%; margin-top: 24px; border: 1px solid #e5e7eb; border-radius: 6px; page-break-inside: avoid; }
+        .verify td { vertical-align: middle; padding: 8px 10px; }
+        .verify .qr { width: 96px; }
+        .verify .qr img { width: 88px; height: 88px; }
+        .verify .code { font-family: DejaVu Sans Mono, monospace; font-size: 13px; font-weight: bold; letter-spacing: 1px; }
+        .verify h2 { font-size: 9px; text-transform: uppercase; color: #6b7280; margin: 0 0 3px; }
         footer { position: fixed; bottom: -22px; left: 0; right: 0; text-align: center; color: #9ca3af; font-size: 8px; }
     </style>
 </head>
@@ -35,7 +41,7 @@
     <header>
         <div class="brand">{{ config('app.name') }}</div>
         <h1>Historia clínica</h1>
-        <div class="meta">{{ $period }} · Generada el {{ $generatedAt->translatedFormat('d \d\e F \d\e Y, g:i A') }} por {{ $generatedBy }}</div>
+        <div class="meta">@if (! empty($number))<strong>N.º {{ $number }}</strong> · @endif{{ $period }} · Generada el {{ $generatedAt->translatedFormat('d \d\e F \d\e Y, g:i A') }} por {{ $generatedBy }}</div>
     </header>
 
     <h2>Datos del paciente</h2>
@@ -140,6 +146,20 @@
     @empty
         <div class="empty">No hay consultas registradas en este período.</div>
     @endforelse
+
+    @if (! empty($verification))
+        <table class="verify">
+            <tr>
+                <td class="qr"><img src="{{ $verification['qr'] }}" alt="Código QR de verificación"></td>
+                <td>
+                    <h2>Verificación de la historia clínica</h2>
+                    Escanee el código QR o ingrese a <strong>{{ $verification['base_url'] }}</strong> con el código
+                    <div class="code">{{ $verification['code'] }}</div>
+                    para comprobar que esta historia clínica fue emitida por {{ config('app.name') }} y qué consultas incluye.
+                </td>
+            </tr>
+        </table>
+    @endif
 
     <footer>Documento confidencial · {{ config('app.name') }} · {{ $patient->full_name }}</footer>
 </body>

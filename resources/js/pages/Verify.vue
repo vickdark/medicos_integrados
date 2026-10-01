@@ -21,8 +21,13 @@ defineProps<{
         type: string;
         number: string;
         issued_at: string;
-        signed: boolean;
-        doctor: { name: string; specialty: string; license_number: string };
+        signed: boolean | null;
+        doctor: {
+            name: string;
+            specialty: string;
+            license_number: string;
+        } | null;
+        issued_by: string | null;
         patient: { initials: string; document: string | null };
         facts: { label: string; value: string | string[] }[];
     } | null;
@@ -55,8 +60,9 @@ defineProps<{
                 </h1>
                 <p class="mt-1 text-sm text-muted-foreground">
                     Comprueba que una receta, incapacidad, remisión, orden de
-                    exámenes o consentimiento fue emitido por la clínica.
-                    Escanea el código QR del documento o escribe su código.
+                    exámenes, consentimiento o historia clínica fue emitido por
+                    la clínica. Escanea el código QR del documento o escribe su
+                    código.
                 </p>
             </div>
 
@@ -99,7 +105,7 @@ defineProps<{
                 </div>
 
                 <p
-                    v-if="!result.signed"
+                    v-if="result.signed === false"
                     class="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
                 >
                     <ShieldAlert class="mt-0.5 size-4 shrink-0" />
@@ -131,15 +137,19 @@ defineProps<{
                             >
                         </dd>
                     </div>
-                    <div class="sm:col-span-2">
+                    <div v-if="result.doctor" class="sm:col-span-2">
                         <dt class="text-muted-foreground">Médico</dt>
                         <dd class="font-medium">
-                            {{ result.doctor.name }}
+                            {{ result.doctor?.name }}
                             <span class="font-normal text-muted-foreground">
-                                · {{ result.doctor.specialty }} · Registro
-                                médico {{ result.doctor.license_number }}
+                                · {{ result.doctor?.specialty }} · Registro
+                                médico {{ result.doctor?.license_number }}
                             </span>
                         </dd>
+                    </div>
+                    <div v-if="result.issued_by" class="sm:col-span-2">
+                        <dt class="text-muted-foreground">Emitida por</dt>
+                        <dd class="font-medium">{{ result.issued_by }}</dd>
                     </div>
                     <div
                         v-for="fact in result.facts"
