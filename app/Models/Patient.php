@@ -140,6 +140,14 @@ class Patient extends Model
     }
 
     /**
+     * @return HasMany<DataSubjectRequest, $this>
+     */
+    public function dataSubjectRequests(): HasMany
+    {
+        return $this->hasMany(DataSubjectRequest::class);
+    }
+
+    /**
      * @return HasMany<Turn, $this>
      */
     public function turns(): HasMany

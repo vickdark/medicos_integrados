@@ -119,6 +119,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether a patient has not accepted the current version of the personal
+     * data policy, either because they never did or because it changed.
+     */
+    public function mustAcceptPrivacyPolicy(): bool
+    {
+        return $this->role === UserRole::Patient
+            && $this->privacy_policy_version !== config('privacy.version');
+    }
+
+    /**
      * Determine whether the user belongs to the clinic personnel.
      */
     public function isStaff(): bool

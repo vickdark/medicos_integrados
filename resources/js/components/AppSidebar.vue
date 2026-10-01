@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import {
+    FileLock2,
     BookMarked,
     CalendarDays,
     ChartColumn,
@@ -34,6 +35,7 @@ import { dashboard } from '@/routes';
 import appointmentRoutes from '@/routes/appointments';
 import auditLogRoutes from '@/routes/audit-logs';
 import cie10Routes from '@/routes/cie10';
+import dataRequestRoutes from '@/routes/data-requests';
 import doctorRoutes from '@/routes/doctors';
 import insurerRoutes from '@/routes/insurers';
 import medicationRoutes from '@/routes/medications';
@@ -175,6 +177,11 @@ const mainNavItems = computed<NavItem[]>(() => {
                 title: 'Auditoría',
                 href: auditLogRoutes.index(),
                 icon: ShieldCheck,
+            },
+            {
+                title: 'Solicitudes de datos',
+                href: dataRequestRoutes.index(),
+                icon: FileLock2,
             },
         );
     }

@@ -38,7 +38,19 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
             'role' => UserRole::Patient,
+            'privacy_accepted_at' => now(),
+            'privacy_policy_version' => config('privacy.version'),
         ];
+    }
+
+    /**
+     * Indicate that the user accepted an older version of the personal data policy.
+     */
+    public function withOutdatedPrivacyPolicy(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'privacy_policy_version' => '0.1',
+        ]);
     }
 
     /**

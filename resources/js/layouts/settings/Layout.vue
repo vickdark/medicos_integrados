@@ -10,6 +10,7 @@ import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editBranding } from '@/routes/branding';
 import { show as showDoctorProfile } from '@/routes/doctor-profile';
 import { edit as editNotifications } from '@/routes/notifications';
+import { edit as editPersonalData } from '@/routes/personal-data';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
@@ -42,6 +43,10 @@ const sidebarNavItems = computed<NavItem[]>(() => [
               {
                   title: 'Notificaciones',
                   href: editNotifications(),
+              },
+              {
+                  title: 'Mis datos personales',
+                  href: editPersonalData(),
               },
           ]
         : []),

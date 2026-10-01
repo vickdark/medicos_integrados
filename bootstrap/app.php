@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureDeviceId;
 use App\Http\Middleware\EnsurePasswordIsChanged;
+use App\Http\Middleware\EnsurePrivacyPolicyIsAccepted;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             EnsureAccountIsActive::class,
             EnsurePasswordIsChanged::class,
+            EnsurePrivacyPolicyIsAccepted::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })

@@ -298,6 +298,9 @@ El menú lateral (`AppSidebar.vue`) se arma según `auth.role`.
 | `/appointments` y `PATCH /appointments/{id}/status` | Citas y cambio de estado |
 | `/payments` | Pagos |
 | `/users` | Usuarios: cuentas, roles y perfil (solo admin) |
+| `GET /settings/personal-data`, `POST /settings/personal-data/requests` y `GET /settings/personal-data/download` | Derechos del titular (paciente): ver sus solicitudes, pedir acceso, corrección o supresión de sus datos, y descargar una copia en JSON (pide la contraseña) |
+| `GET /data-requests` y `PATCH /data-requests/{id}` | Bandeja de solicitudes de datos personales y su respuesta (solo admin) |
+| `GET/POST /privacidad/aceptar` | Aceptar de nuevo la política cuando cambia su versión (pacientes) |
 | `/doctors` y `/doctors/{doctor}/schedules` | Médicos y horarios |
 | `/specialties` | Especialidades |
 | `/cie10` | Catálogo CIE-10: carga de la tabla oficial (ETL), resultado, historial y búsqueda de códigos (solo admin) |
@@ -392,6 +395,8 @@ Sobre la exportación (`GET /{tabla}/export?format=xlsx|pdf&…filtros`):
 - **Cifrado en base de datos:** alergias, enfermedades crónicas, antecedentes, motivo, síntomas, diagnóstico, tratamiento y notas usan el cast `encrypted` de Laravel. Conserva el `APP_KEY`: si se pierde, estos datos no se pueden recuperar.
 - **Permisos en el servidor:** toda acción pasa por una Policy, y los listados se filtran con scopes (`visibleTo`, `treatedBy`). Ocultar un botón en el frontend no es la protección real.
 - **Datos que cada rol no ve:** recepción no ve antecedentes ni consultas, y los pacientes no ven las notas internas del médico.
+- **Derechos del titular (Ley 1581):** en Configuración → *Mis datos personales* el paciente puede descargar una copia de sus datos (JSON, sin las notas internas del personal; pide la contraseña y queda en la auditoría) y registrar solicitudes de **acceso**, **corrección** o **supresión/revocatoria** (`App\Enums\DataRequestType`). Cada solicitud guarda su plazo legal en días hábiles —10 para consultas y 15 para reclamos (arts. 14 y 15)— sin contar festivos, el detalle y la respuesta cifrados, y quién respondió y cuándo. El administrador las atiende desde *Solicitudes de datos*, marcándolas como atendidas o rechazadas con la respuesta, y el paciente recibe un correo. Una solicitud de supresión normalmente se rechaza para los datos de la historia clínica, que deben conservarse por ley (Res. 1995 de 1999).
+- **Nueva aceptación de la política:** al subir `version` en `config/privacy.php`, el middleware `EnsurePrivacyPolicyIsAccepted` lleva a cada paciente a `/privacidad/aceptar` antes de usar el sistema, y guarda la nueva versión y fecha. Lo mismo ocurre con las cuentas de paciente que nunca la aceptaron (p. ej. las creadas por el personal).
 - **Adjuntos privados y cifrados:** se guardan en un disco que no es público, **cifrados en disco** con el `APP_KEY` (extensión `.enc`), y solo se descargan a través de un controlador que verifica permisos y los descifra al vuelo. Los adjuntos subidos antes de esta función se cifran con `php artisan attachments:encrypt` (ejecutarlo una vez tras migrar). Al estar cifrados, si se pierde el `APP_KEY` los archivos tampoco se pueden recuperar.
 - **Auditoría:** se registra quién consulta historias clínicas o consultas, las altas y modificaciones de pacientes, las consultas creadas y las subidas, descargas y eliminaciones de adjuntos, con usuario, IP y fecha.
 - **Autenticación:** incluye límite de intentos de login, verificación en dos pasos opcional y confirmación de contraseña para las acciones sensibles.
@@ -431,7 +436,6 @@ npm run types:check                   # vue-tsc
 - **Pasarela de pagos en línea** (hoy los pagos se registran a mano).
 - **Generación del archivo RIPS (Resolución 2275 de 2023):** los diagnósticos ya se codifican con CIE-10 y el paciente ya tiene tipo de documento, EPS y tipo de afiliación. Para generar el JSON de RIPS falta: (1) la **factura electrónica**, porque cada RIPS se reporta asociado a una factura y se valida en el MUV del Ministerio de Salud, que devuelve el CUV; (2) el **código de habilitación del prestador** (REPS) y el NIT; (3) en la consulta, el **código CUPS** del servicio, la finalidad, la causa externa, la modalidad y el grupo de servicio, el número de autorización y el valor pagado por el usuario (copago o cuota moderadora); (4) en el paciente, el **país, municipio (DIVIPOLA) y zona de residencia**; y (5) cargar las tablas de referencia oficiales de SISPRO para esos campos. Validar el formato con quien radica las cuentas ante las EPS.
 - **Firma digital con certificado:** hoy la firma es una imagen. Si se requiere firma digital con valor probatorio pleno (Ley 527 de 1999), integrar un certificado digital de una entidad de certificación acreditada por la ONAC y firmar los PDF (PAdES).
-- **Derechos del titular de los datos (Ley 1581):** que el paciente pueda descargar sus datos y pedir su corrección o supresión desde el portal, con registro de cada solicitud y de su plazo de respuesta. Además, pedir de nuevo la aceptación de la política cuando cambie su versión (hoy la versión aceptada se guarda, pero no se vuelve a solicitar).
 
 **Consideraciones futuras**
 

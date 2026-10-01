@@ -4,6 +4,7 @@ use App\Http\Controllers\Settings\BrandingController;
 use App\Http\Controllers\Settings\DoctorProfileController;
 use App\Http\Controllers\Settings\DoctorSignatureController;
 use App\Http\Controllers\Settings\LandingSettingsController;
+use App\Http\Controllers\Settings\PersonalDataController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
+
+    Route::get('settings/personal-data', [PersonalDataController::class, 'edit'])->name('personal-data.edit');
+    Route::post('settings/personal-data/requests', [PersonalDataController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('personal-data.requests.store');
+    Route::get('settings/personal-data/download', [PersonalDataController::class, 'download'])
+        ->middleware('password.confirm')
+        ->name('personal-data.download');
 
     Route::inertia('settings/notifications', 'settings/Notifications')->name('notifications.edit');
 });

@@ -9,6 +9,7 @@ use App\Http\Controllers\ConsultationAttachmentController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\ConsultationPrescriptionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataSubjectRequestController;
 use App\Http\Controllers\DiagnosisSearchController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PrivacyAcceptanceController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
@@ -43,6 +45,11 @@ Route::middleware('throttle:30,1')->group(function () {
 Route::get('pantalla-de-turnos', [TurnBoardController::class, 'show'])->name('turns.board');
 Route::get('pantalla-de-turnos/datos', [TurnBoardController::class, 'data'])->name('turns.feed');
 Route::get('doctors/{doctor}/photo', DoctorPhotoController::class)->name('doctors.photo');
+
+Route::middleware('auth')->group(function () {
+    Route::get('privacidad/aceptar', [PrivacyAcceptanceController::class, 'show'])->name('privacy.accept');
+    Route::post('privacidad/aceptar', [PrivacyAcceptanceController::class, 'store'])->name('privacy.accept.store');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
@@ -118,6 +125,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    Route::get('data-requests', [DataSubjectRequestController::class, 'index'])->name('data-requests.index');
+    Route::patch('data-requests/{dataRequest}', [DataSubjectRequestController::class, 'answer'])->name('data-requests.answer');
 });
 
 require __DIR__.'/settings.php';
