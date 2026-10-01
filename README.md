@@ -392,7 +392,7 @@ Sobre la exportación (`GET /{tabla}/export?format=xlsx|pdf&…filtros`):
 - **Cifrado en base de datos:** alergias, enfermedades crónicas, antecedentes, motivo, síntomas, diagnóstico, tratamiento y notas usan el cast `encrypted` de Laravel. Conserva el `APP_KEY`: si se pierde, estos datos no se pueden recuperar.
 - **Permisos en el servidor:** toda acción pasa por una Policy, y los listados se filtran con scopes (`visibleTo`, `treatedBy`). Ocultar un botón en el frontend no es la protección real.
 - **Datos que cada rol no ve:** recepción no ve antecedentes ni consultas, y los pacientes no ven las notas internas del médico.
-- **Adjuntos privados:** se guardan en un disco que no es público y solo se descargan a través de un controlador que verifica permisos.
+- **Adjuntos privados y cifrados:** se guardan en un disco que no es público, **cifrados en disco** con el `APP_KEY` (extensión `.enc`), y solo se descargan a través de un controlador que verifica permisos y los descifra al vuelo. Los adjuntos subidos antes de esta función se cifran con `php artisan attachments:encrypt` (ejecutarlo una vez tras migrar). Al estar cifrados, si se pierde el `APP_KEY` los archivos tampoco se pueden recuperar.
 - **Auditoría:** se registra quién consulta historias clínicas o consultas, las altas y modificaciones de pacientes, las consultas creadas y las subidas, descargas y eliminaciones de adjuntos, con usuario, IP y fecha.
 - **Autenticación:** incluye límite de intentos de login, verificación en dos pasos opcional y confirmación de contraseña para las acciones sensibles.
 
@@ -432,7 +432,6 @@ npm run types:check                   # vue-tsc
 - **Generación del archivo RIPS (Resolución 2275 de 2023):** los diagnósticos ya se codifican con CIE-10 y el paciente ya tiene tipo de documento, EPS y tipo de afiliación. Para generar el JSON de RIPS falta: (1) la **factura electrónica**, porque cada RIPS se reporta asociado a una factura y se valida en el MUV del Ministerio de Salud, que devuelve el CUV; (2) el **código de habilitación del prestador** (REPS) y el NIT; (3) en la consulta, el **código CUPS** del servicio, la finalidad, la causa externa, la modalidad y el grupo de servicio, el número de autorización y el valor pagado por el usuario (copago o cuota moderadora); (4) en el paciente, el **país, municipio (DIVIPOLA) y zona de residencia**; y (5) cargar las tablas de referencia oficiales de SISPRO para esos campos. Validar el formato con quien radica las cuentas ante las EPS.
 - **Firma digital con certificado:** hoy la firma es una imagen. Si se requiere firma digital con valor probatorio pleno (Ley 527 de 1999), integrar un certificado digital de una entidad de certificación acreditada por la ONAC y firmar los PDF (PAdES).
 - **Derechos del titular de los datos (Ley 1581):** que el paciente pueda descargar sus datos y pedir su corrección o supresión desde el portal, con registro de cada solicitud y de su plazo de respuesta. Además, pedir de nuevo la aceptación de la política cuando cambie su versión (hoy la versión aceptada se guarda, pero no se vuelve a solicitar).
-- **Cifrado de los adjuntos clínicos:** guardar cifrados en disco los archivos de las consultas (hoy están en el disco privado, pero sin cifrar).
 
 **Consideraciones futuras**
 

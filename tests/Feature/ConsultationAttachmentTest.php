@@ -32,6 +32,9 @@ it('lets the treating doctor attach files to the consultation', function () {
 
     Storage::disk(ConsultationAttachment::DISK)->assertExists($attachment->path);
 
+    expect($attachment->is_encrypted)->toBeTrue()
+        ->and($attachment->path)->toEndWith('.enc');
+
     expect(AuditLog::query()->where('action', AuditAction::Uploaded)->where('patient_id', $consultation->patient_id)->exists())->toBeTrue();
 });
 
@@ -224,4 +227,39 @@ it('never deletes an attachment nor changes it after storing it', function () {
     expect(fn () => $attachment->fresh()->void($doctor, 'Otra vez'))->toThrow(LogicException::class)
         ->and($attachment->fresh()->status_reason)->toBe('Motivo válido')
         ->and(ConsultationAttachment::query()->count())->toBe(1);
+});
+
+it('stores the file encrypted and downloads it decrypted', function () {
+    $consultation = Consultation::factory()->create();
+    $file = UploadedFile::fake()->createWithContent('resultado.pdf', 'contenido-clinico-secreto');
+
+    $this->actingAs($consultation->doctor->user)
+        ->post(route('attachments.store', $consultation), ['file' => $file])
+        ->assertSessionHasNoErrors();
+
+    $attachment = ConsultationAttachment::query()->sole();
+
+    expect(Storage::disk(ConsultationAttachment::DISK)->get($attachment->path))->not->toContain('contenido-clinico-secreto');
+
+    $this->actingAs($consultation->doctor->user)
+        ->get(route('attachments.show', $attachment))
+        ->assertOk()
+        ->assertDownload('resultado.pdf');
+
+    expect($attachment->contents())->toBe('contenido-clinico-secreto');
+});
+
+it('encrypts the attachments stored before the encryption existed', function () {
+    $attachment = ConsultationAttachment::factory()->create();
+    Storage::disk(ConsultationAttachment::DISK)->put($attachment->path, 'contenido-antiguo');
+
+    expect($attachment->contents())->toBe('contenido-antiguo');
+
+    $this->artisan('attachments:encrypt')->assertSuccessful();
+
+    $attachment->refresh();
+
+    expect($attachment->is_encrypted)->toBeTrue()
+        ->and(Storage::disk(ConsultationAttachment::DISK)->get($attachment->path))->not->toContain('contenido-antiguo')
+        ->and($attachment->contents())->toBe('contenido-antiguo');
 });

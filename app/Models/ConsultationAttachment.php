@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use LogicException;
 
 /**
@@ -28,6 +31,56 @@ class ConsultationAttachment extends Model
     public const DISK = 'local';
 
     /**
+     * Encrypt an uploaded file with the application key and store it on the
+     * attachment disk, returning the attributes that locate it.
+     *
+     * @return array{path: string, is_encrypted: bool}
+     */
+    public static function storeEncrypted(UploadedFile $file, int $consultationId): array
+    {
+        $path = "consultations/{$consultationId}/".Str::uuid().'.enc';
+
+        Storage::disk(self::DISK)->put($path, Crypt::encryptString((string) file_get_contents($file->getRealPath())));
+
+        return ['path' => $path, 'is_encrypted' => true];
+    }
+
+    /**
+     * The decrypted content of the stored file. Files stored before the
+     * encryption was introduced are returned as they are.
+     */
+    public function contents(): string
+    {
+        $contents = (string) Storage::disk(self::DISK)->get($this->path);
+
+        return $this->is_encrypted ? Crypt::decryptString($contents) : $contents;
+    }
+
+    /**
+     * Encrypt in place a file stored without encryption. Returns false when the
+     * file is no longer on disk. It skips the model events on purpose: the
+     * record itself does not change.
+     */
+    public function encryptStoredFile(): bool
+    {
+        $disk = Storage::disk(self::DISK);
+
+        if ($this->is_encrypted) {
+            return true;
+        }
+
+        if (! $disk->exists($this->path)) {
+            return false;
+        }
+
+        $disk->put($this->path, Crypt::encryptString((string) $disk->get($this->path)));
+
+        self::query()->whereKey($this->id)->update(['is_encrypted' => true]);
+
+        return true;
+    }
+
+    /**
      * Fields that may change once the attachment is stored: only those that close it.
      *
      * @var list<string>
@@ -44,6 +97,7 @@ class ConsultationAttachment extends Model
         'uploaded_by',
         'original_name',
         'path',
+        'is_encrypted',
         'mime_type',
         'size',
         'description',
@@ -74,6 +128,7 @@ class ConsultationAttachment extends Model
     {
         return [
             'size' => 'integer',
+            'is_encrypted' => 'boolean',
             'status' => AttachmentStatus::class,
             'status_changed_at' => 'datetime',
             'status_reason' => 'encrypted',
@@ -134,7 +189,7 @@ class ConsultationAttachment extends Model
             $replacement = $this->consultation->attachments()->create([
                 'uploaded_by' => $user->id,
                 'original_name' => $file->getClientOriginalName(),
-                'path' => $file->store("consultations/{$this->consultation_id}", self::DISK),
+                ...self::storeEncrypted($file, $this->consultation_id),
                 'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
                 'size' => $file->getSize(),
                 'description' => $description ?? $this->description,

@@ -9,11 +9,9 @@ use App\Http\Requests\StoreConsultationAttachmentRequest;
 use App\Models\AuditLog;
 use App\Models\Consultation;
 use App\Models\ConsultationAttachment;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ConsultationAttachmentController extends Controller
@@ -28,7 +26,7 @@ class ConsultationAttachmentController extends Controller
         $attachment = $consultation->attachments()->create([
             'uploaded_by' => $request->user()->id,
             'original_name' => $file->getClientOriginalName(),
-            'path' => $file->store("consultations/{$consultation->id}", ConsultationAttachment::DISK),
+            ...ConsultationAttachment::storeEncrypted($file, $consultation->id),
             'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
             'size' => $file->getSize(),
             'description' => $request->validated('description'),
@@ -51,10 +49,13 @@ class ConsultationAttachmentController extends Controller
 
         AuditLog::record(AuditAction::Downloaded, $attachment, "Descargó el archivo «{$attachment->original_name}»", $attachment->consultation->patient);
 
-        /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk(ConsultationAttachment::DISK);
-
-        return $disk->download($attachment->path, $attachment->original_name);
+        return response()->streamDownload(
+            function () use ($attachment): void {
+                echo $attachment->contents();
+            },
+            $attachment->original_name,
+            ['Content-Type' => $attachment->mime_type],
+        );
     }
 
     /**
