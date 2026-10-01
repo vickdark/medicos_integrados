@@ -188,6 +188,7 @@ export type Doctor = {
     user_id: number;
     is_active: boolean;
     photo_url: string | null;
+    has_signature: boolean;
     slot_minutes: number;
 };
 

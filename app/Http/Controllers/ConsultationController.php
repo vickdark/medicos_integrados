@@ -128,6 +128,7 @@ class ConsultationController extends Controller
                 'maxSickLeaveDays' => StoreClinicalDocumentRequest::MAX_SICK_LEAVE_DAYS,
             ],
             'issuedDocumentId' => $request->session()->get('issued_document_id'),
+            'doctorHasSignature' => $consultation->doctor->hasSignature(),
             'can' => [
                 'manage_attachments' => $request->user()->can('manageAttachments', $consultation),
                 'add_addendum' => $request->user()->can('addAddendum', $consultation),

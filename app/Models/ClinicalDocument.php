@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Actions\Verification\DocumentVerifier;
 use App\Enums\ClinicalDocumentType;
 use Carbon\CarbonImmutable;
 use Database\Factories\ClinicalDocumentFactory;
@@ -30,6 +31,7 @@ class ClinicalDocument extends Model
     protected $fillable = [
         'consultation_id',
         'type',
+        'verification_code',
         'data',
         'issued_by',
     ];
@@ -52,6 +54,10 @@ class ClinicalDocument extends Model
      */
     protected static function booted(): void
     {
+        static::creating(function (ClinicalDocument $document): void {
+            $document->verification_code ??= DocumentVerifier::newCode(DocumentVerifier::DOCUMENT_PREFIX);
+        });
+
         static::updating(function (): void {
             throw new LogicException('Un documento clínico emitido no se puede modificar.');
         });

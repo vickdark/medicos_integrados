@@ -117,7 +117,7 @@ class UserController extends Controller
                 'role' => $user->role->value,
             ],
             'doctor' => $user->doctor
-                ? [...$user->doctor->only(['specialty_id', 'license_number', 'phone', 'consultation_fee', 'slot_minutes', 'bio']), 'photo_url' => $user->doctor->photoUrl()]
+                ? [...$user->doctor->only(['specialty_id', 'license_number', 'phone', 'consultation_fee', 'slot_minutes', 'bio']), 'photo_url' => $user->doctor->photoUrl(), 'signature_url' => $user->doctor->signatureUrl()]
                 : null,
             'patient' => $user->patient ? (new PatientResource($user->patient))->resolve($request) : null,
             'initialRole' => $user->role->value,

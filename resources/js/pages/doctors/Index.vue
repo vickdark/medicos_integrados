@@ -49,7 +49,7 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
 
             <TableToolbar
                 v-model:search="filters.search"
-                placeholder="Buscar por nombre, correo, especialidad o colegiatura"
+                placeholder="Buscar por nombre, correo, especialidad o registro médico"
                 :export-url="exportUrl"
                 :can-reset="hasActiveFilters"
                 @reset="reset"
@@ -61,7 +61,9 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                         <tr>
                             <th class="px-4 py-3 font-medium">Médico</th>
                             <th class="px-4 py-3 font-medium">Especialidad</th>
-                            <th class="px-4 py-3 font-medium">Colegiatura</th>
+                            <th class="px-4 py-3 font-medium">
+                                Registro médico
+                            </th>
                             <th class="px-4 py-3 font-medium">Teléfono</th>
                             <th class="px-4 py-3 text-right font-medium">
                                 Tarifa
@@ -93,8 +95,14 @@ const exportUrl = (format: 'xlsx' | 'pdf') =>
                             <td data-label="Especialidad" class="px-4 py-3">
                                 {{ doctor.specialty }}
                             </td>
-                            <td data-label="Colegiatura" class="px-4 py-3">
+                            <td data-label="Registro médico" class="px-4 py-3">
                                 {{ doctor.license_number }}
+                                <p
+                                    v-if="!doctor.has_signature"
+                                    class="mt-1 w-fit rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-500/15 dark:text-red-300"
+                                >
+                                    Sin firma registrada
+                                </p>
                             </td>
                             <td data-label="Teléfono" class="px-4 py-3">
                                 {{ doctor.phone ?? '—' }}

@@ -234,7 +234,7 @@ it('offers the prescription button only to the prescribing doctor', function () 
 
 it('emails the official prescription to the address the doctor confirms', function () {
     Mail::fake();
-    $consultation = Consultation::factory()->create();
+    $consultation = Consultation::factory()->for(Doctor::factory()->signed())->create();
     Prescription::factory()->create(['consultation_id' => $consultation->id]);
 
     $this->actingAs($consultation->doctor->user)

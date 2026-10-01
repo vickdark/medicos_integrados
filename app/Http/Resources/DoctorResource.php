@@ -23,6 +23,7 @@ class DoctorResource extends JsonResource
             'user_id' => $this->user_id,
             'is_active' => $this->user->is_active,
             'photo_url' => $this->photoUrl(),
+            'has_signature' => $this->hasSignature(),
             'slot_minutes' => $this->slotLength(),
             'name' => $this->user->name,
             'email' => $this->user->email,

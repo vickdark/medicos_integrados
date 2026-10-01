@@ -6,14 +6,14 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class SendPrescriptionRequest extends FormRequest
+class SendClinicalDocumentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()->can('emailPrescription', $this->route('consultation'));
+        return $this->user()->can('issueDocuments', $this->route('document')->consultation);
     }
 
     /**
@@ -29,8 +29,8 @@ class SendPrescriptionRequest extends FormRequest
     }
 
     /**
-     * Get the "after" validation callables for the request. An unsigned
-     * prescription is not valid, so it is not sent.
+     * Get the "after" validation callables for the request. An unsigned document
+     * is not valid, so it is not sent.
      *
      * @return array<int, callable>
      */
@@ -38,8 +38,8 @@ class SendPrescriptionRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if (! $this->route('consultation')->doctor->hasSignature()) {
-                    $validator->errors()->add('email', 'Registra tu firma en Configuración → Perfil profesional antes de enviar la receta.');
+                if (! $this->route('document')->consultation->doctor->hasSignature()) {
+                    $validator->errors()->add('email', 'Registra tu firma en Configuración → Perfil profesional antes de enviar documentos.');
                 }
             },
         ];
@@ -53,7 +53,7 @@ class SendPrescriptionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Indica el correo al que se enviará la receta.',
+            'email.required' => 'Indica el correo al que se enviará el documento.',
             'email.email' => 'Escribe un correo válido.',
         ];
     }

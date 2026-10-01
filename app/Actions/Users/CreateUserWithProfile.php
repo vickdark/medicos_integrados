@@ -58,6 +58,7 @@ class CreateUserWithProfile
         $doctor = $user->doctor()->create(Arr::only($data, self::DOCTOR_FIELDS));
 
         app(SaveDoctorPhoto::class)->handle($doctor, $data['photo'] ?? null, (bool) ($data['remove_photo'] ?? false));
+        app(SaveDoctorSignature::class)->handle($doctor, $data['signature'] ?? null, (bool) ($data['remove_signature'] ?? false));
     }
 
     /**

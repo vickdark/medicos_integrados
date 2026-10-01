@@ -46,7 +46,7 @@ const initials = props.doctor.name
 const details = [
     { label: 'Correo', value: props.doctor.email },
     { label: 'Teléfono', value: props.doctor.phone },
-    { label: 'Colegiatura', value: props.doctor.license_number },
+    { label: 'Registro médico', value: props.doctor.license_number },
     {
         label: 'Tarifa de consulta',
         value: formatMoney(props.doctor.consultation_fee),

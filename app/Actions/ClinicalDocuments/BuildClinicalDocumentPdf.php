@@ -2,6 +2,7 @@
 
 namespace App\Actions\ClinicalDocuments;
 
+use App\Actions\Verification\DocumentVerifier;
 use App\Models\ClinicalDocument;
 use Barryvdh\DomPDF\Facade\Pdf as PdfFacade;
 use Barryvdh\DomPDF\PDF;
@@ -30,6 +31,9 @@ class BuildClinicalDocumentPdf
             'document' => $document,
             'consultation' => $document->consultation,
             'isOfficial' => $isOfficial,
+            'verification' => $isOfficial && $document->verification_code
+                ? app(DocumentVerifier::class)->stamp($document->verification_code)
+                : null,
             'generatedAt' => now(),
         ])
             ->setOption('isFontSubsettingEnabled', true)

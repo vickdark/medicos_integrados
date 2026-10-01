@@ -1,3 +1,6 @@
+@php
+    $signature = $consultation->doctor->signatureDataUri();
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -29,6 +32,14 @@
         .invalid { border: 2px solid #b91c1c; background: #fef2f2; color: #7f1d1d; border-radius: 4px; padding: 8px 12px; margin-bottom: 16px; }
         .invalid strong { display: block; font-size: 12px; margin-bottom: 2px; }
         .watermark { position: fixed; top: 38%; left: 8%; width: 84%; text-align: center; font-size: 64px; font-weight: bold; color: #b91c1c; opacity: .12; transform: rotate(-30deg); }
+        .unsigned { border: 2px solid #b91c1c; background: #fef2f2; color: #7f1d1d; border-radius: 4px; padding: 8px 12px; margin-bottom: 16px; }
+        .unsigned strong { display: block; font-size: 12px; margin-bottom: 2px; }
+        .signature-image { height: 60px; max-width: 220px; margin: 0 auto -6px; display: block; }
+        .verify { width: 100%; margin-top: 28px; border: 1px solid #e5e7eb; border-radius: 6px; page-break-inside: avoid; }
+        .verify td { vertical-align: middle; padding: 8px 10px; }
+        .verify .qr { width: 96px; }
+        .verify .qr img { width: 88px; height: 88px; }
+        .verify .code { font-family: DejaVu Sans Mono, monospace; font-size: 13px; font-weight: bold; letter-spacing: 1px; }
         footer { position: fixed; bottom: -14px; left: 0; right: 0; text-align: center; color: #9ca3af; font-size: 8px; }
     </style>
 </head>
@@ -36,6 +47,9 @@
     @unless ($isOfficial)
         <div class="watermark">SIN VALIDEZ</div>
     @endunless
+    @if ($isOfficial && ! $signature)
+        <div class="watermark">SIN FIRMA</div>
+    @endif
     <table class="top">
         <tr>
             <td>
@@ -44,6 +58,7 @@
             </td>
             <td class="doc-title">
                 <h1>RECETA MÉDICA</h1>
+                <div><strong>N.º RX-{{ str_pad((string) $consultation->id, 6, '0', STR_PAD_LEFT) }}</strong></div>
                 <div class="muted">{{ $consultation->consulted_at->translatedFormat('d \d\e F \d\e Y') }}</div>
             </td>
         </tr>
@@ -56,6 +71,13 @@
             Para más información, consulte con el médico responsable: {{ $consultation->doctor->user->name }}.
         </div>
     @endunless
+
+    @if ($isOfficial && ! $signature)
+        <div class="unsigned">
+            <strong>Documento no válido por falta de firma del médico</strong>
+            {{ $consultation->doctor->user->name }} no ha registrado su firma en el sistema. El documento será válido cuando la registre en Configuración → Perfil profesional.
+        </div>
+    @endif
 
     <table class="boxes">
         <tr>
@@ -73,7 +95,7 @@
                 <h2>Médico</h2>
                 <div class="name">{{ $consultation->doctor->user->name }}</div>
                 <div>{{ $consultation->doctor->specialty->name }}</div>
-                <div class="muted">Colegiatura: {{ $consultation->doctor->license_number }}</div>
+                <div class="muted">Registro médico: {{ $consultation->doctor->license_number }}</div>
             </td>
         </tr>
     </table>
@@ -114,10 +136,27 @@
     @endif
 
     <div class="signature">
+        @if ($signature)
+            <img src="{{ $signature }}" alt="Firma" class="signature-image">
+        @endif
         <div class="line"></div>
         <strong>{{ $consultation->doctor->user->name }}</strong><br>
-        <span class="muted">{{ $consultation->doctor->specialty->name }} · Colegiatura {{ $consultation->doctor->license_number }}</span>
+        <span class="muted">{{ $consultation->doctor->specialty->name }} · Registro médico {{ $consultation->doctor->license_number }}</span>
     </div>
+
+    @if ($isOfficial && ! empty($verification))
+        <table class="verify">
+            <tr>
+                <td class="qr"><img src="{{ $verification['qr'] }}" alt="Código QR de verificación"></td>
+                <td>
+                    <h2>Verificación del documento</h2>
+                    Escanee el código QR o ingrese a <strong>{{ $verification['base_url'] }}</strong> con el código
+                    <div class="code">{{ $verification['code'] }}</div>
+                    <span class="muted">para comprobar que este documento fue emitido por {{ config('app.name') }} y no ha sido alterado.</span>
+                </td>
+            </tr>
+        </table>
+    @endif
 
     <footer>
         @if ($isOfficial)

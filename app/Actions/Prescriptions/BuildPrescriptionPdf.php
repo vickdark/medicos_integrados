@@ -2,6 +2,7 @@
 
 namespace App\Actions\Prescriptions;
 
+use App\Actions\Verification\DocumentVerifier;
 use App\Models\Consultation;
 use Barryvdh\DomPDF\Facade\Pdf as PdfFacade;
 use Barryvdh\DomPDF\PDF;
@@ -20,9 +21,12 @@ class BuildPrescriptionPdf
     {
         $consultation->loadMissing(['patient', 'doctor.user', 'doctor.specialty', 'prescriptions', 'primaryDiagnosis']);
 
+        $verifier = app(DocumentVerifier::class);
+
         return PdfFacade::loadView('pdf.prescription', [
             'consultation' => $consultation,
             'isOfficial' => $isOfficial,
+            'verification' => $isOfficial ? $verifier->stamp($verifier->prescriptionCode($consultation)) : null,
             'generatedAt' => now(),
         ])
             ->setOption('isFontSubsettingEnabled', true)

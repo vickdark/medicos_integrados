@@ -16,7 +16,7 @@ class DoctorsExport extends TableExport
      */
     public function headings(): array
     {
-        return ['Nombre', 'Correo', 'Especialidad', 'Colegiatura', 'Teléfono', 'Tarifa'];
+        return ['Nombre', 'Correo', 'Especialidad', 'Registro médico', 'Teléfono', 'Tarifa'];
     }
 
     /**

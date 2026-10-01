@@ -14,6 +14,8 @@ use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorPhotoController;
 use App\Http\Controllers\DoctorScheduleController;
+use App\Http\Controllers\DoctorSignatureController;
+use App\Http\Controllers\DocumentVerificationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InsurerController;
 use App\Http\Controllers\MedicationController;
@@ -23,6 +25,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SendClinicalDocumentController;
 use App\Http\Controllers\SendConsultationPrescriptionController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\TourController;
@@ -33,6 +36,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('privacidad', PrivacyPolicyController::class)->name('privacy');
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('verificar', [DocumentVerificationController::class, 'index'])->name('verification.index');
+    Route::get('verificar/{code}', [DocumentVerificationController::class, 'show'])->name('verification.show');
+});
 Route::get('pantalla-de-turnos', [TurnBoardController::class, 'show'])->name('turns.board');
 Route::get('pantalla-de-turnos/datos', [TurnBoardController::class, 'data'])->name('turns.feed');
 Route::get('doctors/{doctor}/photo', DoctorPhotoController::class)->name('doctors.photo');
@@ -94,6 +101,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('cie10/imports', [Cie10CatalogController::class, 'store'])->name('cie10.imports.store');
     Route::get('cie10/imports/{import}/rejections', [Cie10CatalogController::class, 'rejections'])->name('cie10.imports.rejections');
     Route::resource('insurers', InsurerController::class)->except(['show']);
+
+    Route::get('doctors/{doctor}/signature', DoctorSignatureController::class)->name('doctors.signature');
+    Route::post('clinical-documents/{document}/email', SendClinicalDocumentController::class)->name('clinical-documents.email');
 
     Route::get('turns', [TurnController::class, 'index'])->name('turns.index');
     Route::post('turns', [TurnController::class, 'store'])->name('turns.store');

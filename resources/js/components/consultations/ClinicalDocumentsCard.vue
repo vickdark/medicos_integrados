@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { FilePlus2, FileText, Plus, Trash2 } from 'lucide-vue-next';
+import {
+    FilePlus2,
+    FileText,
+    Mail,
+    Plus,
+    ShieldAlert,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ClinicalDocumentController from '@/actions/App/Http/Controllers/ClinicalDocumentController';
+import SendClinicalDocumentController from '@/actions/App/Http/Controllers/SendClinicalDocumentController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,7 +49,20 @@ const props = defineProps<{
     canIssue: boolean;
     options: DocumentOptions;
     issuedDocumentId: number | null;
+    doctorHasSignature: boolean;
+    doctorName: string;
+    patientEmail: string | null;
 }>();
+
+const emailingDocument = ref<ClinicalDocumentSummary | null>(null);
+const emailDialogOpen = computed({
+    get: () => emailingDocument.value !== null,
+    set: (open) => {
+        if (!open) {
+            emailingDocument.value = null;
+        }
+    },
+});
 
 const dialogOpen = ref(false);
 const type = ref('');
@@ -93,7 +114,22 @@ const pdfUrl = (id: number) => clinicalDocumentRoutes.show(id).url;
                 </Button>
             </div>
         </CardHeader>
-        <CardContent>
+        <CardContent class="grid gap-3">
+            <p
+                v-if="!doctorHasSignature && (documents.length || canIssue)"
+                class="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+            >
+                <ShieldAlert class="mt-0.5 size-4 shrink-0" />
+                <span>
+                    <strong
+                        >Documentos no válidos por falta de firma del
+                        médico.</strong
+                    >
+                    {{ doctorName }} debe registrar su firma en Configuración →
+                    Perfil profesional; mientras tanto no se pueden enviar por
+                    correo.
+                </span>
+            </p>
             <p
                 v-if="documents.length === 0"
                 class="text-sm text-muted-foreground"
@@ -130,19 +166,87 @@ const pdfUrl = (id: number) => clinicalDocumentRoutes.show(id).url;
                             {{ formatDateTime(document.created_at) }}
                         </p>
                     </div>
-                    <Button size="sm" variant="outline" as-child>
-                        <a
-                            :href="pdfUrl(document.id)"
-                            target="_blank"
-                            rel="noopener"
+                    <div class="flex flex-wrap gap-2">
+                        <Button
+                            v-if="canIssue"
+                            size="sm"
+                            variant="outline"
+                            :disabled="!doctorHasSignature"
+                            :title="
+                                doctorHasSignature
+                                    ? undefined
+                                    : 'Registra tu firma para poder enviarlo'
+                            "
+                            @click="emailingDocument = document"
                         >
-                            <FileText class="text-red-600" /> Ver PDF
-                        </a>
-                    </Button>
+                            <Mail /> Enviar
+                        </Button>
+                        <Button size="sm" variant="outline" as-child>
+                            <a
+                                :href="pdfUrl(document.id)"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                <FileText class="text-red-600" /> Ver PDF
+                            </a>
+                        </Button>
+                    </div>
                 </li>
             </ul>
         </CardContent>
     </Card>
+
+    <Dialog v-model:open="emailDialogOpen">
+        <DialogContent v-if="emailingDocument" class="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Enviar por correo</DialogTitle>
+                <DialogDescription>
+                    {{ emailingDocument.type.label }}
+                    {{ emailingDocument.number }} · se adjunta la copia oficial
+                    firmada en PDF.
+                </DialogDescription>
+            </DialogHeader>
+            <Form
+                v-bind="
+                    SendClinicalDocumentController.form(emailingDocument.id)
+                "
+                class="grid gap-4"
+                :options="{ preserveScroll: true }"
+                v-slot="{ errors, processing }"
+                @success="emailingDocument = null"
+            >
+                <div class="grid gap-2">
+                    <Label for="document-email">Correo del paciente *</Label>
+                    <Input
+                        id="document-email"
+                        type="email"
+                        name="email"
+                        :default-value="patientEmail ?? ''"
+                        required
+                    />
+                    <p
+                        v-if="patientEmail"
+                        class="text-xs text-muted-foreground"
+                    >
+                        Correo registrado en el sistema: {{ patientEmail }}
+                    </p>
+                    <InputError :message="errors.email" />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        @click="emailingDocument = null"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button :disabled="processing">
+                        <Mail /> Enviar documento
+                    </Button>
+                </div>
+            </Form>
+        </DialogContent>
+    </Dialog>
 
     <Dialog v-model:open="dialogOpen">
         <DialogContent class="max-h-[90svh] overflow-y-auto sm:max-w-xl">

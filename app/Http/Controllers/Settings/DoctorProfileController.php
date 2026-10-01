@@ -31,6 +31,7 @@ class DoctorProfileController extends Controller
                 'slot_minutes' => $doctor->slotLength(),
                 'bio' => $doctor->bio,
                 'photo_url' => $doctor->photoUrl(),
+                'signature_url' => $doctor->signatureUrl(),
                 'schedule_summary' => $doctor->weeklyScheduleSummary(),
             ],
         ]);

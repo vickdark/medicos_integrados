@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Doctor extends Model
 {
@@ -168,6 +169,39 @@ class Doctor extends Model
         return $this->photo_path
             ? route('doctors.photo', ['doctor' => $this->id, 'v' => $this->updated_at?->timestamp])
             : null;
+    }
+
+    /**
+     * Whether the doctor has registered the image of their signature. Documents
+     * issued without it are marked as not valid.
+     */
+    public function hasSignature(): bool
+    {
+        return $this->signature_path !== null;
+    }
+
+    /**
+     * URL of the signature image, only reachable by the doctor and the administrator.
+     */
+    public function signatureUrl(): ?string
+    {
+        return $this->signature_path
+            ? route('doctors.signature', ['doctor' => $this->id, 'v' => $this->updated_at?->timestamp])
+            : null;
+    }
+
+    /**
+     * The signature as a data URI, to embed it in the PDFs.
+     */
+    public function signatureDataUri(): ?string
+    {
+        if (! $this->signature_path || ! Storage::disk('local')->exists($this->signature_path)) {
+            return null;
+        }
+
+        $disk = Storage::disk('local');
+
+        return 'data:'.($disk->mimeType($this->signature_path) ?: 'image/png').';base64,'.base64_encode((string) $disk->get($this->signature_path));
     }
 
     /**

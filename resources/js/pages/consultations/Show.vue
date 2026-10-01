@@ -4,6 +4,7 @@ import {
     Download,
     FileImage,
     FilePenLine,
+    ShieldAlert,
     FileText,
     Mail,
     Trash2,
@@ -59,6 +60,7 @@ const props = defineProps<{
     addendumSections: { value: string; label: string }[];
     documentOptions: DocumentOptions;
     issuedDocumentId: number | null;
+    doctorHasSignature: boolean;
 }>();
 
 const addenda = computed(() => props.consultation.addenda ?? []);
@@ -259,6 +261,9 @@ const sections = computed(() =>
                 :can-issue="can.issue_documents"
                 :options="documentOptions"
                 :issued-document-id="issuedDocumentId"
+                :doctor-has-signature="doctorHasSignature"
+                :doctor-name="consultation.doctor?.name ?? ''"
+                :patient-email="patientEmail"
             />
 
             <Card id="notas-aclaratorias" class="scroll-mt-20">
@@ -405,6 +410,20 @@ const sections = computed(() =>
                     </CardDescription>
                 </CardHeader>
                 <CardContent v-if="consultation.prescriptions?.length">
+                    <p
+                        v-if="!doctorHasSignature"
+                        class="mb-3 flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+                    >
+                        <ShieldAlert class="mt-0.5 size-4 shrink-0" />
+                        <span>
+                            <strong
+                                >Documento no válido por falta de firma del
+                                médico.</strong
+                            >
+                            {{ consultation.doctor?.name }} debe registrar su
+                            firma en Configuración → Perfil profesional.
+                        </span>
+                    </p>
                     <div
                         v-if="
                             can.download_prescription && !can.email_prescription
@@ -427,6 +446,7 @@ const sections = computed(() =>
                             v-if="can.email_prescription"
                             size="sm"
                             variant="outline"
+                            :disabled="!doctorHasSignature"
                             @click="emailDialogOpen = true"
                         >
                             <Mail /> Enviar por correo

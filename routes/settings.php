@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\BrandingController;
 use App\Http\Controllers\Settings\DoctorProfileController;
+use App\Http\Controllers\Settings\DoctorSignatureController;
 use App\Http\Controllers\Settings\LandingSettingsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/doctor-profile', [DoctorProfileController::class, 'show'])->name('doctor-profile.show');
+    Route::post('settings/doctor-profile/signature', [DoctorSignatureController::class, 'update'])->name('doctor-profile.signature.update');
+    Route::delete('settings/doctor-profile/signature', [DoctorSignatureController::class, 'destroy'])->name('doctor-profile.signature.destroy');
 
     Route::get('settings/branding', [BrandingController::class, 'edit'])->name('branding.edit');
     Route::put('settings/branding', [BrandingController::class, 'update'])->name('branding.update');

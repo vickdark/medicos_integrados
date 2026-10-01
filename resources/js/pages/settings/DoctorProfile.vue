@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { Clock } from 'lucide-vue-next';
+import { Form, Head, Link, router } from '@inertiajs/vue3';
+import { Clock, PenLine, ShieldAlert, Trash2 } from 'lucide-vue-next';
+import DoctorSignatureController from '@/actions/App/Http/Controllers/Settings/DoctorSignatureController';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
+import { confirmAction } from '@/lib/confirm';
 import { formatMoney } from '@/lib/format';
 import { show } from '@/routes/doctor-profile';
 import scheduleRoutes from '@/routes/schedules';
@@ -22,6 +27,7 @@ const props = defineProps<{
         slot_minutes: number;
         bio: string | null;
         photo_url: string | null;
+        signature_url: string | null;
         schedule_summary: { days: string; ranges: string[] }[];
     };
 }>();
@@ -30,11 +36,27 @@ const breadcrumbItems: BreadcrumbItem[] = [
     { title: 'Perfil profesional', href: show() },
 ];
 
+async function removeSignature() {
+    const accepted = await confirmAction({
+        title: 'Quitar tu firma',
+        text: 'Tus recetas y documentos se marcarán como no válidos hasta que registres una nueva.',
+        confirmText: 'Sí, quitar',
+        cancelText: 'Volver',
+        tone: 'danger',
+    });
+
+    if (accepted) {
+        router.delete(DoctorSignatureController.destroy().url, {
+            preserveScroll: true,
+        });
+    }
+}
+
 const details = [
     { label: 'Nombre', value: props.profile.name },
     { label: 'Correo', value: props.profile.email },
     { label: 'Especialidad', value: props.profile.specialty },
-    { label: 'Colegiatura', value: props.profile.license_number },
+    { label: 'Registro médico', value: props.profile.license_number },
     { label: 'Teléfono', value: props.profile.phone },
     {
         label: 'Tarifa de consulta',
@@ -88,6 +110,74 @@ const details = [
                         </dd>
                     </div>
                 </dl>
+
+                <div class="grid gap-3">
+                    <h3 class="text-sm font-semibold">Firma</h3>
+                    <p
+                        v-if="!profile.signature_url"
+                        class="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+                    >
+                        <ShieldAlert class="mt-0.5 size-4 shrink-0" />
+                        <span>
+                            <strong>Aún no registras tu firma.</strong> Tus
+                            recetas y documentos clínicos salen marcados como no
+                            válidos y no se pueden enviar por correo.
+                        </span>
+                    </p>
+                    <div
+                        v-else
+                        class="flex h-24 w-60 items-center justify-center rounded-xl border bg-white p-2"
+                    >
+                        <img
+                            :src="profile.signature_url"
+                            alt="Tu firma"
+                            class="max-h-full max-w-full object-contain"
+                        />
+                    </div>
+                    <Form
+                        v-bind="DoctorSignatureController.update.form()"
+                        class="grid gap-2"
+                        :options="{ preserveScroll: true }"
+                        reset-on-success
+                        v-slot="{ errors, processing }"
+                    >
+                        <Label for="signature">
+                            {{
+                                profile.signature_url
+                                    ? 'Reemplazar firma'
+                                    : 'Subir firma'
+                            }}
+                        </Label>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <Input
+                                id="signature"
+                                type="file"
+                                name="signature"
+                                accept="image/png,image/jpeg,image/webp"
+                                class="max-w-xs"
+                                required
+                            />
+                            <Button size="sm" :disabled="processing">
+                                <PenLine /> Guardar firma
+                            </Button>
+                            <Button
+                                v-if="profile.signature_url"
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                class="text-destructive"
+                                @click="removeSignature"
+                            >
+                                <Trash2 /> Quitar
+                            </Button>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            Firma escaneada o fotografiada sobre fondo blanco
+                            (PNG, JPG o WebP de hasta 1 MB).
+                        </p>
+                        <InputError :message="errors.signature" />
+                    </Form>
+                </div>
 
                 <div class="grid gap-3">
                     <div class="flex items-center justify-between gap-2">

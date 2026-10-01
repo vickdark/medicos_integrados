@@ -29,4 +29,14 @@ class DoctorFactory extends Factory
             'slot_minutes' => 30,
         ];
     }
+
+    /**
+     * A doctor who registered the image of their signature.
+     */
+    public function signed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'signature_path' => 'doctor-signatures/firma-de-prueba.png',
+        ]);
+    }
 }

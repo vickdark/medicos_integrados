@@ -17,7 +17,7 @@ class UsersExport extends TableExport
      */
     public function headings(): array
     {
-        return ['Nombre', 'Correo', 'Rol', 'Especialidad', 'Colegiatura', 'Documento', 'Acceso', 'Fecha de alta'];
+        return ['Nombre', 'Correo', 'Rol', 'Especialidad', 'Registro médico', 'Documento', 'Acceso', 'Fecha de alta'];
     }
 
     /**

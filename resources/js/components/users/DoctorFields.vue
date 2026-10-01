@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ImagePlus } from 'lucide-vue-next';
+import { ImagePlus, PenLine } from 'lucide-vue-next';
 import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import SearchableSelect from '@/components/SearchableSelect.vue';
@@ -16,6 +16,7 @@ export type DoctorProfile = {
     slot_minutes: number;
     bio: string | null;
     photo_url?: string | null;
+    signature_url?: string | null;
 };
 
 const slotOptions = [10, 15, 20, 30, 45, 60];
@@ -32,6 +33,14 @@ function onPhotoChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
 
     preview.value = file ? URL.createObjectURL(file) : null;
+}
+
+const signaturePreview = ref<string | null>(null);
+
+function onSignatureChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+
+    signaturePreview.value = file ? URL.createObjectURL(file) : null;
 }
 </script>
 
@@ -62,7 +71,7 @@ function onPhotoChange(event: Event) {
                 <InputError :message="errors.specialty_id" />
             </div>
             <div class="grid gap-2">
-                <Label for="license_number">N.º de colegiatura *</Label>
+                <Label for="license_number">N.º de registro médico *</Label>
                 <Input
                     id="license_number"
                     name="license_number"
@@ -148,6 +157,49 @@ function onPhotoChange(event: Event) {
                 </div>
             </div>
             <InputError :message="errors.photo" />
+        </div>
+        <div class="grid gap-2">
+            <Label for="signature">Firma del médico</Label>
+            <div class="flex flex-wrap items-center gap-4">
+                <div
+                    class="flex h-20 w-48 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white p-2 text-muted-foreground"
+                >
+                    <img
+                        v-if="signaturePreview || doctor?.signature_url"
+                        :src="signaturePreview ?? doctor?.signature_url ?? ''"
+                        alt="Firma del médico"
+                        class="max-h-full max-w-full object-contain"
+                    />
+                    <PenLine v-else class="size-6" />
+                </div>
+                <div class="grid gap-2">
+                    <Input
+                        id="signature"
+                        type="file"
+                        name="signature"
+                        accept="image/png,image/jpeg,image/webp"
+                        @change="onSignatureChange"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                        Imagen de la firma escaneada o fotografiada sobre fondo
+                        blanco (PNG, JPG o WebP de hasta 1 MB). Se imprime en
+                        recetas y documentos; sin ella, se marcan como no
+                        válidos.
+                    </p>
+                    <label
+                        v-if="doctor?.signature_url"
+                        class="flex items-center gap-2 text-sm"
+                    >
+                        <input
+                            type="checkbox"
+                            name="remove_signature"
+                            value="1"
+                        />
+                        Quitar la firma actual
+                    </label>
+                </div>
+            </div>
+            <InputError :message="errors.signature" />
         </div>
         <div class="grid gap-2">
             <Label for="bio">Reseña profesional</Label>
