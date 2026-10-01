@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
 use App\Models\Doctor;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,7 +24,10 @@ class DoctorPhotoController extends Controller
 
         abort_unless($isPubliclyShown || $request->user() !== null, 404);
 
-        return Storage::disk('local')->response($doctor->photo_path, null, [
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+
+        return $disk->response($doctor->photo_path, null, [
             'Cache-Control' => 'public, max-age=3600',
         ]);
     }

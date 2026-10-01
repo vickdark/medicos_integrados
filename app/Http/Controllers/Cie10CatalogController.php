@@ -10,6 +10,7 @@ use App\Models\AuditLog;
 use App\Models\Diagnosis;
 use App\Models\DiagnosisImport;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -108,7 +109,10 @@ class Cie10CatalogController extends Controller
 
         abort_unless($import->hasRejectionReport(), 404);
 
-        return Storage::disk('local')->download(
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+
+        return $disk->download(
             (string) $import->report_path,
             'cie10-rechazos-'.$import->created_at?->format('Ymd-His').'.csv',
         );

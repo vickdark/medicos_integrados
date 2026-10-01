@@ -9,6 +9,7 @@ use App\Http\Requests\StoreConsultationAttachmentRequest;
 use App\Models\AuditLog;
 use App\Models\Consultation;
 use App\Models\ConsultationAttachment;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -50,7 +51,10 @@ class ConsultationAttachmentController extends Controller
 
         AuditLog::record(AuditAction::Downloaded, $attachment, "Descargó el archivo «{$attachment->original_name}»", $attachment->consultation->patient);
 
-        return Storage::disk(ConsultationAttachment::DISK)->download($attachment->path, $attachment->original_name);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk(ConsultationAttachment::DISK);
+
+        return $disk->download($attachment->path, $attachment->original_name);
     }
 
     /**

@@ -40,6 +40,8 @@ it('starts the numbering again every day', function () {
 });
 
 it('checks in a patient with an appointment today only once', function () {
+    $this->travelTo(today()->setTime(10, 0));
+
     $receptionist = User::factory()->receptionist()->create();
     $appointment = Appointment::factory()->confirmed()->create(['scheduled_at' => now()->addHour()]);
 
@@ -214,6 +216,8 @@ it('shows the patient their turn and place in line on the portal', function () {
 });
 
 it('tells a patient with an appointment today to check in at reception', function () {
+    $this->travelTo(today()->setTime(10, 0));
+
     $patient = Patient::factory()->withAccount()->create();
     $appointment = Appointment::factory()->confirmed()->for($patient)->create(['scheduled_at' => now()->addHours(2)]);
 

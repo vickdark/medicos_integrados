@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 
 class Doctor extends Model
@@ -199,6 +200,7 @@ class Doctor extends Model
             return null;
         }
 
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('local');
 
         return 'data:'.($disk->mimeType($this->signature_path) ?: 'image/png').';base64,'.base64_encode((string) $disk->get($this->signature_path));
